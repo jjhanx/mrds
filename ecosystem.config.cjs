@@ -5,6 +5,7 @@ module.exports = {
       script: "node_modules/next/dist/bin/next",
       args: "start",
       cwd: __dirname,
+      exec_mode: "fork",
       instances: 1,
       autorestart: true,
       watch: false,

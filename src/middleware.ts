@@ -8,7 +8,7 @@ export default auth((req) => {
   const role = user?.role ?? "member";
 
   // 공개 경로
-  const publicPaths = ["/login", "/api/auth"];
+  const publicPaths = ["/login", "/api/auth", "/api/health"];
   const isPublic = publicPaths.some((p) => pathname.startsWith(p));
 
   if (isPublic) return;
