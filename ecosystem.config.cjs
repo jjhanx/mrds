@@ -2,8 +2,8 @@ module.exports = {
   apps: [
     {
       name: "mrds",
-      script: "node_modules/next/dist/bin/next",
-      args: "start",
+      script: "npm",
+      args: "run start",
       cwd: __dirname,
       exec_mode: "fork",
       instances: 1,
