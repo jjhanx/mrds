@@ -18,7 +18,15 @@ npm install
 
 ### 2. 환경 변수 설정
 
-`.env` 파일을 생성하고 다음 변수를 설정하세요:
+**방법 1 (권장)**: AUTH_SECRET 자동 생성 포함
+```bash
+npm run env:init
+```
+
+**방법 2**: 직접 작성  
+상세 가이드: [ENV_GUIDE.md](./ENV_GUIDE.md)
+
+`.env` 예시:
 
 ```env
 # 데이터베이스 (SQLite, 기본 설정)

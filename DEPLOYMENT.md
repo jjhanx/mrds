@@ -172,6 +172,17 @@ pm2 stop mrds       # 중지
 pm2 delete mrds     # 삭제
 ```
 
+### 4-5. 같은 서버에 여러 앱 실행 시
+
+다른 앱이 이미 3000 포트를 쓰고 있다면, `ecosystem.config.cjs`에서 `PORT: 3001` 등으로 포트를 바꿉니다.
+
+```javascript
+env: {
+  NODE_ENV: "production",
+  PORT: 3001,  // poker-game이 3000을 쓰면 3001 사용
+},
+```
+
 ---
 
 ## 5단계: Nginx 리버스 프록시 (선택)
@@ -195,10 +206,10 @@ sudo nano /etc/nginx/sites-available/mrds
 ```nginx
 server {
     listen 80;
-    server_name your-domain.com www.your-domain.com;
+    server_name choir.your-domain.com;   # mrds 전용 서브도메인
 
     location / {
-        proxy_pass http://127.0.0.1:3000;
+        proxy_pass http://127.0.0.1:3001;   # mrds는 3001 포트
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -226,8 +237,17 @@ sudo systemctl reload nginx
 
 ```bash
 sudo apt install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d your-domain.com -d www.your-domain.com
+sudo certbot --nginx -d choir.your-domain.com
 ```
+
+### 5-5. 같은 서버에 여러 앱 (poker-game + mrds)
+
+| 앱 | 포트 | Nginx server_name 예시 |
+|----|------|------------------------|
+| poker-game | 3000 | poker.your-domain.com 또는 your-domain.com |
+| mrds (미래도시) | 3001 | choir.your-domain.com |
+
+서브도메인별로 사이트 설정 파일을 나누고, 각각 `proxy_pass` 포트만 다르게 설정합니다.
 
 ---
 
