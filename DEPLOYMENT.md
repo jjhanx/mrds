@@ -100,6 +100,8 @@ DATABASE_URL="file:/home/ubuntu/mrds/data/dev.db"
 # Auth.js (openssl rand -base64 32 로 생성)
 AUTH_SECRET="여기에-32자-이상-랜덤-문자열"
 NEXTAUTH_URL="https://your-domain.com"
+# Auth.js v5: 배포 시 /api/auth/session 500 에러 방지 (필수)
+AUTH_TRUST_HOST="true"
 
 # OAuth - 프로덕션 도메인으로 콜백 URL 등록 후
 AUTH_GOOGLE_ID="..."

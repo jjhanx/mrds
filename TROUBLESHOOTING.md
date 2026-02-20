@@ -41,6 +41,20 @@ pm2 restart mrds
 
 ---
 
+## 2-1. /api/auth/session 500 에러 (Auth.js v5)
+
+콘솔에 `"There was a problem with the server configuration"` / `autherror` 표시 시:
+
+`.env`에 다음 추가 후 PM2 재시작:
+
+```env
+AUTH_TRUST_HOST="true"
+```
+
+배포 환경(역방향 프록시, 포트 3001 등)에서는 Auth.js v5가 호스트 검증을 위해 이 값이 필요합니다.
+
+---
+
 ## 3. 로그인 페이지 확인
 
 `/login`으로 직접 접속:
@@ -58,7 +72,7 @@ http://서버IP:3001/login
 
 브라우저에서 **F12** → **Console** 탭을 연 뒤 페이지 새로고침.
 
-- `Failed to load resource` → 정적 파일/이미지 경로 문제.
+- `Failed to load resource` (404) → 정적 파일/이미지 경로 문제. `public/hero.jpg` 등이 서버에 있는지 확인. 최신 커밋 `git pull` 후 `npm run build` 재실행.
 - ` hydration` / `Mismatch` → SSR 관련 문제.
 - `Auth` / `Session` / `NEXTAUTH` 관련 메시지 → 인증 설정 문제.
 
