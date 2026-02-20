@@ -6,10 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { MessageSquare, FileMusic, MessageCircle } from "lucide-react";
 import Image from "next/image";
 
-// 첫 화면 히어로 이미지 (교체 시 public/hero.jpg 등록 후 아래를 "/hero.jpg"로 변경)
-const HERO_IMAGE =
-  process.env.NEXT_PUBLIC_HERO_IMAGE ||
-  "https://images.unsplash.com/photo-1511192336575-5a79af67aef2?w=1600&q=80";
+// 첫 화면 히어로 이미지 (public/hero.jpg - 1376x752)
+const HERO_IMAGE = process.env.NEXT_PUBLIC_HERO_IMAGE || "/hero.jpg";
 
 export default async function HomePage() {
   const session = await auth();
@@ -22,22 +20,22 @@ export default async function HomePage() {
     <div className="min-h-screen bg-gradient-to-b from-amber-50 to-orange-50">
       <Navbar />
 
-      {/* 히어로 섹션 - 음악/합창 이미지 */}
-      <section className="relative h-[320px] md:h-[400px] w-full overflow-hidden">
+      {/* 히어로 섹션 - hero.jpg (1376×752) */}
+      <section className="relative h-[280px] sm:h-[360px] md:h-[450px] w-full overflow-hidden bg-stone-900">
         <Image
           src={HERO_IMAGE}
           alt="미래도시 함께 부르는 하모니"
           fill
-          className="object-cover"
+          className="object-cover object-center"
           priority
           sizes="100vw"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
-          <h1 className="text-4xl md:text-5xl font-bold drop-shadow-lg">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8 text-white">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold drop-shadow-lg tracking-tight">
             미래도시
           </h1>
-          <p className="text-xl md:text-2xl mt-2 opacity-95 drop-shadow-md">
+          <p className="text-lg sm:text-xl md:text-2xl mt-2 opacity-95 drop-shadow-md">
             함께 부르는 하모니
           </p>
         </div>
