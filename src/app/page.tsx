@@ -6,6 +6,11 @@ import { prisma } from "@/lib/prisma";
 import { MessageSquare, FileMusic, MessageCircle } from "lucide-react";
 import Image from "next/image";
 
+// 첫 화면 히어로 이미지 (교체 시 public/hero.jpg 등록 후 아래를 "/hero.jpg"로 변경)
+const HERO_IMAGE =
+  process.env.NEXT_PUBLIC_HERO_IMAGE ||
+  "https://images.unsplash.com/photo-1511192336575-5a79af67aef2?w=1600&q=80";
+
 export default async function HomePage() {
   const session = await auth();
   if (session?.user?.status === "approved") {
@@ -20,8 +25,8 @@ export default async function HomePage() {
       {/* 히어로 섹션 - 음악/합창 이미지 */}
       <section className="relative h-[320px] md:h-[400px] w-full overflow-hidden">
         <Image
-          src="https://images.unsplash.com/photo-1511192336575-5a79af67aef2?w=1600&q=80"
-          alt="합창 공연"
+          src={HERO_IMAGE}
+          alt="미래도시 함께 부르는 하모니"
           fill
           className="object-cover"
           priority
