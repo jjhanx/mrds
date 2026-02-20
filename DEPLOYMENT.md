@@ -164,7 +164,32 @@ pm2 startup
 pm2 save
 ```
 
-### 4-4. 유용한 PM2 명령어
+### 4-4. 리부팅 후에도 fork 모드 유지 (mrds 전용)
+
+리부팅 후 `pm2 resurrect`가 cluster 모드로 복원되는 경우, 아래 스크립트로 매 부팅마다 fork 모드로 시작합니다.
+
+**1) 실행 권한 부여**
+```bash
+chmod +x ~/mrds/scripts/pm2-start-fork.sh
+```
+
+**2) crontab 등록**
+```bash
+crontab -e
+```
+
+맨 아래에 다음 한 줄 추가 (`~/mrds`를 실제 경로로 변경):
+```
+@reboot /home/사용자명/mrds/scripts/pm2-start-fork.sh
+```
+예: `@reboot /home/jjhan/mrds/scripts/pm2-start-fork.sh`
+
+**4) 저장 후 종료**  
+(vi: `Esc` → `:wq` → Enter, nano: `Ctrl+X` → `Y` → Enter)
+
+이제 리부팅할 때마다 mrds가 fork 모드로 시작됩니다.
+
+### 4-5. 유용한 PM2 명령어
 
 ```bash
 pm2 restart mrds    # 재시작
@@ -172,7 +197,7 @@ pm2 stop mrds       # 중지
 pm2 delete mrds     # 삭제
 ```
 
-### 4-5. 같은 서버에 여러 앱 실행 시
+### 4-6. 같은 서버에 여러 앱 실행 시
 
 다른 앱이 이미 3000 포트를 쓰고 있다면, `ecosystem.config.cjs`에서 `PORT: 3001` 등으로 포트를 바꿉니다.
 
