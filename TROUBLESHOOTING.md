@@ -92,9 +92,66 @@ http://서버IP:3001/login
 **OAuth 사용 시:**  
 각 서비스 개발자 콘솔에서 **Callback URL**을 실제 접속 주소로 설정했는지 확인하세요.
 
-- Google: `https://your-domain.com/api/auth/callback/google`
-- Naver: `https://your-domain.com/api/auth/callback/naver`
-- Kakao: `https://your-domain.com/api/auth/callback/kakao`
+---
+
+## 5-1. OAuth(Google/Naver/Kakao) 로그인이 안 될 때
+
+버튼은 보이는데 클릭 후 실패·리다이렉트 오류·`redirect_uri_mismatch`가 나면, 아래를 순서대로 확인하세요.
+
+### 0) 환경 변수 확인
+
+`.env`에 해당 제공자의 ID/Secret이 모두 있어야 합니다.
+
+- Google: `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`
+- Naver: `AUTH_NAVER_ID`, `AUTH_NAVER_SECRET`
+- Kakao: `AUTH_KAKAO_ID`, `AUTH_KAKAO_SECRET`
+
+하나라도 비어 있으면 해당 제공자는 사용 불가입니다.
+
+### 1) NEXTAUTH_URL 확인
+
+`.env`의 `NEXTAUTH_URL`이 실제 접속 주소와 **완전히** 같아야 합니다.
+
+| 실제 접속 URL | NEXTAUTH_URL |
+|---------------|--------------|
+| http://123.45.67.89:3001 | `http://123.45.67.89:3001` |
+| http://localhost:3001 | `http://localhost:3001` |
+| https://choir.example.com | `https://choir.example.com` |
+
+> 이 앱은 **3001** 포트 사용. `localhost:3000`이면 안 됩니다.
+
+### 2) 각 OAuth 콘솔에 등록할 콜백 URL
+
+**NEXTAUTH_URL 끝에 `/api/auth/callback/{provider}` 를 붙인 값**을 등록합니다.
+
+| 환경 | Google | Naver | Kakao |
+|------|--------|-------|-------|
+| 로컬 (3001) | `http://localhost:3001/api/auth/callback/google` | `http://localhost:3001/api/auth/callback/naver` | `http://localhost:3001/api/auth/callback/kakao` |
+| 서버 (IP) | `http://서버IP:3001/api/auth/callback/google` | `http://서버IP:3001/api/auth/callback/naver` | `http://서버IP:3001/api/auth/callback/kakao` |
+| 서버 (도메인) | `https://도메인/api/auth/callback/google` | `https://도메인/api/auth/callback/naver` | `https://도메인/api/auth/callback/kakao` |
+
+### 3) 제공자별 체크
+
+- **Google**  
+  [API 및 서비스 → 사용자 인증 정보](https://console.cloud.google.com/apis/credentials) → OAuth 클라이언트 → **승인된 리디렉션 URI**에 위 URL **정확히** 추가
+
+- **Naver**  
+  [네이버 개발자센터](https://developers.naver.com/apps) → 앱 선택 → **API 설정** → **Callback URL**에 위 URL 추가
+
+- **Kakao**  
+  [Kakao Developers](https://developers.kakao.com/console/app) → 앱 선택 →  
+  - **플랫폼** → Web → **사이트 도메인**: `http://localhost:3001` 또는 `http://서버IP:3001`  
+  - **카카오 로그인** → **Redirect URI**: 위 표의 Kakao URL 추가
+
+### 4) 변경 후
+
+`.env` 또는 OAuth 콘솔 수정 후:
+
+```bash
+pm2 restart mrds
+```
+
+브라우저 캐시 삭제 후 다시 시도하세요.
 
 ---
 
