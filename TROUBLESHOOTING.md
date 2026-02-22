@@ -288,3 +288,20 @@ sudo systemctl reload nginx
 **4) 다시 업로드 시도**
 
 브라우저에서 캐시 새로고침(Ctrl+Shift+R) 후 이미지 붙여넣기·등록을 다시 시도하세요.
+
+---
+
+## 8. Failed to parse body as FormData
+
+이미지 붙여넣기 후 등록 시 **Failed to parse body as FormData** 에러가 나면, Next.js가 body를 버퍼링할 때 크기 제한(기본 10MB)에 걸린 것입니다.
+
+### 해결 방법
+
+`next.config.ts`에 `proxyClientMaxBodySize: "50mb"`가 설정되어 있는지 확인하세요 (코드에 이미 반영됨). 설정 후 재빌드:
+
+```bash
+cd ~/mrds
+git pull
+npm run build
+pm2 restart mrds
+```
