@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     const title = formData.get("title") as string;
     const content = (formData.get("content") as string) ?? "";
     const files = formData.getAll("attachments") as File[];
-    const hasAttachments = files?.length > 0 && files[0]?.name && files[0]?.size > 0;
+    const hasAttachments = files?.length > 0 && files.some((f) => f?.size > 0);
 
     if (!title?.trim()) {
       return NextResponse.json({ error: "제목을 입력해 주세요." }, { status: 400 });
@@ -61,33 +61,36 @@ export async function POST(request: Request) {
       },
     });
 
-    // Handle file attachments
-    if (files?.length && files[0]?.name) {
+    // Handle file attachments (클립보드 붙여넣기 이미지는 file.name이 빈 문자열일 수 있음)
+    const validFiles = files?.filter((f) => f?.size > 0) ?? [];
+    if (validFiles.length > 0) {
       const { writeFile, mkdir } = await import("fs/promises");
       const path = await import("path");
       const uploadDir = path.join(process.cwd(), "public", "uploads", "attachments", post.id);
       await mkdir(uploadDir, { recursive: true });
 
-      const attachments = [];
-      for (const file of files) {
-        if (file.size === 0) continue;
+      const extFromType = (t: string) => {
+        const m = t?.match(/image\/(\w+)/);
+        return m ? m[1] : "png";
+      };
+      for (const file of validFiles) {
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
-        const filename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+        const safeName = file.name?.trim() || `pasted-${Date.now()}.${extFromType(file.type)}`;
+        const filename = `${Date.now()}-${safeName.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
         const filepath = path.join(uploadDir, filename);
         await writeFile(filepath, buffer);
         const relativePath = `/uploads/attachments/${post.id}/${filename}`;
 
-        const att = await prisma.postAttachment.create({
+        await prisma.postAttachment.create({
           data: {
             postId: post.id,
-            filename: file.name,
+            filename: safeName,
             filepath: relativePath,
             fileType: file.type,
             fileSize: file.size,
           },
         });
-        attachments.push(att);
       }
     }
 
