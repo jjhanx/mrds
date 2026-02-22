@@ -36,11 +36,16 @@ export async function POST(request: Request) {
 
     const formData = await request.formData();
     const title = formData.get("title") as string;
-    const content = formData.get("content") as string;
+    const content = (formData.get("content") as string) ?? "";
+    const files = formData.getAll("attachments") as File[];
+    const hasAttachments = files?.length > 0 && files[0]?.name && files[0]?.size > 0;
 
-    if (!title?.trim() || !content?.trim()) {
+    if (!title?.trim()) {
+      return NextResponse.json({ error: "제목을 입력해 주세요." }, { status: 400 });
+    }
+    if (!content.trim() && !hasAttachments) {
       return NextResponse.json(
-        { error: "제목과 내용은 필수입니다" },
+        { error: "내용을 입력하거나 이미지/파일을 첨부해 주세요." },
         { status: 400 }
       );
     }
@@ -48,7 +53,7 @@ export async function POST(request: Request) {
     const post = await prisma.post.create({
       data: {
         title: title.trim(),
-        content: content.trim(),
+        content: content.trim() || "",
         authorId: session.user.id,
       },
       include: {
@@ -57,7 +62,6 @@ export async function POST(request: Request) {
     });
 
     // Handle file attachments
-    const files = formData.getAll("attachments") as File[];
     if (files?.length && files[0]?.name) {
       const { writeFile, mkdir } = await import("fs/promises");
       const path = await import("path");
