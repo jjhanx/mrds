@@ -130,10 +130,9 @@ export async function POST(request: Request) {
       }
       // src="{{INLINE_0}}" -> src="/uploads/..."
       for (let i = 0; i < inlinePaths.length; i++) {
-        finalContent = finalContent.replace(
-          new RegExp(`src="{{INLINE_${i}}}"`, "g"),
-          `src="${inlinePaths[i]}"`
-        );
+        const placeholder = `src="{{INLINE_${i}}}"`;
+        const escaped = placeholder.replace(/[{}]/g, "\\$&");
+        finalContent = finalContent.replace(new RegExp(escaped, "g"), `src="${inlinePaths[i]}"`);
       }
       await prisma.post.update({
         where: { id: post.id },

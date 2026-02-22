@@ -172,7 +172,21 @@ export function PostView({ post, currentUserId }: PostViewProps) {
           {isHtmlContent(post.content) ? (
             <div
               className="post-content whitespace-pre-wrap [&_img]:max-w-full [&_img]:rounded-lg [&_img]:border [&_img]:border-stone-200 [&_img]:max-h-80 [&_img]:object-contain"
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
+              dangerouslySetInnerHTML={{
+                __html: DOMPurify.sanitize(
+                  (() => {
+                    let c = post.content;
+                    // {{INLINE_0}} 등이 남아있는 구 글: image attachments로 치환
+                    post.attachments
+                      ?.filter((a) => a.fileType.startsWith("image/"))
+                      .forEach((att, i) => {
+                        c = c.replace(new RegExp(`src="\\{\\{INLINE_${i}\\}\\}"`, "g"), `src="${att.filepath}"`);
+                      });
+                    return c;
+                  })(),
+                  { ALLOWED_URI_REGEXP: /^(https?:|data:|\/)/ }
+                ),
+              }}
             />
           ) : (
             <div className="whitespace-pre-wrap">{renderContent(post.content)}</div>

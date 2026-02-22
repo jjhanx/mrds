@@ -128,10 +128,9 @@ export async function PUT(
         });
       }
       for (let i = 0; i < inlinePaths.length; i++) {
-        finalContent = finalContent.replace(
-          new RegExp(`src="{{INLINE_${i}}}"`, "g"),
-          `src="${inlinePaths[i]}"`
-        );
+        const placeholder = `src="{{INLINE_${i}}}"`;
+        const escaped = placeholder.replace(/[{}]/g, "\\$&");
+        finalContent = finalContent.replace(new RegExp(escaped, "g"), `src="${inlinePaths[i]}"`);
       }
     }
 
