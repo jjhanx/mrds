@@ -24,12 +24,12 @@ export function AdminClaimButton() {
       let errMsg = "등록에 실패했습니다.";
       try {
         const data = JSON.parse(text);
-        if (data?.error) errMsg = data.error;
+        if (data?.error) errMsg = String(data.error);
       } catch {
-        if (text) errMsg = text.slice(0, 200);
+        if (text) errMsg = text.slice(0, 300);
       }
       if (res.status === 401) errMsg = "로그인이 만료되었습니다. 다시 로그인해 주세요.";
-      alert(errMsg);
+      alert(`${errMsg} (${res.status})`);
     } catch (e) {
       alert("요청 중 오류가 발생했습니다: " + (e instanceof Error ? e.message : String(e)));
     } finally {
