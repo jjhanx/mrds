@@ -38,7 +38,7 @@ function isImageUrl(url: string) {
 // HTML 콘텐츠 여부 (리치 에디터로 작성된 글)
 function isHtmlContent(content: string) {
   if (!content?.trim()) return false;
-  return /<(p|img|div|br|span|strong|em)[\s>]/i.test(content.trim());
+  return /<(p|img|div|br|span|strong|em|video|iframe)[\s>]/i.test(content.trim());
 }
 
 interface PostViewProps {
