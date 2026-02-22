@@ -72,10 +72,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   callbacks: {
     async signIn({ user, account }) {
-      // OAuth 로그인 시: 첫 가입자를 자동 관리자+승인
+      // OAuth 로그인 시: 관리자가 없으면 첫 로그인자를 자동 관리자+승인
       if (account?.provider && account.provider !== "credentials" && user?.email) {
-        const userCount = await prisma.user.count();
-        if (userCount === 1) {
+        const adminCount = await prisma.user.count({ where: { role: "admin" } });
+        if (adminCount === 0) {
           await prisma.user.update({
             where: { email: user.email },
             data: { role: "admin", status: "approved" },
@@ -86,10 +86,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async session({ session, user, token }) {
       const userId = (user?.id as string) || (token?.sub as string) || "";
-      if (session.user) {
+      if (session.user && userId) {
         session.user.id = userId;
-        session.user.status = (user as { status?: string })?.status ?? (token?.status as string);
-        session.user.role = (user as { role?: string })?.role ?? (token?.role as string);
+        // DB에서 최신 status/role 조회 (signIn 직후 반영 보장)
+        const dbUser = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { status: true, role: true },
+        });
+        if (dbUser) {
+          session.user.status = dbUser.status;
+          session.user.role = dbUser.role;
+        } else {
+          session.user.status = (user as { status?: string })?.status ?? (token?.status as string);
+          session.user.role = (user as { role?: string })?.role ?? (token?.role as string);
+        }
       }
       return session;
     },

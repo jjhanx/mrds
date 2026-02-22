@@ -4,9 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { MessageSquare, FileMusic, MessageCircle } from "lucide-react";
-
-// 첫 화면 히어로 이미지 (public/hero.jpg - 1376x752)
-const HERO_IMAGE = process.env.NEXT_PUBLIC_HERO_IMAGE || "/hero.jpg";
+import { HeroImage } from "@/components/HeroImage";
 
 export default async function HomePage() {
   const session = await auth();
@@ -19,25 +17,7 @@ export default async function HomePage() {
     <div className="min-h-screen bg-gradient-to-b from-amber-50 to-orange-50">
       <Navbar />
 
-      {/* 히어로 섹션 - 합창단 이미지 (img로 안정적 표시) */}
-      <section className="relative h-[280px] sm:h-[360px] md:h-[450px] w-full overflow-hidden bg-stone-900">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={HERO_IMAGE}
-          alt="미래도시 함께 부르는 하모니"
-          className="absolute inset-0 w-full h-full object-cover object-center"
-          sizes="100vw"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8 text-white">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold drop-shadow-lg tracking-tight">
-            미래도시
-          </h1>
-          <p className="text-lg sm:text-xl md:text-2xl mt-2 opacity-95 drop-shadow-md">
-            함께 부르는 하모니
-          </p>
-        </div>
-      </section>
+      <HeroImage />
 
       <main className="max-w-6xl mx-auto px-4 py-12">
         <div className="text-center mb-12">

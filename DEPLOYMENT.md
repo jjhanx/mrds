@@ -283,8 +283,10 @@ sudo certbot --nginx -d choir.your-domain.com
 코드 수정 후 서버 반영:
 
 ```bash
-cd /home/ubuntu/mrds
+cd ~/mrds
 git pull origin main
+# 첫 화면 이미지 확인 (없으면 git에 포함됐는지 확인)
+ls public/hero.jpg
 npm install
 npm run build
 pm2 restart mrds
