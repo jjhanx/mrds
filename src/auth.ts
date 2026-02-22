@@ -68,7 +68,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       : []),
   ],
   session: {
-    strategy: hasOAuth ? "database" : "jwt",
+    // SQLite는 Edge 런타임(미들웨어)에서 불가 → JWT 사용 (쿠키에 세션 저장)
+    strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   pages: {
@@ -88,30 +89,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       return true;
     },
-    async session({ session, user, token }) {
-      const userId = (user?.id as string) || (token?.sub as string) || "";
+    async session({ session, token }) {
+      const userId = token?.sub as string;
       if (session.user && userId) {
         session.user.id = userId;
-        // DB에서 최신 status/role 조회 (signIn 직후 반영 보장)
-        const dbUser = await prisma.user.findUnique({
-          where: { id: userId },
-          select: { status: true, role: true },
-        });
-        if (dbUser) {
-          session.user.status = dbUser.status;
-          session.user.role = dbUser.role;
-        } else {
-          session.user.status = (user as { status?: string })?.status ?? (token?.status as string);
-          session.user.role = (user as { role?: string })?.role ?? (token?.role as string);
-        }
+        session.user.status = (token?.status as string) ?? "approved";
+        session.user.role = (token?.role as string) ?? "member";
       }
       return session;
     },
     async jwt({ token, user }) {
       if (user?.id) {
         token.sub = user.id;
-        token.status = (user as { status?: string })?.status;
-        token.role = (user as { role?: string })?.role;
+        // signIn 직후 DB에서 최신 status/role 조회 (첫 사용자 admin 반영)
+        const dbUser = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { status: true, role: true },
+        });
+        token.status = dbUser?.status ?? (user as { status?: string })?.status ?? "approved";
+        token.role = dbUser?.role ?? (user as { role?: string })?.role ?? "member";
       }
       return token;
     },

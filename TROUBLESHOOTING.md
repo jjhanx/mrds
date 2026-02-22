@@ -91,6 +91,12 @@ sudo systemctl reload nginx
 
 `https://mrds215.duckdns.org/api/debug-auth` 접속 시 `hasSession: true`이면 세션 정상, `false`이면 쿠키 미설정입니다.
 
+### API에는 세션 있는데 `/` 접속 시 로그인 화면만 보임
+
+**원인**: Next.js 미들웨어는 Edge 런타임에서 실행되는데, **SQLite는 Edge에서 지원되지 않음**. DB 세션 조회가 불가해 미들웨어에서 항상 비로그인으로 처리됨.
+
+**해결**: 세션 전략을 **JWT**로 변경 (코드에 반영됨). JWT는 쿠키에 저장되어 Edge에서도 동작합니다.
+
 ---
 
 ## 2-2. /api/auth/session 500 에러 (Auth.js v5)
