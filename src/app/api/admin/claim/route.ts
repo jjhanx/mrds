@@ -18,21 +18,23 @@ export async function POST() {
     }
 
     const userId = session.user.id;
-    const userEmail = session.user.email;
-    let user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user && userEmail) {
-      user = await prisma.user.findUnique({ where: { email: userEmail } });
-    }
-    if (!user) {
-      return NextResponse.json(
-        { error: "DB에서 사용자를 찾을 수 없습니다. 로그아웃 후 다시 로그인해 주세요." },
-        { status: 404 }
-      );
-    }
+    const userEmail = session.user.email ?? `admin-${userId}@local`;
+    const userName = session.user.name ?? "관리자";
 
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { role: "admin", status: "approved" },
+    const user = await prisma.user.upsert({
+      where: { id: userId },
+      create: {
+        id: userId,
+        email: userEmail,
+        name: userName,
+        image: session.user.image ?? undefined,
+        status: "approved",
+        role: "admin",
+      },
+      update: {
+        role: "admin",
+        status: "approved",
+      },
     });
 
     return NextResponse.json({ success: true });
