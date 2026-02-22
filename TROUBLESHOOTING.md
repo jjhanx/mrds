@@ -73,6 +73,10 @@ proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 proxy_set_header X-Forwarded-Proto $scheme;
 ```
 
+### useSecureCookies
+
+코드에 `useSecureCookies: true`가 NEXTAUTH_URL이 https일 때 자동 설정됩니다. nginx 뒤에서는 앱이 HTTP로 받지만 브라우저는 HTTPS이므로 Secure 쿠키가 필요합니다.
+
 ### 수정 후
 
 ```bash
@@ -82,6 +86,10 @@ sudo systemctl reload nginx
 ```
 
 브라우저에서 **시크릿 창**으로 다시 접속해 테스트하세요.
+
+### 디버그: 세션 확인
+
+`https://mrds215.duckdns.org/api/debug-auth` 접속 시 `hasSession: true`이면 세션 정상, `false`이면 쿠키 미설정입니다.
 
 ---
 

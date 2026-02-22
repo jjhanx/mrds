@@ -11,9 +11,12 @@ const hasOAuth =
   (process.env.AUTH_NAVER_ID && process.env.AUTH_NAVER_SECRET) ||
   (process.env.AUTH_KAKAO_ID && process.env.AUTH_KAKAO_SECRET);
 
+const isHttps = process.env.NEXTAUTH_URL?.startsWith("https://");
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.AUTH_SECRET,
   trustHost: true, // nginx 등 프록시 뒤에서 필수
+  useSecureCookies: isHttps, // HTTPS 도메인에서는 Secure 쿠키 필수
   adapter: PrismaAdapter(prisma),
   providers: [
     ...(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET
