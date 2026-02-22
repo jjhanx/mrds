@@ -41,6 +41,11 @@ function isHtmlContent(content: string) {
   return /<(p|img|div|br|span|strong|em|video|iframe)[\s>]/i.test(content.trim());
 }
 
+// 본문에 이미지/동영상이 포함되어 있는지 (이미지만 있는 글에서 빈 p만 있을 때 첨부 표시용)
+function contentHasMedia(content: string) {
+  return /<\s*img|<\s*video|<\s*iframe/i.test(content ?? "");
+}
+
 interface PostViewProps {
   post: {
     id: string;
@@ -198,7 +203,7 @@ export function PostView({ post, currentUserId }: PostViewProps) {
           )}
         </div>
 
-        {post.attachments?.length > 0 && !isHtmlContent(post.content) && (
+        {post.attachments?.length > 0 && (!isHtmlContent(post.content) || !contentHasMedia(post.content)) && (
           <div className="mt-8 pt-6 border-t border-stone-100">
             <h3 className="flex items-center gap-2 font-medium text-stone-700 mb-3">
               <Paperclip className="w-4 h-4" />
