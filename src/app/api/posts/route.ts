@@ -61,12 +61,15 @@ export async function POST(request: Request) {
       },
     });
 
-    // Handle file attachments (클립보드 붙여넣기 이미지는 file.name이 빈 문자열일 수 있음)
+    // 인라인 이미지: content의 {{INLINE_0}}, {{INLINE_1}} 등을 업로드 경로로 교체
     const validFiles = files?.filter((f) => f?.size > 0) ?? [];
+    let finalContent = content.trim() || "";
+    const inlinePaths: string[] = [];
+
     if (validFiles.length > 0) {
       const { writeFile, mkdir } = await import("fs/promises");
-      const path = await import("path");
-      const uploadDir = path.join(process.cwd(), "public", "uploads", "attachments", post.id);
+      const pathMod = await import("path");
+      const uploadDir = pathMod.join(process.cwd(), "public", "uploads", "attachments", post.id);
       await mkdir(uploadDir, { recursive: true });
 
       const extFromType = (t: string) => {
@@ -78,9 +81,10 @@ export async function POST(request: Request) {
         const buffer = Buffer.from(bytes);
         const safeName = file.name?.trim() || `pasted-${Date.now()}.${extFromType(file.type)}`;
         const filename = `${Date.now()}-${safeName.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-        const filepath = path.join(uploadDir, filename);
+        const filepath = pathMod.join(uploadDir, filename);
         await writeFile(filepath, buffer);
         const relativePath = `/uploads/attachments/${post.id}/${filename}`;
+        inlinePaths.push(relativePath);
 
         await prisma.postAttachment.create({
           data: {
@@ -92,6 +96,17 @@ export async function POST(request: Request) {
           },
         });
       }
+      // src="{{INLINE_0}}" -> src="/uploads/..."
+      for (let i = 0; i < inlinePaths.length; i++) {
+        finalContent = finalContent.replace(
+          new RegExp(`src="{{INLINE_${i}}}"`, "g"),
+          `src="${inlinePaths[i]}"`
+        );
+      }
+      await prisma.post.update({
+        where: { id: post.id },
+        data: { content: finalContent },
+      });
     }
 
     const postWithAttachments = await prisma.post.findUnique({

@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Trash2, Paperclip, Pencil } from "lucide-react";
+import DOMPurify from "isomorphic-dompurify";
 
 // YouTube/Vimeo URL to embed
 function isVideoUrl(url: string) {
@@ -32,6 +33,12 @@ function getEmbedUrl(url: string) {
 // Image URL detection
 function isImageUrl(url: string) {
   return /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(url) || url.includes("imgur");
+}
+
+// HTML 콘텐츠 여부 (리치 에디터로 작성된 글)
+function isHtmlContent(content: string) {
+  if (!content?.trim()) return false;
+  return /<(p|img|div|br|span|strong|em)[\s>]/i.test(content.trim());
 }
 
 interface PostViewProps {
@@ -162,10 +169,17 @@ export function PostView({ post, currentUserId }: PostViewProps) {
         </div>
 
         <div className="prose prose-stone max-w-none">
-          <div className="whitespace-pre-wrap">{renderContent(post.content)}</div>
+          {isHtmlContent(post.content) ? (
+            <div
+              className="post-content whitespace-pre-wrap [&_img]:max-w-full [&_img]:rounded-lg [&_img]:border [&_img]:border-stone-200 [&_img]:max-h-80 [&_img]:object-contain"
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
+            />
+          ) : (
+            <div className="whitespace-pre-wrap">{renderContent(post.content)}</div>
+          )}
         </div>
 
-        {post.attachments?.length > 0 && (
+        {post.attachments?.length > 0 && !isHtmlContent(post.content) && (
           <div className="mt-8 pt-6 border-t border-stone-100">
             <h3 className="flex items-center gap-2 font-medium text-stone-700 mb-3">
               <Paperclip className="w-4 h-4" />

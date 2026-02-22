@@ -75,19 +75,14 @@ export async function PUT(
       );
     }
 
-    await prisma.post.update({
-      where: { id },
-      data: {
-        title: title.trim(),
-        content: content.trim() || "",
-      },
-    });
-
+    let finalContent = content.trim() || "";
     const validFiles = files?.filter((f) => f?.size > 0) ?? [];
+    const inlinePaths: string[] = [];
+
     if (validFiles.length > 0) {
       const { writeFile, mkdir } = await import("fs/promises");
-      const path = await import("path");
-      const uploadDir = path.join(process.cwd(), "public", "uploads", "attachments", id);
+      const pathMod = await import("path");
+      const uploadDir = pathMod.join(process.cwd(), "public", "uploads", "attachments", id);
       await mkdir(uploadDir, { recursive: true });
 
       const extFromType = (t: string) => {
@@ -99,9 +94,10 @@ export async function PUT(
         const buffer = Buffer.from(bytes);
         const safeName = file.name?.trim() || `pasted-${Date.now()}.${extFromType(file.type)}`;
         const filename = `${Date.now()}-${safeName.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-        const filepath = path.join(uploadDir, filename);
+        const filepath = pathMod.join(uploadDir, filename);
         await writeFile(filepath, buffer);
         const relativePath = `/uploads/attachments/${id}/${filename}`;
+        inlinePaths.push(relativePath);
 
         await prisma.postAttachment.create({
           data: {
@@ -113,7 +109,18 @@ export async function PUT(
           },
         });
       }
+      for (let i = 0; i < inlinePaths.length; i++) {
+        finalContent = finalContent.replace(
+          new RegExp(`src="{{INLINE_${i}}}"`, "g"),
+          `src="${inlinePaths[i]}"`
+        );
+      }
     }
+
+    await prisma.post.update({
+      where: { id },
+      data: { title: title.trim(), content: finalContent },
+    });
 
     const updated = await prisma.post.findUnique({
       where: { id },

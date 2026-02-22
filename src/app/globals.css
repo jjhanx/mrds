@@ -23,3 +23,23 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* TipTap / ProseMirror editor */
+.tiptap,
+.ProseMirror {
+  outline: none;
+  min-height: 200px;
+}
+.tiptap p.is-editor-empty:first-child::before,
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #a8a29e;
+  pointer-events: none;
+  height: 0;
+}
+.tiptap img,
+.ProseMirror img {
+  max-width: 100%;
+  height: auto;
+}
