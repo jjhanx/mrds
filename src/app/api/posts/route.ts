@@ -37,8 +37,10 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const title = formData.get("title") as string;
     const content = (formData.get("content") as string) ?? "";
-    const files = formData.getAll("attachments") as File[];
-    const hasAttachments = files?.length > 0 && files.some((f) => f?.size > 0);
+    const files = formData.getAll("attachments") as (File | Blob)[];
+    const hasAttachments =
+      files?.length > 0 &&
+      files.some((f) => (typeof (f as File).size === "number" && (f as File).size > 0) || typeof (f as Blob).arrayBuffer === "function");
 
     if (!title?.trim()) {
       return NextResponse.json({ error: "제목을 입력해 주세요." }, { status: 400 });
@@ -62,7 +64,7 @@ export async function POST(request: Request) {
     });
 
     // 인라인 이미지: content의 {{INLINE_0}}, {{INLINE_1}} 등을 업로드 경로로 교체
-    const validFiles = files?.filter((f) => f?.size > 0) ?? [];
+    const validFiles = files?.filter((f) => f && typeof (f as Blob).arrayBuffer === "function") ?? [];
     let finalContent = content.trim() || "";
     const inlinePaths: string[] = [];
 
@@ -76,11 +78,13 @@ export async function POST(request: Request) {
         const m = t?.match(/image\/(\w+)/);
         return m ? m[1] : "png";
       };
-      for (const file of validFiles) {
+      for (let i = 0; i < validFiles.length; i++) {
+        const file = validFiles[i] as Blob & { name?: string; type?: string };
         const bytes = await file.arrayBuffer();
+        if (bytes.byteLength === 0) continue;
         const buffer = Buffer.from(bytes);
-        const safeName = file.name?.trim() || `pasted-${Date.now()}.${extFromType(file.type)}`;
-        const filename = `${Date.now()}-${safeName.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+        const safeName = (file.name?.trim() || `pasted-${Date.now()}.${extFromType(file.type || "")}`).replace(/[^a-zA-Z0-9.-]/g, "_");
+        const filename = `${Date.now()}-${i}-${safeName}`;
         const filepath = pathMod.join(uploadDir, filename);
         await writeFile(filepath, buffer);
         const relativePath = `/uploads/attachments/${post.id}/${filename}`;
@@ -89,10 +93,10 @@ export async function POST(request: Request) {
         await prisma.postAttachment.create({
           data: {
             postId: post.id,
-            filename: safeName,
+            filename: file.name?.trim() || `pasted-${i}.${extFromType(file.type || "")}`,
             filepath: relativePath,
-            fileType: file.type,
-            fileSize: file.size,
+            fileType: file.type || "image/png",
+            fileSize: bytes.byteLength,
           },
         });
       }
@@ -117,8 +121,9 @@ export async function POST(request: Request) {
     return NextResponse.json(postWithAttachments);
   } catch (error) {
     console.error("Post create error:", error);
+    const msg = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { error: "Failed to create post" },
+      { error: msg || "Failed to create post" },
       { status: 500 }
     );
   }
