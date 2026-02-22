@@ -5,8 +5,10 @@ import { ko } from "date-fns/locale";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect, useRef } from "react";
 import { ArrowLeft, Trash2, Paperclip, Pencil } from "lucide-react";
 import DOMPurify from "isomorphic-dompurify";
+import { VideoPlayer } from "./VideoPlayer";
 
 // YouTube/Vimeo URL to embed
 function isVideoUrl(url: string) {
@@ -44,6 +46,34 @@ function isHtmlContent(content: string) {
 // 본문에 이미지/동영상이 포함되어 있는지 (이미지만 있는 글에서 빈 p만 있을 때 첨부 표시용)
 function contentHasMedia(content: string) {
   return /<\s*img|<\s*video|<\s*iframe/i.test(content ?? "");
+}
+
+function PostContentWithVideos({ html, className }: { html: string; className: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const videos = el.querySelectorAll("video");
+    const cleaners: (() => void)[] = [];
+    videos.forEach((video) => {
+      const onError = () => {
+        const fallback = document.createElement("div");
+        fallback.className = "flex flex-col items-center justify-center rounded-lg border border-stone-200 bg-stone-800 text-stone-300 p-4 my-2";
+        fallback.innerHTML = `
+          <p class="text-sm font-medium mb-1">동영상을 재생할 수 없습니다</p>
+          <p class="text-xs text-stone-400 text-center max-w-xs">PC에서 iPhone 녹화(MOV/HEVC) 재생이 안 될 수 있습니다.<br/>MP4(H.264) 형식을 권장합니다.</p>
+          <a href="${video.src}" target="_blank" rel="noopener noreferrer" class="mt-2 text-amber-500 text-sm hover:underline">다운로드</a>
+        `;
+        video.parentNode?.replaceChild(fallback, video);
+      };
+      video.addEventListener("error", onError);
+      cleaners.push(() => video.removeEventListener("error", onError));
+    });
+    return () => cleaners.forEach((c) => c());
+  }, [html]);
+
+  return <div ref={ref} className={className} dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
 interface PostViewProps {
@@ -175,36 +205,32 @@ export function PostView({ post, currentUserId }: PostViewProps) {
 
         <div className="prose prose-stone max-w-none">
           {isHtmlContent(post.content) ? (
-            <div
-              className="post-content whitespace-pre-wrap [&_img]:max-w-full [&_img]:rounded-lg [&_img]:border [&_img]:border-stone-200 [&_img]:max-h-80 [&_img]:object-contain [&_iframe]:rounded-lg [&_iframe]:max-w-2xl [&_iframe]:aspect-video [&_iframe]:w-full [&_video]:block [&_video]:w-full [&_video]:max-w-2xl [&_video]:aspect-video [&_video]:rounded-lg [&_video]:border [&_video]:border-stone-200 [&_video]:object-contain [&_video]:bg-black"
-              dangerouslySetInnerHTML={{
-                __html: (() => {
-                  let c = post.content;
-                  // {{INLINE_0}} 등이 남아있는 구 글: image/video attachments로 치환
-                  const ordered = [...(post.attachments ?? [])].sort((a, b) =>
-                    a.id.localeCompare(b.id)
-                  );
-                  ordered.forEach((att, i) => {
-                    c = c.replace(new RegExp(`src="\\{\\{INLINE_${i}\\}\\}"`, "g"), `src="${att.filepath}"`);
-                  });
-                  const clean = DOMPurify.sanitize(c, {
-                    ALLOWED_URI_REGEXP: /^(https?:|data:|\/)/,
-                    ADD_TAGS: ["iframe", "video", "source"],
-                    ADD_ATTR: ["allow", "allowfullscreen", "frameborder", "controls", "playsinline", "preload", "src"],
-                  });
-                  // video 태그에 playsinline, preload 보강 (구 글 호환)
-                  return clean.replace(
-                    /<video(\s[^>]*)>/gi,
-                    (_, attrs) => {
-                      const a = attrs.toLowerCase();
-                      let extra = "";
-                      if (!/playsinline/.test(a)) extra += " playsinline";
-                      if (!/preload=/.test(a)) extra += ' preload="auto"';
-                      return `<video${attrs}${extra}>`;
-                    }
-                  );
-                })(),
-              }}
+            <PostContentWithVideos
+              html={(() => {
+                let c = post.content;
+                const ordered = [...(post.attachments ?? [])].sort((a, b) =>
+                  a.id.localeCompare(b.id)
+                );
+                ordered.forEach((att, i) => {
+                  c = c.replace(new RegExp(`src="\\{\\{INLINE_${i}\\}\\}"`, "g"), `src="${att.filepath}"`);
+                });
+                const clean = DOMPurify.sanitize(c, {
+                  ALLOWED_URI_REGEXP: /^(https?:|data:|\/)/,
+                  ADD_TAGS: ["iframe", "video", "source"],
+                  ADD_ATTR: ["allow", "allowfullscreen", "frameborder", "controls", "playsinline", "preload", "src"],
+                });
+                return clean.replace(
+                  /<video(\s[^>]*)>/gi,
+                  (_, attrs) => {
+                    const a = attrs.toLowerCase();
+                    let extra = "";
+                    if (!/playsinline/.test(a)) extra += " playsinline";
+                    if (!/preload=/.test(a)) extra += ' preload="metadata"';
+                    return `<video${attrs}${extra}>`;
+                  }
+                );
+              })()}
+              className="post-content whitespace-pre-wrap [&_img]:max-w-full [&_img]:rounded-lg [&_img]:border [&_img]:border-stone-200 [&_img]:max-h-80 [&_img]:object-contain [&_iframe]:rounded-lg [&_iframe]:max-w-2xl [&_iframe]:aspect-video [&_iframe]:w-full [&_video]:block [&_video]:max-w-full [&_video]:rounded-lg [&_video]:border [&_video]:border-stone-200 [&_video]:bg-stone-900"
             />
           ) : (
             <div className="whitespace-pre-wrap">{renderContent(post.content)}</div>
@@ -235,14 +261,8 @@ export function PostView({ post, currentUserId }: PostViewProps) {
                       </div>
                     )}
                     {isVideo && (
-                      <div className="my-2 w-full max-w-2xl aspect-video">
-                        <video
-                          src={att.filepath}
-                          controls
-                          playsInline
-                          preload="auto"
-                          className="w-full h-full rounded-lg border border-stone-200 object-contain bg-black"
-                        />
+                      <div className="my-2 max-w-full">
+                        <VideoPlayer src={att.filepath} />
                       </div>
                     )}
                     {!isImage && !isVideo && (

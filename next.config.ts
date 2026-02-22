@@ -5,6 +5,16 @@ const nextConfig: NextConfig = {
     serverActions: { bodySizeLimit: "50mb" },
     proxyClientMaxBodySize: "50mb",
   },
+  async headers() {
+    return [
+      {
+        source: "/uploads/attachments/:path*",
+        headers: [
+          { key: "Accept-Ranges", value: "bytes" },
+        ],
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com", pathname: "/**" },
