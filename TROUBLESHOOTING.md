@@ -41,7 +41,51 @@ pm2 restart mrds
 
 ---
 
-## 2-1. /api/auth/session 500 에러 (Auth.js v5)
+## 2-1. 로그인 후 다시 로그인 페이지로 돌아옴 (세션 미유지)
+
+OAuth 로그인 완료 후 곧바로 로그인 화면으로 돌아가면 **세션 쿠키**가 설정되지 않은 상태입니다.
+
+### 서버 .env 확인 (필수)
+
+```bash
+grep -E "NEXTAUTH_URL|AUTH_TRUST_HOST" ~/mrds/.env
+```
+
+**반드시** 아래처럼 설정되어 있어야 합니다:
+
+```env
+NEXTAUTH_URL="https://mrds215.duckdns.org"
+AUTH_TRUST_HOST="true"
+```
+
+잘못된 예:
+- `NEXTAUTH_URL="http://59.10.149.18:3001"` → **절대 사용 금지** (접속 도메인과 다름)
+- `NEXTAUTH_URL="http://mrds215.duckdns.org"` → http가 아닌 **https** 사용
+
+### nginx 프록시 헤더 확인
+
+`/etc/nginx/sites-available/mrds`의 `location /`에 다음이 있어야 합니다:
+
+```nginx
+proxy_set_header Host $host;
+proxy_set_header X-Real-IP $remote_addr;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+proxy_set_header X-Forwarded-Proto $scheme;
+```
+
+### 수정 후
+
+```bash
+pm2 restart mrds
+# nginx 수정 시
+sudo systemctl reload nginx
+```
+
+브라우저에서 **시크릿 창**으로 다시 접속해 테스트하세요.
+
+---
+
+## 2-2. /api/auth/session 500 에러 (Auth.js v5)
 
 콘솔에 `"There was a problem with the server configuration"` / `autherror` 표시 시:
 

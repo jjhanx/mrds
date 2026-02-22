@@ -13,6 +13,7 @@ const hasOAuth =
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.AUTH_SECRET,
+  trustHost: true, // nginx 등 프록시 뒤에서 필수
   adapter: PrismaAdapter(prisma),
   providers: [
     ...(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET
