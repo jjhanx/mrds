@@ -171,20 +171,25 @@ export function PostView({ post, currentUserId }: PostViewProps) {
         <div className="prose prose-stone max-w-none">
           {isHtmlContent(post.content) ? (
             <div
-              className="post-content whitespace-pre-wrap [&_img]:max-w-full [&_img]:rounded-lg [&_img]:border [&_img]:border-stone-200 [&_img]:max-h-80 [&_img]:object-contain"
+              className="post-content whitespace-pre-wrap [&_img]:max-w-full [&_img]:rounded-lg [&_img]:border [&_img]:border-stone-200 [&_img]:max-h-80 [&_img]:object-contain [&_iframe]:rounded-lg [&_iframe]:max-w-2xl [&_iframe]:aspect-video [&_iframe]:w-full [&_video]:max-w-full [&_video]:rounded-lg [&_video]:border [&_video]:border-stone-200"
               dangerouslySetInnerHTML={{
                 __html: DOMPurify.sanitize(
                   (() => {
                     let c = post.content;
-                    // {{INLINE_0}} 등이 남아있는 구 글: image attachments로 치환
-                    post.attachments
-                      ?.filter((a) => a.fileType.startsWith("image/"))
-                      .forEach((att, i) => {
-                        c = c.replace(new RegExp(`src="\\{\\{INLINE_${i}\\}\\}"`, "g"), `src="${att.filepath}"`);
-                      });
+                    // {{INLINE_0}} 등이 남아있는 구 글: image/video attachments로 치환
+                    const ordered = [...(post.attachments ?? [])].sort((a, b) =>
+                      a.id.localeCompare(b.id)
+                    );
+                    ordered.forEach((att, i) => {
+                      c = c.replace(new RegExp(`src="\\{\\{INLINE_${i}\\}\\}"`, "g"), `src="${att.filepath}"`);
+                    });
                     return c;
                   })(),
-                  { ALLOWED_URI_REGEXP: /^(https?:|data:|\/)/ }
+                  {
+                    ALLOWED_URI_REGEXP: /^(https?:|data:|\/)/,
+                    ADD_TAGS: ["iframe", "video", "source"],
+                    ADD_ATTR: ["allow", "allowfullscreen", "frameborder", "controls", "playsinline"],
+                  }
                 ),
               }}
             />

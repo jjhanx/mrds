@@ -97,8 +97,14 @@ export async function POST(request: Request) {
       await mkdir(uploadDir, { recursive: true });
 
       const extFromType = (t: string) => {
-        const m = t?.match(/image\/(\w+)/);
-        return m ? m[1] : "png";
+        const img = t?.match(/image\/(\w+)/);
+        if (img) return img[1];
+        if (t === "video/mp4") return "mp4";
+        if (t === "video/webm") return "webm";
+        if (t === "video/quicktime") return "mov";
+        const vid = t?.match(/video\/(\w+)/);
+        if (vid) return vid[1];
+        return "png";
       };
       for (let i = 0; i < validFiles.length; i++) {
         const file = validFiles[i] as Blob & { name?: string; type?: string };
