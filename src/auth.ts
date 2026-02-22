@@ -36,14 +36,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             async authorize(credentials) {
               if (credentials?.password === "test" && credentials?.email) {
                 const email = credentials.email as string;
+                const userCount = await prisma.user.count();
+                const isFirst = userCount === 0;
                 const user = await prisma.user.upsert({
                   where: { email },
                   update: {},
                   create: {
                     email,
                     name: email.split("@")[0],
-                    status: "pending",
-                    role: "member",
+                    status: isFirst ? "approved" : "pending",
+                    role: isFirst ? "admin" : "member",
                   },
                 });
                 return {
@@ -69,6 +71,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: "/login",
   },
   callbacks: {
+    async signIn({ user, account }) {
+      // OAuth 로그인 시: 첫 가입자를 자동 관리자+승인
+      if (account?.provider && account.provider !== "credentials" && user?.email) {
+        const userCount = await prisma.user.count();
+        if (userCount === 1) {
+          await prisma.user.update({
+            where: { email: user.email },
+            data: { role: "admin", status: "approved" },
+          });
+        }
+      }
+      return true;
+    },
     async session({ session, user, token }) {
       const userId = (user?.id as string) || (token?.sub as string) || "";
       if (session.user) {

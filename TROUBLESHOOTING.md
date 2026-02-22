@@ -143,7 +143,32 @@ http://서버IP:3001/login
   - **플랫폼** → Web → **사이트 도메인**: `http://localhost:3001` 또는 `http://서버IP:3001`  
   - **카카오 로그인** → **Redirect URI**: 위 표의 Kakao URL 추가
 
-### 4) 변경 후
+### 4) Google 전용: "doesn't comply with OAuth 2.0 policy" / 400 invalid_request
+
+`You can't sign in to this app because it doesn't comply with Google's OAuth 2.0 policy` 오류가 나면:
+
+**원인 1: 테스트 모드 + 테스트 사용자 미등록**
+
+앱이 **테스트** 모드일 때는 **테스트 사용자 목록에 등록된 Google 계정**만 로그인할 수 있습니다.
+
+1. [Google Cloud Console](https://console.cloud.google.com/) → 프로젝트 선택
+2. **API 및 서비스** → **OAuth 동의 화면**
+3. 아래로 스크롤하여 **테스트 사용자** 섹션 확인
+4. **+ ADD USERS** 클릭 → 로그인 허용할 Google 이메일 주소 추가 (최대 100명)
+5. 저장
+
+**원인 2: 프로덕션 발행 필요**
+
+테스트 사용자 외 모든 사용자가 로그인하려면:
+
+- **OAuth 동의 화면** → **앱 게시** → **앱을 프로덕션으로 이동** 선택
+- (민감 범위 사용 시) Google 검증 신청 필요
+
+**원인 3: HTTPS**
+
+프로덕션 도메인(mrds215.duckdns.org 등)은 **HTTPS**여야 합니다. HTTP 리디렉션 URI는 localhost만 허용됩니다.
+
+### 5) 변경 후
 
 `.env` 또는 OAuth 콘솔 수정 후:
 

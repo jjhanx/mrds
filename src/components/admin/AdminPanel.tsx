@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
-import { UserCheck, UserX, Loader2 } from "lucide-react";
+import { UserCheck, UserX, Loader2, ShieldPlus } from "lucide-react";
 
 interface User {
   id: string;
@@ -46,6 +46,18 @@ export function AdminPanel() {
       method: "POST",
     });
     if (res.ok) fetchUsers();
+  };
+
+  const handlePromote = async (id: string) => {
+    if (!confirm("이 회원을 관리자로 지정하시겠습니까?")) return;
+    const res = await fetch(`/api/admin/users/${id}/promote`, {
+      method: "POST",
+    });
+    if (res.ok) fetchUsers();
+    else {
+      const data = await res.json();
+      alert(data.error || "실패했습니다.");
+    }
   };
 
   if (loading) {
@@ -136,10 +148,20 @@ export function AdminPanel() {
                       ? "대기"
                       : "거절"}
                 </span>
-                {u.role === "admin" && (
+                {u.role === "admin" ? (
                   <span className="text-sm bg-stone-200 text-stone-700 px-2 py-0.5 rounded">
                     관리자
                   </span>
+                ) : (
+                  u.status === "approved" && (
+                    <button
+                      onClick={() => handlePromote(u.id)}
+                      className="flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-800 rounded hover:bg-amber-200 text-xs font-medium"
+                    >
+                      <ShieldPlus className="w-3.5 h-3.5" />
+                      관리자 지정
+                    </button>
+                  )
                 )}
                 <span className="text-stone-400 text-xs">
                   {format(new Date(u.createdAt), "PP", { locale: ko })}
