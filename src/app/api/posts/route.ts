@@ -65,6 +65,14 @@ export async function POST(request: Request) {
 
     // 인라인 이미지: content의 {{INLINE_0}}, {{INLINE_1}} 등을 업로드 경로로 교체
     const validFiles = files?.filter((f) => f && typeof (f as Blob).arrayBuffer === "function") ?? [];
+    const hasPlaceholders = /{{INLINE_\d+}}/.test(content);
+    if (hasPlaceholders && validFiles.length === 0) {
+      return NextResponse.json(
+        { error: "이미지 전송 실패. 다시 시도해 주세요. (파일이 서버에 전달되지 않음)" },
+        { status: 400 }
+      );
+    }
+
     let finalContent = content.trim() || "";
     const inlinePaths: string[] = [];
 
@@ -80,7 +88,13 @@ export async function POST(request: Request) {
       };
       for (let i = 0; i < validFiles.length; i++) {
         const file = validFiles[i] as Blob & { name?: string; type?: string };
-        const bytes = await file.arrayBuffer();
+        let bytes: ArrayBuffer;
+        try {
+          bytes = await file.arrayBuffer();
+        } catch (e) {
+          console.error("arrayBuffer failed for file", i, e);
+          throw new Error(`이미지 처리 실패 (${i + 1}번째 파일): ${e instanceof Error ? e.message : String(e)}`);
+        }
         if (bytes.byteLength === 0) continue;
         const buffer = Buffer.from(bytes);
         const safeName = (file.name?.trim() || `pasted-${Date.now()}.${extFromType(file.type || "")}`).replace(/[^a-zA-Z0-9.-]/g, "_");

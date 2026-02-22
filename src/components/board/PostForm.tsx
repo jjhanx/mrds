@@ -52,14 +52,22 @@ export function PostForm({ post, existingAttachments = [], isEdit }: PostFormPro
 
       const url = isEdit && post?.id ? `/api/posts/${post.id}` : "/api/posts";
       const method = isEdit ? "PUT" : "POST";
-      const res = await fetch(url, { method, body: formData });
+      const res = await fetch(url, { method, body: formData, credentials: "include" });
 
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "저장에 실패했습니다.");
+        const text = await res.text();
+        let errMsg = "저장에 실패했습니다.";
+        try {
+          const data = JSON.parse(text);
+          if (data?.error) errMsg = data.error;
+        } catch {
+          if (text) errMsg = `${res.status}: ${text.slice(0, 200)}`;
+          else errMsg = `${res.status} ${res.statusText}`;
+        }
+        throw new Error(errMsg);
       }
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       router.push(`/board/${data.id}`);
       router.refresh();
     } catch (err) {
