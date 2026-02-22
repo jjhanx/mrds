@@ -21,7 +21,7 @@ export function HeroImage() {
       </div>
       {/* 텍스트: 배경 완전 검정 */}
       <div className="absolute left-0 top-0 bottom-0 flex flex-col justify-center pl-6 pr-4 sm:pl-8 sm:pr-6 md:pl-10 md:pr-8">
-        <div className="bg-black px-4 py-3 sm:px-5 sm:py-4 rounded-r-lg">
+        <div className="bg-transparent px-4 py-3 sm:px-5 sm:py-4 rounded-r-lg">
           <div className="w-max min-w-[200px] sm:min-w-[240px]">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight">
               미래도시
