@@ -12,7 +12,7 @@ export function HeroImage() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={HERO_IMAGE}
-          alt="미래도시 친구와 함께 부르는 노래"
+          alt="미래도시 노래가 있는 삶"
           className="absolute right-0 top-0 h-full w-auto max-w-full object-contain object-right"
           onError={(e) => {
             e.currentTarget.style.display = "none";
@@ -27,7 +27,7 @@ export function HeroImage() {
               미래도시
             </h1>
             <p className="text-lg sm:text-xl md:text-2xl mt-1.5 sm:mt-2 text-white/95">
-              친구와 함께 부르는 노래
+              노래가 있는 삶
             </p>
           </div>
         </div>
