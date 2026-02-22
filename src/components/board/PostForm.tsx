@@ -3,14 +3,20 @@
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
+interface ExistingAttachment {
+  id: string;
+  filename: string;
+  filepath: string;
+  fileType: string;
+}
+
 interface PostFormProps {
   post?: { id: string; title: string; content: string };
+  existingAttachments?: ExistingAttachment[];
   isEdit?: boolean;
 }
 
-// isEdit not used - no PUT handler yet
-
-export function PostForm({ post }: PostFormProps) {
+export function PostForm({ post, existingAttachments = [], isEdit }: PostFormProps) {
   const router = useRouter();
   const [title, setTitle] = useState(post?.title || "");
   const [content, setContent] = useState(post?.content || "");
@@ -38,7 +44,8 @@ export function PostForm({ post }: PostFormProps) {
       setError("제목을 입력해 주세요.");
       return;
     }
-    if (!content.trim() && attachments.length === 0) {
+    const hasExisting = existingAttachments.length > 0;
+    if (!content.trim() && attachments.length === 0 && !hasExisting) {
       setError("내용을 입력하거나 이미지/파일을 첨부해 주세요.");
       return;
     }
@@ -50,7 +57,9 @@ export function PostForm({ post }: PostFormProps) {
       formData.append("content", content.trim() || "");
       attachments.forEach((file) => formData.append("attachments", file));
 
-      const res = await fetch("/api/posts", { method: "POST", body: formData });
+      const url = isEdit && post?.id ? `/api/posts/${post.id}` : "/api/posts";
+      const method = isEdit ? "PUT" : "POST";
+      const res = await fetch(url, { method, body: formData });
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -111,6 +120,25 @@ export function PostForm({ post }: PostFormProps) {
         <label className="block text-sm font-medium text-stone-700 mb-2">
           첨부파일
         </label>
+        {existingAttachments.length > 0 && (
+          <div className="mb-3 p-3 bg-stone-50 rounded-lg">
+            <p className="text-sm text-stone-600 mb-2">기존 첨부 ({existingAttachments.length}개)</p>
+            <div className="flex flex-wrap gap-3">
+              {existingAttachments.map((att) => (
+                <div key={att.id} className="flex flex-col items-center gap-1">
+                  {att.fileType.startsWith("image/") ? (
+                    <img src={att.filepath} alt={att.filename} className="h-20 w-20 object-cover rounded-lg border border-stone-200" />
+                  ) : (
+                    <div className="h-20 w-20 rounded-lg border border-stone-200 bg-stone-100 flex items-center justify-center text-xs text-stone-500">
+                      파일
+                    </div>
+                  )}
+                  <span className="max-w-[80px] truncate text-xs text-stone-500">{att.filename}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         <input
           type="file"
           multiple
@@ -167,7 +195,7 @@ export function PostForm({ post }: PostFormProps) {
           disabled={submitting}
           className="px-6 py-2.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50 font-medium"
         >
-          {submitting ? "저장 중..." : "등록하기"}
+          {submitting ? "저장 중..." : isEdit ? "수정 완료" : "등록하기"}
         </button>
         <button
           type="button"

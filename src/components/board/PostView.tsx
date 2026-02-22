@@ -5,7 +5,7 @@ import { ko } from "date-fns/locale";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Trash2, Paperclip } from "lucide-react";
+import { ArrowLeft, Trash2, Paperclip, Pencil } from "lucide-react";
 
 // YouTube/Vimeo URL to embed
 function isVideoUrl(url: string) {
@@ -142,7 +142,14 @@ export function PostView({ post, currentUserId }: PostViewProps) {
           <span>·</span>
           <span>{format(new Date(post.createdAt), "PPp", { locale: ko })}</span>
           {post.authorId === currentUserId && (
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-4">
+              <Link
+                href={`/board/${post.id}/edit`}
+                className="flex items-center gap-1 text-amber-600 hover:text-amber-700"
+              >
+                <Pencil className="w-4 h-4" />
+                수정
+              </Link>
               <button
                 onClick={handleDelete}
                 className="flex items-center gap-1 text-red-600 hover:text-red-700"
