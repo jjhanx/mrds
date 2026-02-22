@@ -111,7 +111,13 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
 
   useImperativeHandle(ref, () => ({ insertImages, getContentForSubmit }), [insertImages, getContentForSubmit]);
 
-  if (!editor) return null;
+  if (!editor) {
+    return (
+      <div className="w-full min-h-[200px] rounded-lg border border-stone-200 bg-stone-50 flex items-center justify-center text-stone-500 text-sm">
+        에디터 로딩 중...
+      </div>
+    );
+  }
 
   return (
     <div className="w-full rounded-lg border border-stone-200 focus-within:ring-2 focus-within:ring-amber-500 focus-within:border-transparent overflow-hidden">

@@ -102,6 +102,7 @@ export function PostForm({ post, existingAttachments = [], isEdit }: PostFormPro
           내용 (이미지를 커서 위치에 넣을 수 있습니다)
         </label>
         <RichTextEditor
+          key={post?.id ?? "new"}
           ref={editorRef}
           initialContent={post?.content}
           placeholder="내용을 입력하세요. Ctrl+V로 이미지 붙여넣기, 또는 아래에서 이미지 파일 선택. YouTube/Vimeo URL도 붙여넣기 가능."
