@@ -235,6 +235,9 @@ server {
     listen 80;
     server_name choir.your-domain.com;   # mrds 전용 서브도메인
 
+    # 이미지/파일 업로드 용량 (없으면 413 에러 발생)
+    client_max_body_size 50M;
+
     location / {
         proxy_pass http://127.0.0.1:3001;   # mrds는 3001 포트
         proxy_http_version 1.1;
@@ -246,9 +249,6 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
     }
-
-    # 업로드 파일 용량
-    client_max_body_size 50M;
 }
 ```
 

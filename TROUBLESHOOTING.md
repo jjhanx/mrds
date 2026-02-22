@@ -245,3 +245,46 @@ pm2 logs mrds --lines 30
 ```
 
 여기서 스택 트레이스나 에러 메시지를 확인합니다.
+
+---
+
+## 7. 413 Request Entity Too Large (이미지/파일 업로드 실패)
+
+게시글에 이미지 붙여넣기 후 등록 시 **413** 에러가 나면 nginx의 업로드 용량 제한 때문입니다.
+
+### 해결 방법
+
+**1) nginx 설정 파일 확인**
+
+```bash
+sudo nano /etc/nginx/sites-available/mrds
+```
+
+**2) `client_max_body_size 50M;` 추가**
+
+`server {` 블록 **안쪽**에 다음 한 줄을 추가합니다 (location 위에 두어도 됨):
+
+```nginx
+server {
+    listen 80;
+    server_name mrds215.duckdns.org;   # 본인 도메인
+
+    client_max_body_size 50M;          # ← 이 줄 추가
+
+    location / {
+        proxy_pass http://127.0.0.1:3001;
+        # ... 기존 proxy_set_header 등
+    }
+}
+```
+
+**3) nginx 설정 검사 및 적용**
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+**4) 다시 업로드 시도**
+
+브라우저에서 캐시 새로고침(Ctrl+Shift+R) 후 이미지 붙여넣기·등록을 다시 시도하세요.
