@@ -29,12 +29,17 @@ export function VideoPlayer({ src, className = "" }: VideoPlayerProps) {
       <div
         className={`flex flex-col items-center justify-center rounded-lg border border-stone-200 bg-stone-800 text-stone-300 p-4 ${className}`}
       >
-        <p className="text-sm">동영상을 재생할 수 없습니다</p>
+        <p className="text-sm font-medium">동영상을 재생할 수 없습니다</p>
+        <p className="text-xs text-stone-400 text-center max-w-xs mt-1">
+          업로드 시 서버에서 H.264로 자동 변환됩니다(ffmpeg 필요).
+          <br />
+          관리자: 서버에 ffmpeg 설치 후 새로 업로드해 보세요.
+        </p>
         <a
           href={src}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-2 text-amber-500 text-sm hover:underline"
+          className="mt-3 text-amber-500 text-sm hover:underline"
         >
           다운로드
         </a>
