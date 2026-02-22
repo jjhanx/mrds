@@ -2,6 +2,8 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
+export const runtime = "nodejs";
+
 export async function GET() {
   try {
     const session = await auth();
@@ -34,7 +36,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const formData = await request.formData();
+    let formData: FormData;
+    try {
+      formData = await request.formData();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg.includes("FormData") || msg.includes("parse")) {
+        return NextResponse.json(
+          { error: "이미지가 너무 크거나 형식 오류. 10MB 이하 이미지로 다시 시도해 주세요." },
+          { status: 413 }
+        );
+      }
+      throw e;
+    }
     const title = formData.get("title") as string;
     const content = (formData.get("content") as string) ?? "";
     const files = formData.getAll("attachments") as (File | Blob)[];
