@@ -36,7 +36,7 @@ export const Video = Node.create({
 
   renderHTML({ HTMLAttributes }) {
     const src = HTMLAttributes.src;
-    if (!src) return ["video", { controls: "", class: "rounded-lg max-w-full" }];
+    if (!src) return ["video", { controls: "", playsinline: "", class: "rounded-lg max-w-full aspect-video w-full" }];
     return [
       "video",
       mergeAttributes(
@@ -44,8 +44,9 @@ export const Video = Node.create({
         {
           src,
           controls: "",
-          class: "rounded-lg border border-stone-200 max-w-full max-h-96 w-full",
-          preload: "metadata",
+          playsinline: "",
+          preload: "auto",
+          class: "rounded-lg border border-stone-200 max-w-full w-full aspect-video object-contain block bg-black",
         }
       ),
     ];

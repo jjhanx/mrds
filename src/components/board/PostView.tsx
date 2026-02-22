@@ -176,26 +176,34 @@ export function PostView({ post, currentUserId }: PostViewProps) {
         <div className="prose prose-stone max-w-none">
           {isHtmlContent(post.content) ? (
             <div
-              className="post-content whitespace-pre-wrap [&_img]:max-w-full [&_img]:rounded-lg [&_img]:border [&_img]:border-stone-200 [&_img]:max-h-80 [&_img]:object-contain [&_iframe]:rounded-lg [&_iframe]:max-w-2xl [&_iframe]:aspect-video [&_iframe]:w-full [&_video]:max-w-full [&_video]:rounded-lg [&_video]:border [&_video]:border-stone-200"
+              className="post-content whitespace-pre-wrap [&_img]:max-w-full [&_img]:rounded-lg [&_img]:border [&_img]:border-stone-200 [&_img]:max-h-80 [&_img]:object-contain [&_iframe]:rounded-lg [&_iframe]:max-w-2xl [&_iframe]:aspect-video [&_iframe]:w-full [&_video]:block [&_video]:w-full [&_video]:max-w-2xl [&_video]:aspect-video [&_video]:rounded-lg [&_video]:border [&_video]:border-stone-200 [&_video]:object-contain [&_video]:bg-black"
               dangerouslySetInnerHTML={{
-                __html: DOMPurify.sanitize(
-                  (() => {
-                    let c = post.content;
-                    // {{INLINE_0}} 등이 남아있는 구 글: image/video attachments로 치환
-                    const ordered = [...(post.attachments ?? [])].sort((a, b) =>
-                      a.id.localeCompare(b.id)
-                    );
-                    ordered.forEach((att, i) => {
-                      c = c.replace(new RegExp(`src="\\{\\{INLINE_${i}\\}\\}"`, "g"), `src="${att.filepath}"`);
-                    });
-                    return c;
-                  })(),
-                  {
+                __html: (() => {
+                  let c = post.content;
+                  // {{INLINE_0}} 등이 남아있는 구 글: image/video attachments로 치환
+                  const ordered = [...(post.attachments ?? [])].sort((a, b) =>
+                    a.id.localeCompare(b.id)
+                  );
+                  ordered.forEach((att, i) => {
+                    c = c.replace(new RegExp(`src="\\{\\{INLINE_${i}\\}\\}"`, "g"), `src="${att.filepath}"`);
+                  });
+                  const clean = DOMPurify.sanitize(c, {
                     ALLOWED_URI_REGEXP: /^(https?:|data:|\/)/,
                     ADD_TAGS: ["iframe", "video", "source"],
-                    ADD_ATTR: ["allow", "allowfullscreen", "frameborder", "controls", "playsinline"],
-                  }
-                ),
+                    ADD_ATTR: ["allow", "allowfullscreen", "frameborder", "controls", "playsinline", "preload", "src"],
+                  });
+                  // video 태그에 playsinline, preload 보강 (구 글 호환)
+                  return clean.replace(
+                    /<video(\s[^>]*)>/gi,
+                    (_, attrs) => {
+                      const a = attrs.toLowerCase();
+                      let extra = "";
+                      if (!/playsinline/.test(a)) extra += " playsinline";
+                      if (!/preload=/.test(a)) extra += ' preload="auto"';
+                      return `<video${attrs}${extra}>`;
+                    }
+                  );
+                })(),
               }}
             />
           ) : (
@@ -227,11 +235,13 @@ export function PostView({ post, currentUserId }: PostViewProps) {
                       </div>
                     )}
                     {isVideo && (
-                      <div className="my-2">
+                      <div className="my-2 w-full max-w-2xl aspect-video">
                         <video
                           src={att.filepath}
                           controls
-                          className="max-w-full rounded-lg"
+                          playsInline
+                          preload="auto"
+                          className="w-full h-full rounded-lg border border-stone-200 object-contain bg-black"
                         />
                       </div>
                     )}
