@@ -93,6 +93,7 @@ export async function POST(request: Request) {
     if (validFiles.length > 0) {
       const { writeFile, mkdir } = await import("fs/promises");
       const pathMod = await import("path");
+      const { transcodeToH264 } = await import("@/lib/transcode-video");
       const uploadDir = pathMod.join(process.cwd(), "public", "uploads", "attachments", post.id);
       await mkdir(uploadDir, { recursive: true });
 
@@ -116,9 +117,21 @@ export async function POST(request: Request) {
           throw new Error(`이미지 처리 실패 (${i + 1}번째 파일): ${e instanceof Error ? e.message : String(e)}`);
         }
         if (bytes.byteLength === 0) continue;
-        const buffer = Buffer.from(bytes);
-        const safeName = (file.name?.trim() || `pasted-${Date.now()}.${extFromType(file.type || "")}`).replace(/[^a-zA-Z0-9.-]/g, "_");
-        const filename = `${Date.now()}-${i}-${safeName}`;
+        let buffer = Buffer.from(bytes);
+        const mime = file.type || "image/png";
+        const isVideo = mime.startsWith("video/");
+        // 동영상: H.264로 트랜스코딩 (PC 호환)
+        if (isVideo) {
+          const transcoded = await transcodeToH264(buffer, mime);
+          if (transcoded && transcoded.length > 0) {
+            buffer = transcoded;
+          }
+        }
+        const outExt = isVideo ? "mp4" : extFromType(mime);
+        const safeName = (file.name?.trim() || `pasted-${Date.now()}.${extFromType(mime)}`)
+          .replace(/\.[^.]+$/, "")
+          .replace(/[^a-zA-Z0-9.-]/g, "_");
+        const filename = `${Date.now()}-${i}-${safeName}.${outExt}`;
         const filepath = pathMod.join(uploadDir, filename);
         await writeFile(filepath, buffer);
         const relativePath = `/uploads/attachments/${post.id}/${filename}`;
@@ -127,10 +140,10 @@ export async function POST(request: Request) {
         await prisma.postAttachment.create({
           data: {
             postId: post.id,
-            filename: file.name?.trim() || `pasted-${i}.${extFromType(file.type || "")}`,
+            filename: (file.name?.trim() || `pasted-${i}`).replace(/\.[^.]+$/, "") + `.${outExt}`,
             filepath: relativePath,
-            fileType: file.type || "image/png",
-            fileSize: bytes.byteLength,
+            fileType: isVideo ? "video/mp4" : mime,
+            fileSize: buffer.byteLength,
           },
         });
       }

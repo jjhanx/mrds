@@ -61,8 +61,7 @@ function PostContentWithVideos({ html, className }: { html: string; className: s
         const fallback = document.createElement("div");
         fallback.className = "flex flex-col items-center justify-center rounded-lg border border-stone-200 bg-stone-800 text-stone-300 p-4 my-2";
         fallback.innerHTML = `
-          <p class="text-sm font-medium mb-1">동영상을 재생할 수 없습니다</p>
-          <p class="text-xs text-stone-400 text-center max-w-xs">PC에서 iPhone 녹화(MOV/HEVC) 재생이 안 될 수 있습니다.<br/>MP4(H.264) 형식을 권장합니다.</p>
+          <p class="text-sm">동영상을 재생할 수 없습니다</p>
           <a href="${video.src}" target="_blank" rel="noopener noreferrer" class="mt-2 text-amber-500 text-sm hover:underline">다운로드</a>
         `;
         video.parentNode?.replaceChild(fallback, video);

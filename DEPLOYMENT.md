@@ -62,6 +62,17 @@ sudo apt update
 sudo apt install -y git
 ```
 
+### 2-4. ffmpeg 설치 (동영상 PC 호환용)
+
+업로드된 동영상(iPhone MOV 등)을 H.264 MP4로 자동 변환해 PC에서도 재생되게 합니다.
+
+```bash
+sudo apt install -y ffmpeg
+ffmpeg -version   # 확인
+```
+
+> ffmpeg가 없으면 원본 파일 그대로 저장됩니다. iPhone 녹화(MOV/HEVC)는 PC에서 재생이 안 될 수 있습니다.
+
 ---
 
 ## 3단계: 서버에서 프로젝트 가져오기
@@ -312,5 +323,6 @@ pm2 restart mrds
 | OAuth 콜백 URL을 `https://your-domain.com/api/auth/callback/...` 로 등록 | |
 | `npx prisma migrate deploy` 실행 | |
 | PM2로 서비스 실행 | |
+| (동영상 업로드 시) ffmpeg 설치 | |
 | (선택) Nginx 리버스 프록시 설정 | |
 | (선택) HTTPS 인증서 적용 | |
