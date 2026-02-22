@@ -7,13 +7,9 @@ import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import Placeholder from "@tiptap/extension-placeholder";
 import FileHandler from "@tiptap/extension-file-handler";
-import Youtube from "@tiptap/extension-youtube";
-import { Vimeo } from "@/extensions/vimeo";
-import { Video } from "@/extensions/video";
 
 export interface RichTextEditorHandle {
   insertImages: (files: File[]) => void;
-  insertMedia: (files: File[]) => void;
   getContentForSubmit: () => { html: string; files: File[] } | null;
 }
 
@@ -27,7 +23,7 @@ interface RichTextEditorProps {
 export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(function RichTextEditor(
   {
     initialContent = "",
-    placeholder = "내용 입력. Ctrl+V로 이미지·동영상 붙여넣기. YouTube·Vimeo URL 붙여넣으면 링크 삽입.",
+    placeholder = "내용을 입력하세요. Ctrl+V로 이미지 붙여넣기, 이미지 드래그 앤 드롭 가능.",
     onChange,
     onInlineFilesChange,
   },
@@ -35,24 +31,14 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
 ) {
   const blobToFile = useRef<Map<string, File>>(new Map());
 
-  const insertMediaAtCursor = useCallback(
-    (editor: Editor | null, files: File[], pos?: number) => {
+  const insertImagesAtCursor = useCallback(
+    (editor: Editor | null, files: File[]) => {
       if (!editor) return;
-      const mediaFiles = files.filter(
-        (f) => f.type.startsWith("image/") || f.type.startsWith("video/")
-      );
-      for (const file of mediaFiles) {
+      const imageFiles = files.filter((f) => f.type.startsWith("image/"));
+      for (const file of imageFiles) {
         const blobUrl = URL.createObjectURL(file);
         blobToFile.current.set(blobUrl, file);
-        const node =
-          file.type.startsWith("video/")
-            ? { type: "video" as const, attrs: { src: blobUrl } }
-            : { type: "image" as const, attrs: { src: blobUrl } };
-        if (typeof pos === "number") {
-          editor.chain().focus().insertContentAt(pos, node).run();
-        } else {
-          editor.chain().focus().insertContent(node).run();
-        }
+        editor.chain().focus().insertContent({ type: "image", attrs: { src: blobUrl } }).run();
       }
       onInlineFilesChange?.(Array.from(blobToFile.current.values()));
     },
@@ -63,25 +49,21 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
     extensions: [
       StarterKit,
       Image.configure({ allowBase64: true, HTMLAttributes: { class: "max-w-full rounded-lg border border-stone-200 max-h-80 object-contain" } }),
-      Youtube.configure({ width: 640, height: 360, HTMLAttributes: { class: "rounded-lg" } }),
-      Vimeo.configure({ width: 640, height: 360 }),
-      Video,
       Placeholder.configure({ placeholder }),
       FileHandler.configure({
-        allowedMimeTypes: [
-          "image/jpeg",
-          "image/png",
-          "image/gif",
-          "image/webp",
-          "video/mp4",
-          "video/webm",
-          "video/quicktime",
-        ],
+        allowedMimeTypes: ["image/jpeg", "image/png", "image/gif", "image/webp"],
         onPaste: (ed, files) => {
-          insertMediaAtCursor(ed, files);
+          insertImagesAtCursor(ed, files);
         },
         onDrop: (ed, files, pos) => {
-          if (ed) insertMediaAtCursor(ed, files, pos);
+          if (!ed) return;
+          const imageFiles = files.filter((f) => f.type.startsWith("image/"));
+          for (const file of imageFiles) {
+            const blobUrl = URL.createObjectURL(file);
+            blobToFile.current.set(blobUrl, file);
+            ed.chain().focus().insertContentAt(pos, { type: "image", attrs: { src: blobUrl } }).run();
+          }
+          onInlineFilesChange?.(Array.from(blobToFile.current.values()));
         },
       }),
     ],
@@ -101,11 +83,11 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
     },
   });
 
-  const insertMedia = useCallback(
+  const insertImages = useCallback(
     (files: File[]) => {
-      if (editor) insertMediaAtCursor(editor, files);
+      if (editor) insertImagesAtCursor(editor, files);
     },
-    [editor, insertMediaAtCursor]
+    [editor, insertImagesAtCursor]
   );
 
   const getContentForSubmit = useCallback(() => {
@@ -127,11 +109,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
     return { html, files };
   }, [editor]);
 
-  useImperativeHandle(
-    ref,
-    () => ({ insertImages: insertMedia, insertMedia, getContentForSubmit }),
-    [insertMedia, getContentForSubmit]
-  );
+  useImperativeHandle(ref, () => ({ insertImages, getContentForSubmit }), [insertImages, getContentForSubmit]);
 
   if (!editor) {
     return (
