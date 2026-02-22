@@ -79,7 +79,7 @@ export function PostForm({ post, existingAttachments = [], isEdit }: PostFormPro
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    editorRef.current?.insertImages(files);
+    editorRef.current?.insertMedia(files);
     e.target.value = "";
   };
 
@@ -107,21 +107,21 @@ export function PostForm({ post, existingAttachments = [], isEdit }: PostFormPro
 
       <div>
         <label className="block text-sm font-medium text-stone-700 mb-2">
-          내용 (이미지를 커서 위치에 넣을 수 있습니다)
+          내용 (이미지·동영상을 커서 위치에 넣을 수 있습니다)
         </label>
         <RichTextEditor
           key={post?.id ?? "new"}
           ref={editorRef}
           initialContent={post?.content}
-          placeholder="내용을 입력하세요. Ctrl+V로 이미지 붙여넣기, 또는 아래에서 이미지 파일 선택. YouTube/Vimeo URL도 붙여넣기 가능."
+          placeholder="내용을 입력하세요. Ctrl+V로 이미지·동영상 붙여넣기, 또는 아래에서 파일 선택. YouTube/Vimeo URL도 붙여넣기 가능."
           onChange={setContentHtml}
         />
         <p className="mt-2 text-xs text-stone-500">
-          이미지: Ctrl+V 클립보드 붙여넣기, 드래그 앤 드롭, 또는 아래에서 파일 선택
+          이미지·동영상: Ctrl+V 클립보드 붙여넣기, 드래그 앤 드롭, 또는 아래에서 파일 선택
         </p>
         <input
           type="file"
-          accept="image/*"
+          accept="image/*,video/mp4,video/webm,video/quicktime"
           multiple
           onChange={handleFileSelect}
           className="mt-2 w-full text-sm text-stone-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-amber-50 file:text-amber-700 file:font-medium hover:file:bg-amber-100"
