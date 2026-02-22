@@ -121,7 +121,7 @@ export async function PUT(
         const isVideo = mime.startsWith("video/");
         if (isVideo) {
           const transcoded = await transcodeToH264(buffer, mime);
-          if (transcoded && transcoded.length > 0) buffer = transcoded;
+          if (transcoded && transcoded.length > 0) buffer = Buffer.from(transcoded);
         }
         const outExt = isVideo ? "mp4" : extFromType(mime);
         const safeName = (file.name?.trim() || `pasted-${Date.now()}.${extFromType(mime)}`)
