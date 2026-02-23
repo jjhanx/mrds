@@ -32,18 +32,24 @@ export const FOLDER_FORMAT_RULES: Record<
   },
 };
 
+const ALL_FORMAT_SLUGS = ["utility", "education"];
+
 export function getAllowedExts(slug: string): readonly string[] {
-  const rule = FOLDER_FORMAT_RULES[slug];
+  const key = (slug || "").toLowerCase();
+  const rule = FOLDER_FORMAT_RULES[key];
   if (!rule) return ["pdf", "jpg", "jpeg", "png", "gif", "webp"];
   return rule.exts;
 }
 
 export function getFolderHint(slug: string): string {
-  return FOLDER_FORMAT_RULES[slug]?.hint ?? "PDF, 이미지 파일";
+  const key = (slug || "").toLowerCase();
+  return FOLDER_FORMAT_RULES[key]?.hint ?? "PDF, 이미지 파일";
 }
 
 export function isFileAllowed(file: { name: string; type?: string }, slug: string): boolean {
-  const exts = getAllowedExts(slug);
+  const key = (slug || "").toLowerCase();
+  if (ALL_FORMAT_SLUGS.includes(key)) return true;
+  const exts = getAllowedExts(key);
   if (exts.includes("*")) return true;
   const ext = (file.name.split(".").pop() || "").toLowerCase();
   return exts.some((e) => e.toLowerCase() === ext);

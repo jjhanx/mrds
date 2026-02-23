@@ -14,8 +14,6 @@ import {
   Printer,
   Download,
   Share2,
-  FileDown,
-  Video,
   X,
 } from "lucide-react";
 
@@ -32,6 +30,7 @@ interface SheetMusicItem {
   title: string;
   filepath: string;
   folderId: string | null;
+  createdAt?: string;
   videos: { id: string; part: string; videoUrl: string }[];
   nwcFiles: { id: string; filepath: string }[];
 }
@@ -54,6 +53,8 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
   const [editFolderName, setEditFolderName] = useState("");
   const [attachModal, setAttachModal] = useState<{ id: string; title: string } | null>(null);
   const [renameModal, setRenameModal] = useState<{ id: string; title: string } | null>(null);
+  const [sortBy, setSortBy] = useState<"name" | "date">("date");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   const loadFolders = useCallback(() => {
     fetch("/api/sheet-music/folders", { credentials: "include" })
@@ -90,6 +91,20 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
     [folders, folderIdParam]
   );
   const uploadHint = currentFolder ? getFolderHint(currentFolder.slug) : "PDF, 이미지";
+
+  const sortedItems = useMemo(() => {
+    const arr = [...items];
+    arr.sort((a, b) => {
+      const mul = sortOrder === "asc" ? 1 : -1;
+      if (sortBy === "name") {
+        return mul * (a.title.localeCompare(b.title, "ko"));
+      }
+      const da = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const db = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return mul * (da - db);
+    });
+    return arr;
+  }, [items, sortBy, sortOrder]);
 
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
@@ -435,7 +450,7 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
           </div>
         ) : (
           <div className="space-y-2">
-            <div className="flex items-center gap-2 px-2">
+            <div className="flex items-center gap-2 px-2 flex-wrap">
               <input
                 type="checkbox"
                 checked={selected.size === items.length && items.length > 0}
@@ -443,8 +458,26 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
                 className="rounded"
               />
               <span className="text-sm text-stone-500">전체 선택</span>
+              <span className="text-stone-300">|</span>
+              <div className="flex items-center gap-1 text-sm">
+                <span className="text-stone-500">정렬:</span>
+                <select
+                  value={`${sortBy}-${sortOrder}`}
+                  onChange={(e) => {
+                    const [by, order] = (e.target.value as string).split("-");
+                    setSortBy(by as "name" | "date");
+                    setSortOrder(order as "asc" | "desc");
+                  }}
+                  className="text-stone-600 border border-stone-200 rounded-lg px-2 py-1 bg-white"
+                >
+                  <option value="name-asc">이름순 (가나다↑)</option>
+                  <option value="name-desc">이름순 (가나다↓)</option>
+                  <option value="date-desc">업로드일순 (최신↑)</option>
+                  <option value="date-asc">업로드일순 (오래된↑)</option>
+                </select>
+              </div>
             </div>
-            {items.map((item) => (
+            {sortedItems.map((item) => (
               <div
                 key={item.id}
                 className="flex items-center gap-3 p-4 bg-white rounded-xl border border-amber-100 hover:border-amber-200 transition-all"

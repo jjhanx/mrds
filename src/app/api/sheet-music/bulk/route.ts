@@ -31,12 +31,9 @@ export async function POST(request: Request) {
         where: { id: folderId },
         select: { slug: true },
       });
-      folderSlug = folder?.slug ?? "";
+      folderSlug = (folder?.slug ?? "").toLowerCase();
     }
 
-    const allowed = validFiles.filter((f) =>
-      isFileAllowed({ name: f.name, type: f.type }, folderSlug)
-    );
     const rejected = validFiles.filter(
       (f) => !isFileAllowed({ name: f.name, type: f.type }, folderSlug)
     );
