@@ -5,9 +5,10 @@
   "scripts": {
     "dev": "next dev",
     "env:init": "node scripts/generate-env.js",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start -p 3001",
-    "lint": "eslint"
+    "lint": "eslint",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
