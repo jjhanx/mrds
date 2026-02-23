@@ -54,8 +54,24 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
   const [editFolderName, setEditFolderName] = useState("");
   const [attachModal, setAttachModal] = useState<{ id: string; title: string } | null>(null);
   const [renameModal, setRenameModal] = useState<{ id: string; title: string } | null>(null);
+  const SORT_KEY = "sheet-music-sort";
+  const validSort = (v: string): v is "name-asc" | "name-desc" | "date-asc" | "date-desc" =>
+    ["name-asc", "name-desc", "date-asc", "date-desc"].includes(v);
   const [sortBy, setSortBy] = useState<"name" | "date">("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(SORT_KEY);
+      if (saved && validSort(saved)) {
+        const [by, order] = saved.split("-");
+        setSortBy(by as "name" | "date");
+        setSortOrder(order as "asc" | "desc");
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   const loadFolders = useCallback(() => {
     fetch("/api/sheet-music/folders", { credentials: "include" })
@@ -497,9 +513,16 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
                 <select
                   value={`${sortBy}-${sortOrder}`}
                   onChange={(e) => {
-                    const [by, order] = (e.target.value as string).split("-");
+                    const val = e.target.value;
+                    if (!validSort(val)) return;
+                    const [by, order] = val.split("-");
                     setSortBy(by as "name" | "date");
                     setSortOrder(order as "asc" | "desc");
+                    try {
+                      localStorage.setItem(SORT_KEY, val);
+                    } catch {
+                      /* ignore */
+                    }
                   }}
                   className="text-stone-600 border border-stone-200 rounded-lg px-2 py-1 bg-white"
                 >
