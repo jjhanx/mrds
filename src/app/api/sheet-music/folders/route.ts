@@ -37,19 +37,22 @@ export async function GET() {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
     const session = await auth();
-    if (!session?.user?.id || session.user.role !== "admin") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "로그인이 필요합니다" }, { status: 401 });
+    }
+    const role = (session.user as { role?: string }).role;
+    if (role !== "admin") {
+      return NextResponse.json({ error: "관리자만 폴더를 추가할 수 있습니다" }, { status: 403 });
     }
 
     await ensureDefaultFolders();
 
     const all = await prisma.sheetMusicFolder.findMany({ orderBy: { sortOrder: "desc" }, take: 1 });
     const maxOrder = all[0]?.sortOrder ?? -1;
-    const baseSlug = `folder-${Date.now()}`;
-    const slug = baseSlug;
+    const slug = `folder-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
     const folder = await prisma.sheetMusicFolder.create({
       data: {
@@ -62,8 +65,9 @@ export async function POST(request: Request) {
     return NextResponse.json(folder);
   } catch (error) {
     console.error("Sheet music folder create error:", error);
+    const msg = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { error: "Failed to create folder" },
+      { error: msg.includes("Unique constraint") ? "폴더 생성 중 중복이 발생했습니다. 다시 시도해 주세요." : `폴더 생성 실패: ${msg}` },
       { status: 500 }
     );
   }

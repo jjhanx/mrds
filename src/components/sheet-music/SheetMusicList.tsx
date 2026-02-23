@@ -132,11 +132,9 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
       const res = await fetch("/api/sheet-music/folders", {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "추가 실패");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data as { error?: string }).error || `추가 실패 (${res.status})`);
       loadFolders();
     } catch (err) {
       alert(err instanceof Error ? err.message : "추가 실패");
