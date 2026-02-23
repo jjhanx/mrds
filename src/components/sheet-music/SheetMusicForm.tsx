@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { SCORE_FOLDER_SLUGS } from "@/constants/sheet-music";
 
 const PARTS = [
   { key: "soprano", label: "소프라노" },
@@ -11,26 +12,59 @@ const PARTS = [
   { key: "full", label: "전체" },
 ];
 
+interface FolderOption {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 export function SheetMusicForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const defaultFolderId = searchParams.get("folderId") ?? "";
+
+  const [folders, setFolders] = useState<FolderOption[]>([]);
+  const [folderId, setFolderId] = useState(defaultFolderId);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [composer, setComposer] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [fileUrl, setFileUrl] = useState("");
+  const [nwcFile, setNwcFile] = useState<File | null>(null);
+  const [nwcFileUrl, setNwcFileUrl] = useState("");
   const [videos, setVideos] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetch("/api/sheet-music/folders")
+      .then((res) => res.json())
+      .then((data) => {
+        const list = Array.isArray(data) ? data : [];
+        setFolders(list);
+        if (!folderId && list.length > 0) setFolderId(list[0].id);
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (defaultFolderId && folders.some((f) => f.id === defaultFolderId)) {
+      setFolderId(defaultFolderId);
+    }
+  }, [defaultFolderId, folders]);
+
+  const selectedFolder = folders.find((f) => f.id === folderId);
+  const isScoreFolder = selectedFolder && SCORE_FOLDER_SLUGS.includes(selectedFolder.slug);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     if (!title.trim()) {
-      setError("악보 제목을 입력해 주세요.");
+      setError("제목을 입력해 주세요.");
       return;
     }
     if (!file?.size && !fileUrl.trim()) {
-      setError("악보 파일을 업로드하거나 URL을 입력해 주세요.");
+      setError("악보(자료) 파일을 업로드하거나 URL을 입력해 주세요.");
       return;
     }
 
@@ -40,8 +74,11 @@ export function SheetMusicForm() {
       formData.append("title", title);
       formData.append("description", description);
       formData.append("composer", composer);
+      if (folderId) formData.append("folderId", folderId);
       if (file?.size) formData.append("file", file);
       if (fileUrl.trim()) formData.append("fileUrl", fileUrl);
+      if (nwcFile?.size) formData.append("nwcFile", nwcFile);
+      if (nwcFileUrl.trim()) formData.append("nwcFileUrl", nwcFileUrl);
       PARTS.forEach(({ key }) => {
         if (videos[key]?.trim()) formData.append(`video_${key}`, videos[key]);
       });
@@ -76,7 +113,25 @@ export function SheetMusicForm() {
 
       <div>
         <label className="block text-sm font-medium text-stone-700 mb-2">
-          악보 제목 *
+          폴더 *
+        </label>
+        <select
+          value={folderId}
+          onChange={(e) => setFolderId(e.target.value)}
+          className="w-full px-4 py-3 rounded-lg border border-stone-200 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none bg-white"
+        >
+          <option value="">선택하세요</option>
+          {folders.map((f) => (
+            <option key={f.id} value={f.id}>
+              {f.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-stone-700 mb-2">
+          제목 *
         </label>
         <input
           type="text"
@@ -115,7 +170,7 @@ export function SheetMusicForm() {
 
       <div>
         <label className="block text-sm font-medium text-stone-700 mb-2">
-          악보 파일 *
+          {isScoreFolder ? "악보 파일 *" : "자료 파일 또는 URL *"}
         </label>
         <p className="text-xs text-stone-500 mb-2">
           PDF, 이미지 파일 업로드 또는 외부 URL 입력
@@ -138,9 +193,40 @@ export function SheetMusicForm() {
             if (e.target.value) setFile(null);
           }}
           className="w-full px-4 py-3 rounded-lg border border-stone-200 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none"
-          placeholder="또는 악보 URL (예: Google Drive 링크)"
+          placeholder="또는 URL (예: Google Drive 링크)"
         />
       </div>
+
+      {isScoreFolder && (
+        <div>
+          <label className="block text-sm font-medium text-stone-700 mb-2">
+            NWC 파일 (선택)
+          </label>
+          <p className="text-xs text-stone-500 mb-2">
+            관련 NWC 악보 파일을 업로드하거나 URL을 입력하세요.
+          </p>
+          <input
+            type="file"
+            accept=".nwc"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              setNwcFile(f || null);
+              if (f) setNwcFileUrl("");
+            }}
+            className="w-full text-sm text-stone-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-stone-100 file:text-stone-700 file:font-medium mb-2"
+          />
+          <input
+            type="url"
+            value={nwcFileUrl}
+            onChange={(e) => {
+              setNwcFileUrl(e.target.value);
+              if (e.target.value) setNwcFile(null);
+            }}
+            className="w-full px-4 py-3 rounded-lg border border-stone-200 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none"
+            placeholder="또는 NWC 파일 URL"
+          />
+        </div>
+      )}
 
       <div>
         <label className="block text-sm font-medium text-stone-700 mb-2">

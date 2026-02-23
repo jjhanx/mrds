@@ -3,6 +3,11 @@ import { Navbar } from "@/components/Navbar";
 import { SheetMusicList } from "@/components/sheet-music/SheetMusicList";
 import Link from "next/link";
 import { Plus } from "lucide-react";
+import { Suspense } from "react";
+
+function ListFallback() {
+  return <div className="text-center py-12 text-stone-500">불러오는 중...</div>;
+}
 
 export default async function SheetMusicPage() {
   await auth();
@@ -23,7 +28,9 @@ export default async function SheetMusicPage() {
           </Link>
         </div>
 
-        <SheetMusicList />
+        <Suspense fallback={<ListFallback />}>
+          <SheetMusicList />
+        </Suspense>
       </main>
     </div>
   );

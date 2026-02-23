@@ -105,6 +105,7 @@ model PostAttachment {
 
 model SheetMusic {
   id          String   @id @default(cuid())
+  folderId    String?
   title       String
   description String?
   filepath    String
@@ -112,7 +113,31 @@ model SheetMusic {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  videos SheetMusicVideo[]
+  folder   SheetMusicFolder   @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  videos   SheetMusicVideo[]
+  nwcFiles SheetMusicNwcFile[]
+}
+
+model SheetMusicFolder {
+  id        String   @id @default(cuid())
+  name      String   // 표시 이름 (예: 합창곡, 애창곡)
+  slug      String   @unique // URL용 (예: choir, art-song)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  items SheetMusic[]
+}
+
+model SheetMusicNwcFile {
+  id           String   @id @default(cuid())
+  sheetMusicId String
+  filepath     String   // 업로드 경로 또는 외부 URL
+  label        String?  // 예: "4부 합창"
+  createdAt    DateTime @default(now())
+
+  sheetMusic SheetMusic @relation(fields: [sheetMusicId], references: [id], onDelete: Cascade)
+
+  @@index([sheetMusicId])
 }
 
 model SheetMusicVideo {

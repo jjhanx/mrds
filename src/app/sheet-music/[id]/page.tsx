@@ -15,7 +15,7 @@ export default async function SheetMusicDetailPage({
   const { id } = await params;
   const sheetMusic = await prisma.sheetMusic.findUnique({
     where: { id },
-    include: { videos: true },
+    include: { folder: true, videos: true, nwcFiles: true },
   });
 
   if (!sheetMusic) notFound();

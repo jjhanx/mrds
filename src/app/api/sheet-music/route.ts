@@ -2,16 +2,26 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { searchParams } = new URL(request.url);
+    const folderId = searchParams.get("folderId") ?? undefined;
+
+    const where = folderId ? { folderId } : {};
+
     const sheetMusic = await prisma.sheetMusic.findMany({
+      where,
       orderBy: { createdAt: "desc" },
-      include: { videos: true },
+      include: {
+        folder: true,
+        videos: true,
+        nwcFiles: true,
+      },
     });
 
     return NextResponse.json(sheetMusic);
@@ -35,6 +45,7 @@ export async function POST(request: Request) {
     const title = formData.get("title") as string;
     const description = formData.get("description") as string;
     const composer = formData.get("composer") as string;
+    const folderId = (formData.get("folderId") as string)?.trim() || null;
 
     if (!title?.trim()) {
       return NextResponse.json(
@@ -57,7 +68,6 @@ export async function POST(request: Request) {
       await writeFile(fullPath, buffer);
       filepath = `/uploads/sheet-music/${filename}`;
     } else {
-      // Allow URL as filepath for external scores
       const fileUrl = formData.get("fileUrl") as string;
       if (fileUrl?.trim()) filepath = fileUrl;
     }
@@ -71,6 +81,7 @@ export async function POST(request: Request) {
 
     const sheetMusic = await prisma.sheetMusic.create({
       data: {
+        folderId,
         title: title.trim(),
         description: description?.trim() || null,
         composer: composer?.trim() || null,
@@ -78,7 +89,35 @@ export async function POST(request: Request) {
       },
     });
 
-    // Add video links by part
+    // NWC 파일들 (복수)
+    const nwcFile = formData.get("nwcFile") as File | null;
+    const nwcFileUrl = (formData.get("nwcFileUrl") as string)?.trim();
+    if (nwcFile && nwcFile.size > 0) {
+      const { writeFile, mkdir } = await import("fs/promises");
+      const path = await import("path");
+      const uploadDir = path.join(process.cwd(), "public", "uploads", "sheet-music", "nwc");
+      await mkdir(uploadDir, { recursive: true });
+      const bytes = await nwcFile.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      const filename = `${Date.now()}-${nwcFile.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+      const fullPath = path.join(uploadDir, filename);
+      await writeFile(fullPath, buffer);
+      await prisma.sheetMusicNwcFile.create({
+        data: {
+          sheetMusicId: sheetMusic.id,
+          filepath: `/uploads/sheet-music/nwc/${filename}`,
+        },
+      });
+    } else if (nwcFileUrl) {
+      await prisma.sheetMusicNwcFile.create({
+        data: {
+          sheetMusicId: sheetMusic.id,
+          filepath: nwcFileUrl,
+        },
+      });
+    }
+
+    // 파트별 영상
     const parts = ["soprano", "alto", "tenor", "bass", "full"] as const;
     for (const part of parts) {
       const url = formData.get(`video_${part}`) as string;
@@ -91,7 +130,7 @@ export async function POST(request: Request) {
 
     const result = await prisma.sheetMusic.findUnique({
       where: { id: sheetMusic.id },
-      include: { videos: true },
+      include: { folder: true, videos: true, nwcFiles: true },
     });
 
     return NextResponse.json(result);
