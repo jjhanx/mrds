@@ -113,7 +113,7 @@ model SheetMusic {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  folder   SheetMusicFolder   @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  folder   SheetMusicFolder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
   videos   SheetMusicVideo[]
   nwcFiles SheetMusicNwcFile[]
 }
