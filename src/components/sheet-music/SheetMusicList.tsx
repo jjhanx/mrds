@@ -50,7 +50,6 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [addingFolder, setAddingFolder] = useState(false);
-  const [newFolderName, setNewFolderName] = useState("");
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [editFolderName, setEditFolderName] = useState("");
   const [attachModal, setAttachModal] = useState<{ id: string; title: string } | null>(null);
@@ -127,43 +126,33 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
     }
   };
 
-  const handleAddFolder = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newFolderName.trim()) return;
-    const slug = newFolderName.trim().toLowerCase().replace(/\s+/g, "-");
+  const handleAddFolder = async () => {
+    setAddingFolder(true);
     try {
       const res = await fetch("/api/sheet-music/folders", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: newFolderName.trim(),
-          slug: slug.replace(/[^a-z0-9-]/g, ""),
-          sortOrder: folders.length,
-        }),
+        body: JSON.stringify({}),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "추가 실패");
-      setAddingFolder(false);
-      setNewFolderName("");
       loadFolders();
     } catch (err) {
       alert(err instanceof Error ? err.message : "추가 실패");
+    } finally {
+      setAddingFolder(false);
     }
   };
 
   const handleUpdateFolder = async (id: string) => {
     if (!editFolderName.trim()) return;
-    const slug = editFolderName.trim().toLowerCase().replace(/\s+/g, "-");
     try {
       const res = await fetch(`/api/sheet-music/folders/${id}`, {
         method: "PATCH",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: editFolderName.trim(),
-          slug: slug.replace(/[^a-z0-9-]/g, ""),
-        }),
+        body: JSON.stringify({ name: editFolderName.trim() }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "수정 실패");
@@ -178,7 +167,10 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
     const f = folders.find((x) => x.id === id);
     if (!f || !confirm(`"${f.name}" 폴더를 삭제하시겠습니까? (비어 있을 때만)`)) return;
     try {
-      const res = await fetch(`/api/sheet-music/folders/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/sheet-music/folders/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "삭제 실패");
       loadFolders();
@@ -279,7 +271,7 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
   return (
     <div className="flex flex-col md:flex-row gap-6">
       {/* 폴더 사이드바 */}
-      <aside className="w-full md:w-56 flex-shrink-0">
+      <aside className="w-full md:w-64 flex-shrink-0">
         <div className="bg-white rounded-xl border border-amber-100 overflow-hidden">
           <div className="px-4 py-3 border-b border-amber-100 flex items-center gap-2 font-medium text-stone-700">
             <Folder className="w-4 h-4" />
@@ -300,28 +292,34 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
                 className="group flex items-center gap-1 rounded-lg hover:bg-stone-50"
               >
                 {editingFolderId === f.id ? (
-                  <div className="flex-1 flex gap-1 p-1">
+                  <div className="flex-1 min-w-0 flex flex-col gap-2 p-2">
                     <input
                       type="text"
                       value={editFolderName}
                       onChange={(e) => setEditFolderName(e.target.value)}
-                      className="flex-1 px-2 py-1 text-sm border rounded"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleUpdateFolder(f.id);
+                        if (e.key === "Escape") setEditingFolderId(null);
+                      }}
+                      className="w-full min-w-0 px-3 py-2 text-sm border border-stone-200 rounded-lg"
                       autoFocus
                     />
-                    <button
-                      type="button"
-                      onClick={() => handleUpdateFolder(f.id)}
-                      className="px-2 py-1 text-xs bg-amber-600 text-white rounded"
-                    >
-                      저장
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditingFolderId(null)}
-                      className="px-2 py-1 text-xs border rounded"
-                    >
-                      취소
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateFolder(f.id)}
+                        className="flex-1 px-3 py-1.5 text-sm bg-amber-600 text-white rounded-lg"
+                      >
+                        저장
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingFolderId(null)}
+                        className="flex-1 px-3 py-1.5 text-sm border rounded-lg"
+                      >
+                        취소
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <>
@@ -368,39 +366,15 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
               </div>
             ))}
             {isAdmin && (
-              <>
-                {addingFolder ? (
-                  <form onSubmit={handleAddFolder} className="p-2 flex gap-1">
-                    <input
-                      type="text"
-                      value={newFolderName}
-                      onChange={(e) => setNewFolderName(e.target.value)}
-                      placeholder="폴더 이름"
-                      className="flex-1 px-2 py-1 text-sm border rounded"
-                      autoFocus
-                    />
-                    <button type="submit" className="px-2 py-1 text-xs bg-amber-600 text-white rounded">
-                      추가
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAddingFolder(false)}
-                      className="px-2 py-1 text-xs border rounded"
-                    >
-                      취소
-                    </button>
-                  </form>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setAddingFolder(true)}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-stone-500 hover:bg-stone-100"
-                  >
-                    <Plus className="w-4 h-4" />
-                    폴더 추가
-                  </button>
-                )}
-              </>
+              <button
+                type="button"
+                onClick={handleAddFolder}
+                disabled={addingFolder}
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-stone-500 hover:bg-stone-100 disabled:opacity-50"
+              >
+                <Plus className="w-4 h-4" />
+                {addingFolder ? "추가 중..." : "폴더 추가"}
+              </button>
             )}
           </nav>
         </div>

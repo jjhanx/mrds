@@ -46,36 +46,16 @@ export async function POST(request: Request) {
 
     await ensureDefaultFolders();
 
-    const body = await request.json();
-    const { name, slug, sortOrder } = body as {
-      name?: string;
-      slug?: string;
-      sortOrder?: number;
-    };
-
-    if (!name?.trim() || !slug?.trim()) {
-      return NextResponse.json(
-        { error: "폴더 이름과 slug는 필수입니다" },
-        { status: 400 }
-      );
-    }
-
-    const slugNorm = slug.trim().toLowerCase().replace(/\s+/g, "-");
-    const existing = await prisma.sheetMusicFolder.findUnique({
-      where: { slug: slugNorm },
-    });
-    if (existing) {
-      return NextResponse.json(
-        { error: "이미 사용 중인 slug입니다" },
-        { status: 400 }
-      );
-    }
+    const all = await prisma.sheetMusicFolder.findMany({ orderBy: { sortOrder: "desc" }, take: 1 });
+    const maxOrder = all[0]?.sortOrder ?? -1;
+    const baseSlug = `folder-${Date.now()}`;
+    const slug = baseSlug;
 
     const folder = await prisma.sheetMusicFolder.create({
       data: {
-        name: name.trim(),
-        slug: slugNorm,
-        sortOrder: sortOrder ?? 0,
+        name: "새 폴더",
+        slug,
+        sortOrder: maxOrder + 1,
       },
     });
 

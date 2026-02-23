@@ -25,18 +25,19 @@ export async function PATCH(
       return NextResponse.json({ error: "폴더를 찾을 수 없습니다" }, { status: 404 });
     }
 
-    const slugNorm = slug !== undefined
-      ? String(slug).trim().toLowerCase().replace(/\s+/g, "-")
-      : undefined;
+    let slugNorm: string | undefined;
+    if (name !== undefined && name.trim()) {
+      const s = name.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+      slugNorm = s.length >= 2 ? s : `folder-${id.slice(-8)}`;
+    } else if (slug !== undefined) {
+      slugNorm = String(slug).trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "") || undefined;
+    }
     if (slugNorm !== undefined && slugNorm !== folder.slug) {
       const existing = await prisma.sheetMusicFolder.findUnique({
         where: { slug: slugNorm },
       });
       if (existing) {
-        return NextResponse.json(
-          { error: "이미 사용 중인 slug입니다" },
-          { status: 400 }
-        );
+        slugNorm = `folder-${id.slice(-8)}-${Date.now().toString(36)}`;
       }
     }
 
