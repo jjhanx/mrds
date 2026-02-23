@@ -34,19 +34,20 @@ export const FOLDER_FORMAT_RULES: Record<
 
 const ALL_FORMAT_SLUGS = ["utility", "education"];
 
-/** 폴더별 최대 파일 크기 (바이트). 합창곡/애창곡 100MB, 나머지 2GB */
+/** 폴더별 최대 파일 크기 (바이트). 모든 폴더 2GB */
+const MAX_2GB = 2 * 1024 * 1024 * 1024;
 export const FOLDER_SIZE_LIMITS: Record<string, number> = {
-  choir: 100 * 1024 * 1024,
-  "art-song": 100 * 1024 * 1024,
-  nwc: 2 * 1024 * 1024 * 1024,
-  utility: 2 * 1024 * 1024 * 1024,
-  video: 2 * 1024 * 1024 * 1024,
-  education: 2 * 1024 * 1024 * 1024,
+  choir: MAX_2GB,
+  "art-song": MAX_2GB,
+  nwc: MAX_2GB,
+  utility: MAX_2GB,
+  video: MAX_2GB,
+  education: MAX_2GB,
 };
 
 export function getMaxFileSizeBytes(slug: string): number {
   const key = (slug || "").toLowerCase();
-  return FOLDER_SIZE_LIMITS[key] ?? 100 * 1024 * 1024;
+  return FOLDER_SIZE_LIMITS[key] ?? MAX_2GB;
 }
 
 export function isFileSizeAllowed(size: number, slug: string): boolean {

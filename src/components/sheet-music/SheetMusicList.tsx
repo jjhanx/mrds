@@ -122,7 +122,7 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
     const files = allValid.filter((f) => isFileSizeAllowed(f.size, slug));
 
     if (oversized.length > 0) {
-      const maxLabel = slug === "choir" || slug === "art-song" ? "100MB" : "2GB";
+      const maxLabel = getMaxFileSizeLabel(slug);
       alert(`이 폴더는 파일당 최대 ${maxLabel}까지 허용됩니다. (초과: ${oversized.map((f) => f.name).join(", ")})`);
     }
     if (files.length === 0) {
