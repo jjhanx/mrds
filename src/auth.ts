@@ -17,8 +17,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.AUTH_SECRET,
   trustHost: true, // nginx 등 프록시 뒤에서 필수
   useSecureCookies: isHttps, // HTTPS 도메인에서는 Secure 쿠키 필수
-  // 동일 이메일로 다른 방식(다른 OAuth·개발용 로그인)으로 가입된 계정에 OAuth 연결 허용
-  allowDangerousEmailAccountLinking: true,
   adapter: PrismaAdapter(prisma),
   providers: [
     ...(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET
