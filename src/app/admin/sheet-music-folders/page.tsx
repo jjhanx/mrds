@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Folder, Plus, Pencil, Trash2, ArrowLeft } from "lucide-react";
+import { Folder, Pencil, Trash2, ArrowLeft } from "lucide-react";
 
 interface FolderItem {
   id: string;
@@ -16,9 +16,6 @@ export default function AdminSheetMusicFoldersPage() {
   const [folders, setFolders] = useState<FolderItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [adding, setAdding] = useState(false);
-  const [newName, setNewName] = useState("");
-  const [newSlug, setNewSlug] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editSlug, setEditSlug] = useState("");
@@ -36,34 +33,6 @@ export default function AdminSheetMusicFoldersPage() {
   useEffect(() => {
     load();
   }, []);
-
-  const handleAdd = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    if (!newName.trim() || !newSlug.trim()) {
-      setError("이름과 slug를 입력하세요.");
-      return;
-    }
-    try {
-      const res = await fetch("/api/sheet-music/folders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: newName.trim(),
-          slug: newSlug.trim().toLowerCase().replace(/\s+/g, "-"),
-          sortOrder: folders.length,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "추가 실패");
-      setAdding(false);
-      setNewName("");
-      setNewSlug("");
-      load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "추가 실패");
-    }
-  };
 
   const handleUpdate = async (id: string) => {
     setError("");
@@ -137,63 +106,12 @@ export default function AdminSheetMusicFoldersPage() {
         )}
 
         <div className="bg-white rounded-xl border border-amber-100 overflow-hidden">
-          <div className="px-4 py-3 border-b border-amber-100 flex items-center justify-between">
-            <span className="font-medium text-stone-700 flex items-center gap-2">
-              <Folder className="w-4 h-4" />
-              폴더 목록
-            </span>
-            {!adding && (
-              <button
-                type="button"
-                onClick={() => setAdding(true)}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm bg-amber-600 text-white rounded-lg hover:bg-amber-700"
-              >
-                <Plus className="w-4 h-4" />
-                추가
-              </button>
-            )}
+          <div className="px-4 py-3 border-b border-amber-100 flex items-center gap-2">
+            <Folder className="w-4 h-4" />
+            <span className="font-medium text-stone-700">폴더 목록</span>
           </div>
 
           <ul className="divide-y divide-stone-100">
-            {adding && (
-              <li className="p-4 bg-amber-50/50">
-                <form onSubmit={handleAdd} className="flex flex-wrap gap-3 items-end">
-                  <div>
-                    <label className="block text-xs text-stone-500 mb-1">이름</label>
-                    <input
-                      type="text"
-                      value={newName}
-                      onChange={(e) => setNewName(e.target.value)}
-                      className="px-3 py-2 border border-stone-200 rounded-lg text-sm w-32"
-                      placeholder="예: 클래식"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-stone-500 mb-1">slug</label>
-                    <input
-                      type="text"
-                      value={newSlug}
-                      onChange={(e) => setNewSlug(e.target.value)}
-                      className="px-3 py-2 border border-stone-200 rounded-lg text-sm w-32"
-                      placeholder="예: classic"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="px-3 py-2 bg-amber-600 text-white rounded-lg text-sm hover:bg-amber-700"
-                  >
-                    저장
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setAdding(false); setNewName(""); setNewSlug(""); }}
-                    className="px-3 py-2 border border-stone-200 rounded-lg text-sm"
-                  >
-                    취소
-                  </button>
-                </form>
-              </li>
-            )}
             {folders.map((f) => (
               <li key={f.id} className="p-4 flex items-center justify-between gap-4">
                 {editingId === f.id ? (

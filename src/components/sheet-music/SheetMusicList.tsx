@@ -49,7 +49,6 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [addingFolder, setAddingFolder] = useState(false);
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [editFolderName, setEditFolderName] = useState("");
   const [attachModal, setAttachModal] = useState<{ id: string; title: string } | null>(null);
@@ -123,23 +122,6 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
       alert(err instanceof Error ? err.message : "업로드 실패");
     } finally {
       setUploading(false);
-    }
-  };
-
-  const handleAddFolder = async () => {
-    setAddingFolder(true);
-    try {
-      const res = await fetch("/api/sheet-music/folders", {
-        method: "POST",
-        credentials: "include",
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error((data as { error?: string }).error || `추가 실패 (${res.status})`);
-      loadFolders();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "추가 실패");
-    } finally {
-      setAddingFolder(false);
     }
   };
 
@@ -363,17 +345,6 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
                 )}
               </div>
             ))}
-            {isAdmin && (
-              <button
-                type="button"
-                onClick={handleAddFolder}
-                disabled={addingFolder}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-stone-500 hover:bg-stone-100 disabled:opacity-50"
-              >
-                <Plus className="w-4 h-4" />
-                {addingFolder ? "추가 중..." : "폴더 추가"}
-              </button>
-            )}
           </nav>
         </div>
       </aside>
