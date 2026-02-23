@@ -49,6 +49,7 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [editFolderName, setEditFolderName] = useState("");
   const [attachModal, setAttachModal] = useState<{ id: string; title: string } | null>(null);
@@ -123,26 +124,44 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
     }
 
     setUploading(true);
-    const formData = new FormData();
-    formData.append("folderId", folderIdParam);
-    files.forEach((f) => formData.append("files", f));
+    setUploadProgress({ done: 0, total: files.length });
+    const CHUNK_SIZE = 5;
 
     try {
-      const res = await fetch("/api/sheet-music/bulk", {
-        method: "POST",
-        body: formData,
-        credentials: "include",
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "업로드 실패");
+      for (let i = 0; i < files.length; i += CHUNK_SIZE) {
+        const chunk = files.slice(i, i + CHUNK_SIZE);
+        setUploadProgress({ done: i, total: files.length });
+        const formData = new FormData();
+        formData.append("folderId", folderIdParam);
+        chunk.forEach((f) => formData.append("files", f));
+
+        const res = await fetch("/api/sheet-music/bulk", {
+          method: "POST",
+          body: formData,
+          credentials: "include",
+        });
+
+        const text = await res.text();
+        let data: { error?: string };
+        try {
+          data = text ? JSON.parse(text) : {};
+        } catch {
+          const msg = res.status === 413 ? "파일 용량이 너무 큽니다. 개수가 많으면 자동으로 나눠 업로드됩니다." : `업로드 실패 (${res.status})`;
+          throw new Error(res.ok ? "응답 형식 오류" : msg);
+        }
+
+        if (!res.ok) {
+          throw new Error((data as { error?: string }).error || "업로드 실패");
+        }
       }
+      setUploadProgress({ done: files.length, total: files.length });
       loadItems();
       loadFolders();
     } catch (err) {
       alert(err instanceof Error ? err.message : "업로드 실패");
     } finally {
       setUploading(false);
+      setUploadProgress(null);
     }
   };
 
@@ -388,7 +407,11 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
           >
             <Upload className="w-10 h-10 text-amber-500 mx-auto mb-2" />
             <p className="text-stone-600 font-medium">
-              {uploading ? "업로드 중..." : "여기에 파일을 끌어다 놓으세요"}
+              {uploading
+                ? uploadProgress
+                  ? `${uploadProgress.done}/${uploadProgress.total} 업로드 중...`
+                  : "업로드 중..."
+                : "여기에 파일을 끌어다 놓으세요"}
             </p>
             <p className="text-sm text-stone-400 mt-1">{uploadHint} 여러 개 업로드 가능</p>
           </div>
