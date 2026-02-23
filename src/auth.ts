@@ -20,13 +20,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   providers: [
     ...(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET
-      ? [Google({ clientId: process.env.AUTH_GOOGLE_ID, clientSecret: process.env.AUTH_GOOGLE_SECRET })]
+      ? [Google({
+          clientId: process.env.AUTH_GOOGLE_ID,
+          clientSecret: process.env.AUTH_GOOGLE_SECRET,
+          allowDangerousEmailAccountLinking: true,
+        })]
       : []),
     ...(process.env.AUTH_NAVER_ID && process.env.AUTH_NAVER_SECRET
-      ? [Naver({ clientId: process.env.AUTH_NAVER_ID, clientSecret: process.env.AUTH_NAVER_SECRET })]
+      ? [Naver({
+          clientId: process.env.AUTH_NAVER_ID,
+          clientSecret: process.env.AUTH_NAVER_SECRET,
+          allowDangerousEmailAccountLinking: true,
+        })]
       : []),
     ...(process.env.AUTH_KAKAO_ID && process.env.AUTH_KAKAO_SECRET
-      ? [Kakao({ clientId: process.env.AUTH_KAKAO_ID, clientSecret: process.env.AUTH_KAKAO_SECRET })]
+      ? [Kakao({
+          clientId: process.env.AUTH_KAKAO_ID,
+          clientSecret: process.env.AUTH_KAKAO_SECRET,
+          allowDangerousEmailAccountLinking: true,
+        })]
       : []),
     // 개발용: OAuth 미설정 시 테스트 로그인 (비밀번호: test)
     ...(!hasOAuth
