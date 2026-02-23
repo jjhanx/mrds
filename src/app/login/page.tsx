@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Music2 } from "lucide-react";
 
@@ -8,6 +9,11 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [devError, setDevError] = useState("");
+  const searchParams = useSearchParams();
+  const errorParam = searchParams.get("error");
+
+  // OAuthAccountNotLinked: 동일 이메일로 다른 로그인 방식으로 가입된 경우
+  const isOAuthAccountNotLinked = errorParam === "OAuthAccountNotLinked";
 
   const handleDevLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,6 +46,11 @@ export default function LoginPage() {
         </div>
 
         <div className="bg-white/80 backdrop-blur rounded-2xl shadow-xl p-8 border border-amber-100">
+          {isOAuthAccountNotLinked && (
+            <div className="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+              이 이메일은 이미 다른 로그인 방식(다른 OAuth 또는 개발용 로그인)으로 등록되어 있습니다. Google로 다시 시도해 보시거나, 처음 가입할 때 사용한 방식으로 로그인해 주세요.
+            </div>
+          )}
           <div className="space-y-3">
             <button
                 onClick={() => signIn("google", { callbackUrl: "/" })}
