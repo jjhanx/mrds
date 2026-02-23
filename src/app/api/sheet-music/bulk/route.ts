@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { isFileAllowed, getFolderHint } from "@/constants/sheet-music";
+import { isFileAllowed, isFileSizeAllowed, getFolderHint, getMaxFileSizeLabel } from "@/constants/sheet-music";
 import { NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
@@ -42,6 +42,19 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error: `이 폴더에는 ${hint}만 업로드할 수 있습니다. (허용되지 않음: ${rejected.map((f) => f.name).join(", ")})`,
+        },
+        { status: 400 }
+      );
+    }
+
+    const oversized = validFiles.filter(
+      (f) => !isFileSizeAllowed(f.size, folderSlug)
+    );
+    if (oversized.length > 0) {
+      const maxLabel = getMaxFileSizeLabel(folderSlug);
+      return NextResponse.json(
+        {
+          error: `이 폴더는 파일당 최대 ${maxLabel}까지 허용됩니다. (초과: ${oversized.map((f) => f.name).join(", ")})`,
         },
         { status: 400 }
       );

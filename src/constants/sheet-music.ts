@@ -34,6 +34,32 @@ export const FOLDER_FORMAT_RULES: Record<
 
 const ALL_FORMAT_SLUGS = ["utility", "education"];
 
+/** 폴더별 최대 파일 크기 (바이트). 합창곡/애창곡 100MB, 나머지 2GB */
+export const FOLDER_SIZE_LIMITS: Record<string, number> = {
+  choir: 100 * 1024 * 1024,
+  "art-song": 100 * 1024 * 1024,
+  nwc: 2 * 1024 * 1024 * 1024,
+  utility: 2 * 1024 * 1024 * 1024,
+  video: 2 * 1024 * 1024 * 1024,
+  education: 2 * 1024 * 1024 * 1024,
+};
+
+export function getMaxFileSizeBytes(slug: string): number {
+  const key = (slug || "").toLowerCase();
+  return FOLDER_SIZE_LIMITS[key] ?? 100 * 1024 * 1024;
+}
+
+export function isFileSizeAllowed(size: number, slug: string): boolean {
+  return size <= getMaxFileSizeBytes(slug);
+}
+
+export function getMaxFileSizeLabel(slug: string): string {
+  const bytes = getMaxFileSizeBytes(slug);
+  if (bytes >= 2 * 1024 * 1024 * 1024) return "2GB";
+  if (bytes >= 1024 * 1024) return "100MB";
+  return `${Math.round(bytes / 1024)}KB`;
+}
+
 export function getAllowedExts(slug: string): readonly string[] {
   const key = (slug || "").toLowerCase();
   const rule = FOLDER_FORMAT_RULES[key];

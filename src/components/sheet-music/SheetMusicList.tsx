@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { isFileAllowed, getFolderHint } from "@/constants/sheet-music";
+import { isFileAllowed, isFileSizeAllowed, getFolderHint, getMaxFileSizeLabel } from "@/constants/sheet-music";
 import {
   FileMusic,
   Folder,
@@ -91,7 +91,9 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
     () => folders.find((f) => f.id === folderIdParam),
     [folders, folderIdParam]
   );
-  const uploadHint = currentFolder ? getFolderHint(currentFolder.slug) : "PDF, 이미지";
+  const uploadHint = currentFolder
+    ? `${getFolderHint(currentFolder.slug)} (파일당 최대 ${getMaxFileSizeLabel(currentFolder.slug)})`
+    : "PDF, 이미지";
 
   const sortedItems = useMemo(() => {
     const arr = [...items];
@@ -113,13 +115,21 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
     if (!folderIdParam || uploading) return;
 
     const slug = currentFolder?.slug ?? "";
-    const files = Array.from(e.dataTransfer.files).filter(
+    const allValid = Array.from(e.dataTransfer.files).filter(
       (f) => f.size > 0 && isFileAllowed({ name: f.name, type: f.type }, slug)
     );
+    const oversized = allValid.filter((f) => !isFileSizeAllowed(f.size, slug));
+    const files = allValid.filter((f) => isFileSizeAllowed(f.size, slug));
 
+    if (oversized.length > 0) {
+      const maxLabel = slug === "choir" || slug === "art-song" ? "100MB" : "2GB";
+      alert(`이 폴더는 파일당 최대 ${maxLabel}까지 허용됩니다. (초과: ${oversized.map((f) => f.name).join(", ")})`);
+    }
     if (files.length === 0) {
-      const hint = getFolderHint(slug);
-      alert(`이 폴더에는 ${hint}만 업로드할 수 있습니다.`);
+      if (oversized.length === 0) {
+        const hint = getFolderHint(slug);
+        alert(`이 폴더에는 ${hint}만 업로드할 수 있습니다.`);
+      }
       return;
     }
 
