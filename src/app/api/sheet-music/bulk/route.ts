@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { isFileAllowed, getFolderHint } from "@/constants/sheet-music";
 import { NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
@@ -20,6 +21,31 @@ export async function POST(request: Request) {
     if (validFiles.length === 0) {
       return NextResponse.json(
         { error: "업로드할 파일을 선택해 주세요" },
+        { status: 400 }
+      );
+    }
+
+    let folderSlug = "";
+    if (folderId) {
+      const folder = await prisma.sheetMusicFolder.findUnique({
+        where: { id: folderId },
+        select: { slug: true },
+      });
+      folderSlug = folder?.slug ?? "";
+    }
+
+    const allowed = validFiles.filter((f) =>
+      isFileAllowed({ name: f.name, type: f.type }, folderSlug)
+    );
+    const rejected = validFiles.filter(
+      (f) => !isFileAllowed({ name: f.name, type: f.type }, folderSlug)
+    );
+    if (rejected.length > 0) {
+      const hint = getFolderHint(folderSlug);
+      return NextResponse.json(
+        {
+          error: `이 폴더에는 ${hint}만 업로드할 수 있습니다. (허용되지 않음: ${rejected.map((f) => f.name).join(", ")})`,
+        },
         { status: 400 }
       );
     }

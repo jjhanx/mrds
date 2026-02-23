@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { isFileAllowed, getFolderHint } from "@/constants/sheet-music";
 import {
   FileMusic,
   Folder,
@@ -84,20 +85,25 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
     loadItems();
   }, [loadItems]);
 
+  const currentFolder = useMemo(
+    () => folders.find((f) => f.id === folderIdParam),
+    [folders, folderIdParam]
+  );
+  const uploadHint = currentFolder ? getFolderHint(currentFolder.slug) : "PDF, 이미지";
+
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setDragging(false);
     if (!folderIdParam || uploading) return;
 
+    const slug = currentFolder?.slug ?? "";
     const files = Array.from(e.dataTransfer.files).filter(
-      (f) =>
-        f.type === "application/pdf" ||
-        f.type.startsWith("image/") ||
-        /\.(pdf|jpg|jpeg|png|gif|webp)$/i.test(f.name)
+      (f) => f.size > 0 && isFileAllowed({ name: f.name, type: f.type }, slug)
     );
 
     if (files.length === 0) {
-      alert("PDF 또는 이미지 파일만 업로드할 수 있습니다.");
+      const hint = getFolderHint(slug);
+      alert(`이 폴더에는 ${hint}만 업로드할 수 있습니다.`);
       return;
     }
 
@@ -369,7 +375,7 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
             <p className="text-stone-600 font-medium">
               {uploading ? "업로드 중..." : "여기에 파일을 끌어다 놓으세요"}
             </p>
-            <p className="text-sm text-stone-400 mt-1">PDF, 이미지 파일 여러 개 업로드 가능</p>
+            <p className="text-sm text-stone-400 mt-1">{uploadHint} 여러 개 업로드 가능</p>
           </div>
         )}
 
