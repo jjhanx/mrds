@@ -11,15 +11,20 @@ interface Post {
   title: string;
   content: string;
   createdAt: string;
+  isNotice?: boolean;
   author: { name: string | null };
   attachments: { id: string }[];
 }
 
-export function BoardList() {
+interface BoardListProps {
+  userRole?: string;
+}
+
+export function BoardList({ userRole }: BoardListProps) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchPosts = () => {
     fetch("/api/posts")
       .then((res) => res.json())
       .then((data) => {
@@ -27,7 +32,22 @@ export function BoardList() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchPosts();
   }, []);
+
+  const handleToggleNotice = async (e: React.MouseEvent, postId: string) => {
+    e.preventDefault(); // prevent navigation
+    if (!confirm("이 글의 공지 상태를 변경하시겠습니까?")) return;
+    const res = await fetch(`/api/posts/${postId}/notice`, { method: "PATCH" });
+    if (res.ok) {
+      fetchPosts();
+    } else {
+      alert("공지 설정에 실패했습니다.");
+    }
+  };
 
   if (loading) {
     return (
@@ -56,13 +76,20 @@ export function BoardList() {
         <Link
           key={post.id}
           href={`/board/${post.id}`}
-          className="block p-4 bg-white rounded-xl border border-amber-100 hover:border-amber-200 hover:shadow-md transition-all"
+          className={`block p-4 bg-white rounded-xl border ${post.isNotice ? 'border-amber-400 shadow-sm bg-amber-50/30' : 'border-amber-100'} hover:border-amber-300 hover:shadow-md transition-all`}
         >
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
-              <h2 className="font-semibold text-stone-800 truncate">
-                {post.title}
-              </h2>
+              <div className="flex items-center gap-2 mb-1">
+                {post.isNotice && (
+                  <span className="shrink-0 px-2 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-600">
+                    공지
+                  </span>
+                )}
+                <h2 className="font-semibold text-stone-800 truncate">
+                  {post.title}
+                </h2>
+              </div>
               <p className="text-sm text-stone-500 mt-1 line-clamp-2">
                 {post.content.replace(/<[^>]*>/g, "").slice(0, 100)}
                 {post.content.length > 100 ? "..." : ""}
@@ -81,8 +108,21 @@ export function BoardList() {
               </div>
             </div>
           </div>
+          {userRole === "admin" && (
+            <button
+              onClick={(e) => handleToggleNotice(e, post.id)}
+              className={`shrink-0 text-xs px-2 py-1 rounded border transition-colors ${post.isNotice
+                  ? "bg-red-50 border-red-200 text-red-600 hover:bg-red-100"
+                  : "bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100"
+                }`}
+            >
+              {post.isNotice ? "공지 내리기" : "공지로 등록"}
+            </button>
+          )}
+        </div>
         </Link>
-      ))}
-    </div>
+  ))
+}
+    </div >
   );
 }

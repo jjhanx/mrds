@@ -3,8 +3,10 @@ import { Navbar } from "@/components/Navbar";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { MessageSquare, FileMusic, MessageCircle } from "lucide-react";
+import { MessageSquare, FileMusic, MessageCircle, AlertCircle } from "lucide-react";
 import { HeroImage } from "@/components/HeroImage";
+import { format } from "date-fns";
+import { ko } from "date-fns/locale";
 
 export default async function HomePage() {
   const session = await auth();
@@ -13,6 +15,13 @@ export default async function HomePage() {
     if (adminCount === 0) redirect("/admin/claim");
   }
 
+  const notices = await prisma.post.findMany({
+    where: { isNotice: true },
+    orderBy: { createdAt: "desc" },
+    take: 3,
+    include: { author: { select: { name: true } } }
+  });
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50 to-orange-50">
       <Navbar />
@@ -20,14 +29,32 @@ export default async function HomePage() {
       <HeroImage />
 
       <main className="max-w-6xl mx-auto px-4 py-12">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-stone-800 mb-2">
-            환영합니다, {session?.user?.name || "회원"}님!
-          </h1>
-          <p className="text-stone-600 text-lg">
-            미래도시 합창단 회원 전용 공간에 오신 것을 환영합니다.
-          </p>
-        </div>
+        {notices.length > 0 && (
+          <div className="mb-12 max-w-4xl mx-auto">
+            <div className="flex items-center gap-2 mb-4 px-2">
+              <AlertCircle className="w-5 h-5 text-red-500" />
+              <h2 className="text-xl font-bold text-stone-800">공지사항</h2>
+            </div>
+            <div className="grid gap-3">
+              {notices.map(notice => (
+                <Link
+                  key={notice.id}
+                  href={`/board/${notice.id}`}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white rounded-xl shadow-sm border border-red-100 hover:shadow-md hover:border-red-200 transition-all gap-2"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="shrink-0 px-2 py-0.5 bg-red-50 text-red-600 rounded text-xs font-semibold">공지</span>
+                    <span className="font-medium text-stone-800 truncate">{notice.title}</span>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0 text-sm text-stone-500">
+                    <span>{notice.author.name || "관리자"}</span>
+                    <span>{format(new Date(notice.createdAt), "yyyy.MM.dd", { locale: ko })}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
           <Link

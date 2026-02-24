@@ -23,7 +23,7 @@ export default async function BoardPage() {
           </Link>
         </div>
 
-        <BoardList />
+        <BoardList userRole={session?.user?.role || "member"} />
       </main>
     </div>
   );
