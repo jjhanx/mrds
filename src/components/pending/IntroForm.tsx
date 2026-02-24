@@ -78,6 +78,7 @@ export function IntroForm({ initialIntro, initialName, onSaved }: IntroFormProps
             {saving ? "저장 중..." : saved ? "저장됨!" : "저장"}
           </button>
         </div>
+      </div>
     </form>
   );
 }
