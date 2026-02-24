@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
-import { UserCheck, UserX, Loader2, ShieldPlus } from "lucide-react";
+import { UserCheck, UserX, Loader2, ShieldPlus, Trash2 } from "lucide-react";
 
 interface User {
   id: string;
@@ -60,6 +60,17 @@ export function AdminPanel() {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    if (!confirm("정말 이 회원을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) return;
+    const res = await fetch(`/api/admin/users/${id}`, {
+      method: "DELETE",
+    });
+    if (res.ok) fetchUsers();
+    else {
+      alert("회원 삭제에 실패했습니다.");
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center py-12">
@@ -96,21 +107,21 @@ export function AdminPanel() {
                     )}
                   </div>
                   <div className="flex gap-2 flex-shrink-0">
-                  <button
-                    onClick={() => handleApprove(u.id)}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-green-100 text-green-800 rounded-lg hover:bg-green-200 text-sm font-medium"
-                  >
-                    <UserCheck className="w-4 h-4" />
-                    승인
-                  </button>
-                  <button
-                    onClick={() => handleReject(u.id)}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 text-sm font-medium"
-                  >
-                    <UserX className="w-4 h-4" />
-                    거절
-                  </button>
-                </div>
+                    <button
+                      onClick={() => handleApprove(u.id)}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-green-100 text-green-800 rounded-lg hover:bg-green-200 text-sm font-medium"
+                    >
+                      <UserCheck className="w-4 h-4" />
+                      승인
+                    </button>
+                    <button
+                      onClick={() => handleReject(u.id)}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 text-sm font-medium"
+                    >
+                      <UserX className="w-4 h-4" />
+                      거절
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -134,13 +145,12 @@ export function AdminPanel() {
               </div>
               <div className="flex items-center gap-3">
                 <span
-                  className={`text-sm px-2 py-0.5 rounded ${
-                    u.status === "approved"
+                  className={`text-sm px-2 py-0.5 rounded ${u.status === "approved"
                       ? "bg-green-100 text-green-800"
                       : u.status === "pending"
                         ? "bg-amber-100 text-amber-800"
                         : "bg-red-100 text-red-800"
-                  }`}
+                    }`}
                 >
                   {u.status === "approved"
                     ? "승인"
@@ -153,15 +163,24 @@ export function AdminPanel() {
                     관리자
                   </span>
                 ) : (
-                  u.status === "approved" && (
+                  <>
+                    {u.status === "approved" && (
+                      <button
+                        onClick={() => handlePromote(u.id)}
+                        className="flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-800 rounded hover:bg-amber-200 text-xs font-medium"
+                      >
+                        <ShieldPlus className="w-3.5 h-3.5" />
+                        관리자 지정
+                      </button>
+                    )}
                     <button
-                      onClick={() => handlePromote(u.id)}
-                      className="flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-800 rounded hover:bg-amber-200 text-xs font-medium"
+                      onClick={() => handleDelete(u.id)}
+                      className="flex items-center gap-1 px-2 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100 text-xs font-medium"
                     >
-                      <ShieldPlus className="w-3.5 h-3.5" />
-                      관리자 지정
+                      <Trash2 className="w-3.5 h-3.5" />
+                      삭제
                     </button>
-                  )
+                  </>
                 )}
                 <span className="text-stone-400 text-xs">
                   {format(new Date(u.createdAt), "PP", { locale: ko })}

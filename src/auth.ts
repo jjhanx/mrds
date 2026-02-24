@@ -21,62 +21,70 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     ...(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET
       ? [Google({
-          clientId: process.env.AUTH_GOOGLE_ID,
-          clientSecret: process.env.AUTH_GOOGLE_SECRET,
-          allowDangerousEmailAccountLinking: true,
-        })]
+        clientId: process.env.AUTH_GOOGLE_ID,
+        clientSecret: process.env.AUTH_GOOGLE_SECRET,
+        allowDangerousEmailAccountLinking: true,
+      })]
       : []),
     ...(process.env.AUTH_NAVER_ID && process.env.AUTH_NAVER_SECRET
       ? [Naver({
-          clientId: process.env.AUTH_NAVER_ID,
-          clientSecret: process.env.AUTH_NAVER_SECRET,
-          allowDangerousEmailAccountLinking: true,
-        })]
+        clientId: process.env.AUTH_NAVER_ID,
+        clientSecret: process.env.AUTH_NAVER_SECRET,
+        allowDangerousEmailAccountLinking: true,
+      })]
       : []),
     ...(process.env.AUTH_KAKAO_ID && process.env.AUTH_KAKAO_SECRET
       ? [Kakao({
-          clientId: process.env.AUTH_KAKAO_ID,
-          clientSecret: process.env.AUTH_KAKAO_SECRET,
-          allowDangerousEmailAccountLinking: true,
-        })]
+        clientId: process.env.AUTH_KAKAO_ID,
+        clientSecret: process.env.AUTH_KAKAO_SECRET,
+        allowDangerousEmailAccountLinking: true,
+        profile(profile) {
+          return {
+            id: profile.id.toString(),
+            name: profile.kakao_account?.profile?.nickname || profile.properties?.nickname || "카카오 유저",
+            email: profile.kakao_account?.email,
+            image: profile.kakao_account?.profile?.profile_image_url || profile.properties?.profile_image,
+          };
+        },
+      })]
       : []),
     // 개발용: OAuth 미설정 시 테스트 로그인 (비밀번호: test)
     ...(!hasOAuth
       ? [
-          Credentials({
-            name: "개발용 로그인",
-            credentials: {
-              email: { label: "이메일", type: "email" },
-              password: { label: "비밀번호", type: "password" },
-            },
-            async authorize(credentials) {
-              if (credentials?.password === "test" && credentials?.email) {
-                const email = credentials.email as string;
-                const userCount = await prisma.user.count();
-                const isFirst = userCount === 0;
-                const user = await prisma.user.upsert({
-                  where: { email },
-                  update: {},
-                  create: {
-                    email,
-                    name: email.split("@")[0],
-                    status: isFirst ? "approved" : "pending",
-                    role: isFirst ? "admin" : "member",
-                  },
-                });
-                return {
-                  id: user.id,
-                  name: user.name,
-                  email: user.email,
-                  image: user.image,
-                  status: user.status,
-                  role: user.role,
-                };
-              }
-              return null;
-            },
-          }),
-        ]
+        Credentials({
+          name: "개발용 로그인",
+          credentials: {
+            email: { label: "이메일", type: "email" },
+            password: { label: "비밀번호", type: "password" },
+          },
+          async authorize(credentials) {
+            if (credentials?.password === "test" && credentials?.email) {
+              const email = credentials.email as string;
+              const userCount = await prisma.user.count();
+              const isFirst = userCount === 0;
+              const user = await prisma.user.upsert({
+                where: { email },
+                update: {},
+                create: {
+                  email,
+                  name: email.split("@")[0],
+                  status: isFirst ? "approved" : "pending",
+                  role: isFirst ? "admin" : "member",
+                },
+              });
+              return {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                image: user.image,
+                status: user.status,
+                role: user.role,
+              };
+            }
+            return null;
+          },
+        }),
+      ]
       : []),
   ],
   session: {
