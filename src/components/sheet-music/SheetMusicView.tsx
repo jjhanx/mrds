@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ArrowLeft, Printer, Download, Share2, FileDown, Video } from "lucide-react";
+import { VideoPlayer } from "@/components/board/VideoPlayer";
 
 interface SheetMusicViewProps {
   sheetMusic: {
@@ -19,6 +20,7 @@ interface SheetMusicViewProps {
 export function SheetMusicView({ sheetMusic }: SheetMusicViewProps) {
   const isPdf = sheetMusic.filepath.toLowerCase().endsWith(".pdf");
   const isImage = /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(sheetMusic.filepath);
+  const isVideo = /\.(mp4|webm|mov|avi|mkv|m4v|ogv|wmv)(\?|$)/i.test(sheetMusic.filepath);
   const isExternal = sheetMusic.filepath.startsWith("http");
   const hasNwc = sheetMusic.nwcFiles && sheetMusic.nwcFiles.length > 0;
   const hasVideo = sheetMusic.videos && sheetMusic.videos.length > 0;
@@ -139,9 +141,11 @@ export function SheetMusicView({ sheetMusic }: SheetMusicViewProps) {
           </div>
         )}
 
-        {/* 악보 뷰어 */}
+        {/* 악보/동영상 뷰어 */}
         <div className="border-t border-stone-100 pt-6">
-          <h3 className="font-medium text-stone-700 mb-3">악보 보기</h3>
+          <h3 className="font-medium text-stone-700 mb-3">
+            {isVideo ? "동영상 보기" : "악보 보기"}
+          </h3>
           <p className="text-sm text-stone-500 mb-3">
             {isPdf && "PDF는 브라우저 기본 뷰어로 페이지를 넘겨보실 수 있습니다."}
           </p>
@@ -167,6 +171,20 @@ export function SheetMusicView({ sheetMusic }: SheetMusicViewProps) {
                 alt={sheetMusic.title}
                 className="max-w-full h-auto rounded-lg"
               />
+            ) : isVideo ? (
+              <div className="max-w-2xl">
+                <VideoPlayer src={sheetMusic.filepath} className="w-full aspect-video" />
+                <a
+                  href={sheetMusic.filepath}
+                  download
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 mt-2 text-amber-600 hover:text-amber-700 text-sm"
+                >
+                  <Download className="w-4 h-4" />
+                  다운로드
+                </a>
+              </div>
             ) : (
               <a
                 href={sheetMusic.filepath}
