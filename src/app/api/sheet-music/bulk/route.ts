@@ -74,7 +74,7 @@ export async function POST(request: Request) {
       if (mime.startsWith("video/")) {
         const transcoded = await transcodeToH264(buffer, mime);
         if (transcoded && transcoded.length > 0) {
-          buffer = transcoded;
+          buffer = Buffer.from(transcoded);
           outExt = "mp4";
         }
       }
