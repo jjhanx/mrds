@@ -6,6 +6,69 @@ import { signIn } from "next-auth/react";
 import { Music2 } from "lucide-react";
 import { isInAppBrowser, tryOpenExternalBrowser } from "@/lib/browser";
 
+function CustomLoginForm() {
+  const [name, setName] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || !password.trim()) return;
+    setLoading(true);
+    setError("");
+
+    const res = await signIn("custom", {
+      name,
+      password,
+      redirect: false,
+    });
+
+    if (res?.ok) {
+      window.location.href = "/";
+    } else {
+      setLoading(false);
+      setError("비밀번호가 일치하지 않거나, 이미 사용 중인 이름입니다.");
+    }
+  };
+
+  return (
+    <div className="mt-8 pt-6 border-t border-amber-200/60">
+      <div className="text-center mb-4">
+        <h2 className="text-sm font-semibold text-stone-700">일반 회원가입 / 로그인</h2>
+        <p className="text-xs text-stone-500 mt-1">소셜 계정이 없다면 이름과 비밀번호를 입력해 바로 시작하세요.</p>
+      </div>
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="이름 (소셜 가입자와 겹치지 않게 입력)"
+          className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none text-sm"
+          maxLength={30}
+          required
+        />
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="비밀번호"
+          className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none text-sm"
+          required
+        />
+        {error && <p className="text-xs text-red-600 text-center">{error}</p>}
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full py-3 bg-amber-600 text-white rounded-xl hover:bg-amber-700 disabled:opacity-50 text-sm font-medium transition-colors"
+        >
+          {loading ? "처리 중..." : "로그인 / 회원가입"}
+        </button>
+      </form>
+    </div>
+  );
+}
+
 function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -92,6 +155,8 @@ function LoginForm() {
           카카오로 로그인
         </button>
       </div>
+
+      <CustomLoginForm />
 
       <p className="mt-6 text-center text-sm text-stone-500">
         로그인하면 서비스 이용약관 및 개인정보처리방침에 동의하게 됩니다.

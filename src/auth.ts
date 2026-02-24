@@ -5,6 +5,7 @@ import Kakao from "next-auth/providers/kakao";
 import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
+import crypto from "crypto";
 
 const hasOAuth =
   (process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET) ||
@@ -48,10 +49,52 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         },
       })]
       : []),
-    // 개발용: OAuth 미설정 시 테스트 로그인 (비밀번호: test)
+    // 일반 사용자: 이름 + 비밀번호 가입/로그인 제공
+    Credentials({
+      id: "custom",
+      name: "일반 회원가입/로그인",
+      credentials: {
+        name: { label: "이름", type: "text" },
+        password: { label: "비밀번호", type: "password" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.name || !credentials?.password) return null;
+        const name = (credentials.name as string).trim();
+        const password = credentials.password as string;
+
+        const pwdHash = crypto.createHash('sha256').update(password).digest('hex');
+
+        // Find existing custom user with this name
+        let user = await prisma.user.findFirst({
+          where: { name, password: { not: null } }
+        });
+
+        if (!user) {
+          // Create new custom user if name is not taken by another custom user
+          user = await prisma.user.create({
+            data: {
+              name,
+              password: pwdHash,
+              status: "pending",
+              role: "member"
+            }
+          });
+          return { id: user.id, name: user.name, status: user.status, role: user.role };
+        } else {
+          // Verify password
+          if (user.password === pwdHash) {
+            return { id: user.id, name: user.name, status: user.status, role: user.role };
+          } else {
+            throw new Error("비밀번호가 일치하지 않습니다.");
+          }
+        }
+      }
+    }),
+    // 개발용: 첫 사용자 자동 관리자 등
     ...(!hasOAuth
       ? [
         Credentials({
+          id: "dev",
           name: "개발용 로그인",
           credentials: {
             email: { label: "이메일", type: "email" },
