@@ -50,6 +50,7 @@ interface SheetMusicItem {
   title: string;
   filepath: string;
   folderId: string | null;
+  folder?: { slug: string } | null;
   createdAt?: string;
   videos: { id: string; part: string; videoUrl: string }[];
   nwcFiles: { id: string; filepath: string }[];
@@ -587,14 +588,18 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
                       동영상
                     </span>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => setAttachModal({ id: item.id, title: item.title })}
-                    className="p-2 text-stone-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg"
-                    title="NWC/동영상 첨부"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
+                  {!["choir", "art-song", "nwc"].includes(
+                    currentFolder?.slug ?? item.folder?.slug ?? ""
+                  ) && (
+                    <button
+                      type="button"
+                      onClick={() => setAttachModal({ id: item.id, title: item.title })}
+                      className="p-2 text-stone-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg"
+                      title="NWC/동영상 첨부"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => setRenameModal({ id: item.id, title: item.title })}
