@@ -61,7 +61,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const name = (credentials.name as string).trim();
         const password = credentials.password as string;
 
-        const pwdHash = crypto.createHash('sha256').update(password).digest('hex');
+        // Generate SHA-256 hash using Web Crypto API (supported in Edge)
+        const msgUint8 = new TextEncoder().encode(password);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const pwdHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
         // Find existing custom user with this name
         let user = await prisma.user.findFirst({
