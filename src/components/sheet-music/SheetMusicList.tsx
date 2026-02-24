@@ -6,6 +6,10 @@ import { useSearchParams } from "next/navigation";
 import { isFileAllowed, isFileSizeAllowed, getFolderHint, getMaxFileSizeLabel } from "@/constants/sheet-music";
 import {
   FileMusic,
+  FileText,
+  Image,
+  Video,
+  Archive,
   Folder,
   Plus,
   Pencil,
@@ -16,6 +20,22 @@ import {
   Share2,
   X,
 } from "lucide-react";
+
+function getFileIcon(filepath: string) {
+  const ext = (filepath.split(".").pop() || "").toLowerCase();
+  const videoExt = ["mp4", "webm", "mov", "avi", "mkv", "m4v", "ogv", "wmv"];
+  const imageExt = ["jpg", "jpeg", "png", "gif", "webp"];
+  const archiveExt = ["zip", "rar", "7z", "tar", "gz"];
+  if (videoExt.includes(ext)) return { Icon: Video, color: "text-violet-600" };
+  if (ext === "pdf") return { Icon: FileText, color: "text-red-600" };
+  if (imageExt.includes(ext)) return { Icon: Image, color: "text-emerald-600" };
+  if (archiveExt.includes(ext)) return { Icon: Archive, color: "text-amber-600" };
+  if (ext === "nwc") return { Icon: FileMusic, color: "text-amber-600" };
+  if (["doc", "docx", "txt"].includes(ext)) return { Icon: FileText, color: "text-blue-600" };
+  if (["xls", "xlsx"].includes(ext)) return { Icon: FileText, color: "text-green-600" };
+  if (["ppt", "pptx"].includes(ext)) return { Icon: FileText, color: "text-orange-600" };
+  return { Icon: FileMusic, color: "text-amber-600" };
+}
 
 interface SheetMusicFolder {
   id: string;
@@ -544,7 +564,10 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
                   onChange={() => toggleSelect(item.id)}
                   className="rounded flex-shrink-0"
                 />
-                <FileMusic className="w-6 h-6 text-amber-600 flex-shrink-0" />
+                {(() => {
+                  const { Icon, color } = getFileIcon(item.filepath);
+                  return <Icon className={`w-6 h-6 flex-shrink-0 ${color}`} />;
+                })()}
                 <div className="min-w-0 flex-1">
                   <Link
                     href={`/sheet-music/${item.id}`}
