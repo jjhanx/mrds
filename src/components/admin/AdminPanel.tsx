@@ -65,9 +65,11 @@ export function AdminPanel() {
     const res = await fetch(`/api/admin/users/${id}`, {
       method: "DELETE",
     });
-    if (res.ok) fetchUsers();
-    else {
-      alert("회원 삭제에 실패했습니다.");
+    if (res.ok) {
+      fetchUsers();
+    } else {
+      const errorMsg = await res.text();
+      alert(errorMsg || "회원 삭제에 실패했습니다.");
     }
   };
 
@@ -179,30 +181,27 @@ export function AdminPanel() {
                       ? "대기"
                       : "거절"}
                 </span>
-                {u.role === "admin" ? (
+                {u.role === "admin" && (
                   <span className="text-sm bg-stone-200 text-stone-700 px-2 py-0.5 rounded">
                     관리자
                   </span>
-                ) : (
-                  <>
-                    {u.status === "approved" && (
-                      <button
-                        onClick={() => handlePromote(u.id)}
-                        className="flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-800 rounded hover:bg-amber-200 text-xs font-medium"
-                      >
-                        <ShieldPlus className="w-3.5 h-3.5" />
-                        관리자 지정
-                      </button>
-                    )}
-                    <button
-                      onClick={() => handleDelete(u.id)}
-                      className="flex items-center gap-1 px-2 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100 text-xs font-medium"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      삭제
-                    </button>
-                  </>
                 )}
+                {u.role !== "admin" && u.status === "approved" && (
+                  <button
+                    onClick={() => handlePromote(u.id)}
+                    className="flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-800 rounded hover:bg-amber-200 text-xs font-medium"
+                  >
+                    <ShieldPlus className="w-3.5 h-3.5" />
+                    관리자 지정
+                  </button>
+                )}
+                <button
+                  onClick={() => handleDelete(u.id)}
+                  className="flex items-center gap-1 px-2 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100 text-xs font-medium"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  삭제
+                </button>
                 <span className="text-stone-400 text-xs">
                   {format(new Date(u.createdAt), "PP", { locale: ko })}
                 </span>

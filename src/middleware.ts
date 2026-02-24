@@ -4,7 +4,7 @@ export default auth((req) => {
   const { pathname } = req.nextUrl;
   const isLoggedIn = !!req.auth;
   const user = req.auth?.user as { status?: string; role?: string } | undefined;
-  const status = user?.status ?? "approved";
+  const status = user?.status ?? "pending";
   const role = user?.role ?? "member";
 
   // 공개 경로

@@ -113,7 +113,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       const userId = token?.sub as string;
       if (session.user && userId) {
         session.user.id = userId;
-        session.user.status = (token?.status as string) ?? "approved";
+        session.user.status = (token?.status as string) ?? "pending";
         session.user.role = (token?.role as string) ?? "member";
       }
       return session;
@@ -126,7 +126,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           where: { id: user.id },
           select: { status: true, role: true },
         });
-        token.status = dbUser?.status ?? (user as { status?: string })?.status ?? "approved";
+        token.status = dbUser?.status ?? (user as { status?: string })?.status ?? "pending";
         token.role = dbUser?.role ?? (user as { role?: string })?.role ?? "member";
       }
       return token;
