@@ -291,7 +291,51 @@ sudo systemctl reload nginx
 
 ---
 
-## 8. Failed to parse body as FormData
+## 8. 악보 자료실 동영상 업로드 504 (Gateway Timeout)
+
+동영상 업로드 시 **504 Bad Gateway**가 나면, nginx의 프록시 타임아웃(기본 60초)에 걸린 것입니다. ffmpeg 트랜스코딩은 수 분 걸릴 수 있습니다.
+
+### 해결 방법
+
+**1) nginx 설정 파일 수정**
+
+```bash
+sudo nano /etc/nginx/sites-available/mrds
+```
+
+`location /` 블록 안에 다음을 추가합니다:
+
+```nginx
+location / {
+    proxy_pass http://127.0.0.1:3001;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection 'upgrade';
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_cache_bypass $http_upgrade;
+
+    # 동영상 업로드·트랜스코딩 대기 (10분)
+    proxy_connect_timeout 600;
+    proxy_send_timeout 600;
+    proxy_read_timeout 600;
+}
+```
+
+**2) nginx 적용**
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+**3) 다시 업로드 시도**
+
+---
+
+## 9. Failed to parse body as FormData
 
 이미지 붙여넣기 후 등록 시 **Failed to parse body as FormData** 에러가 나면, Next.js가 body를 버퍼링할 때 크기 제한(기본 10MB)에 걸린 것입니다.
 
