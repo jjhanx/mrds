@@ -31,9 +31,9 @@ export function VideoPlayer({ src, className = "" }: VideoPlayerProps) {
       >
         <p className="text-sm font-medium">동영상을 재생할 수 없습니다</p>
         <p className="text-xs text-stone-400 text-center max-w-xs mt-1">
-          업로드 시 서버에서 H.264로 자동 변환됩니다(ffmpeg 필요).
+          PC에서는 H.264 MP4가 필요합니다. 업로드 시 ffmpeg으로 변환됩니다.
           <br />
-          관리자: 서버에 ffmpeg 설치 후 새로 업로드해 보세요.
+          관리자: ffmpeg 설치 후 새로 업로드. .env에 FFMPEG_PATH=/usr/bin/ffmpeg 추가 시도.
         </p>
         <a
           href={src}

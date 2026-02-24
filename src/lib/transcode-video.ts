@@ -1,12 +1,15 @@
 /**
  * 동영상을 H.264 MP4로 변환 (iPhone MOV/HEVC → PC 호환)
  * ffmpeg가 서버에 설치되어 있어야 함.
+ * PM2 등에서 PATH가 제한적이면 .env에 FFMPEG_PATH=/usr/bin/ffmpeg 설정.
  */
 
 import { spawn } from "child_process";
 import { writeFile, unlink } from "fs/promises";
 import { join } from "path";
 import { tmpdir } from "os";
+
+const FFMPEG_BIN = process.env.FFMPEG_PATH || "ffmpeg";
 
 export async function transcodeToH264(
   inputBuffer: Buffer,
@@ -23,7 +26,7 @@ export async function transcodeToH264(
     await writeFile(inputPath, inputBuffer);
     await new Promise<void>((resolve, reject) => {
       const proc = spawn(
-        "ffmpeg",
+        FFMPEG_BIN,
         [
           "-i",
           inputPath,
@@ -40,7 +43,7 @@ export async function transcodeToH264(
           "-y",
           outputPath,
         ],
-        { stdio: ["ignore", "pipe", "pipe"] }
+        { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, PATH: "/usr/bin:/usr/local/bin:" + (process.env.PATH || "") } }
       );
       let stderr = "";
       proc.stderr?.on("data", (d) => (stderr += d.toString()));
@@ -59,7 +62,7 @@ export async function transcodeToH264(
   } catch (e) {
     await unlink(inputPath).catch(() => {});
     await unlink(outputPath).catch(() => {});
-    console.warn("Video transcode failed (ffmpeg may be missing):", e);
+    console.error("Video transcode failed:", e instanceof Error ? e.message : String(e));
     return null;
   }
 }

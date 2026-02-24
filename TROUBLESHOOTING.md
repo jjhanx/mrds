@@ -335,7 +335,42 @@ sudo systemctl reload nginx
 
 ---
 
-## 9. Failed to parse body as FormData
+## 9. 동영상 업로드됐지만 "재생할 수 없습니다" (ffmpeg 있음)
+
+ffmpeg이 설치되어 있는데도 동영상이 재생되지 않으면, **PM2 환경에서 ffmpeg 실행 파일을 찾지 못하는 경우**입니다.
+
+### 해결 방법
+
+**1) .env에 ffmpeg 절대 경로 추가**
+
+```bash
+nano ~/mrds/.env
+```
+
+맨 아래에 추가:
+```env
+FFMPEG_PATH="/usr/bin/ffmpeg"
+```
+
+(경로 확인: `which ffmpeg`)
+
+**2) ecosystem.config.cjs에 PATH 추가** (이미 반영됨)
+
+`env`에 `PATH: "/usr/bin:/usr/local/bin:..."`가 있으면 ffmpeg을 찾을 수 있습니다.
+
+**3) PM2 재시작**
+
+```bash
+pm2 restart mrds
+```
+
+**4) 동영상 다시 업로드**
+
+기존에 업로드된 파일은 원본 형식이므로, 수정 후 **새로 업로드**해야 H.264로 변환됩니다.
+
+---
+
+## 10. Failed to parse body as FormData
 
 이미지 붙여넣기 후 등록 시 **Failed to parse body as FormData** 에러가 나면, Next.js가 body를 버퍼링할 때 크기 제한(기본 10MB)에 걸린 것입니다.
 

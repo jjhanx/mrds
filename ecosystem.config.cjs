@@ -13,6 +13,7 @@ module.exports = {
       env: {
         NODE_ENV: "production",
         PORT: 3001,
+        PATH: "/usr/bin:/usr/local/bin:" + (process.env.PATH || ""),
       },
     },
   ],
