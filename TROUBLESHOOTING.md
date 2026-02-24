@@ -238,7 +238,18 @@ pm2 restart mrds
 
 ---
 
-## 6. PM2 로그
+## 6. 403 disallowed_useragent (모바일 Chrome 이외 브라우저)
+
+삼성 인터넷, Firefox 모바일 등에서 Google 로그인 시 **"요청이 Google 정책을 준수하지 않습니다"** / **403 disallowed_useragent** 오류가 발생합니다. Google의 "보안 브라우저" 정책 때문입니다.
+
+### 해결 방법 (사용자 안내)
+
+- **Chrome 브라우저**를 사용해 주세요.
+- 카카오톡·네이버 앱 내 브라우저에서 접속한 경우: **주소창에 URL 직접 입력**하거나 **Chrome에서 열기**로 접속해 주세요.
+
+---
+
+## 7. PM2 로그
 
 ```bash
 pm2 logs mrds --lines 30
@@ -248,7 +259,7 @@ pm2 logs mrds --lines 30
 
 ---
 
-## 7. 413 Request Entity Too Large (이미지/파일 업로드 실패)
+## 8. 413 Request Entity Too Large (이미지/파일 업로드 실패)
 
 게시글에 이미지 붙여넣기 후 등록 시 **413** 에러가 나면 nginx의 업로드 용량 제한 때문입니다.
 
@@ -291,7 +302,7 @@ sudo systemctl reload nginx
 
 ---
 
-## 8. 악보 자료실 동영상 업로드 504 (Gateway Timeout)
+## 9. 악보 자료실 동영상 업로드 504 (Gateway Timeout)
 
 동영상 업로드 시 **504 Bad Gateway**가 나면, nginx의 프록시 타임아웃(기본 60초)에 걸린 것입니다. ffmpeg 트랜스코딩은 수 분 걸릴 수 있습니다.
 
@@ -335,7 +346,7 @@ sudo systemctl reload nginx
 
 ---
 
-## 9. 동영상 업로드됐지만 "재생할 수 없습니다" (ffmpeg 있음)
+## 10. 동영상 업로드됐지만 "재생할 수 없습니다" (ffmpeg 있음)
 
 ffmpeg이 설치되어 있는데도 동영상이 재생되지 않으면, **PM2 환경에서 ffmpeg 실행 파일을 찾지 못하는 경우**입니다.
 
@@ -370,7 +381,7 @@ pm2 restart mrds
 
 ---
 
-## 10. Failed to parse body as FormData
+## 11. Failed to parse body as FormData
 
 이미지 붙여넣기 후 등록 시 **Failed to parse body as FormData** 에러가 나면, Next.js가 body를 버퍼링할 때 크기 제한(기본 10MB)에 걸린 것입니다.
 

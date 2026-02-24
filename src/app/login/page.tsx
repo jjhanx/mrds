@@ -12,6 +12,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const errorParam = searchParams.get("error");
   const isOAuthAccountNotLinked = errorParam === "OAuthAccountNotLinked";
+  const isDisallowedUserAgent = errorParam === "disallowed_useragent";
 
   const handleDevLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +34,11 @@ function LoginForm() {
       {isOAuthAccountNotLinked && (
         <div className="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
           이 이메일은 이미 다른 로그인 방식(다른 OAuth 또는 개발용 로그인)으로 등록되어 있습니다. Google로 다시 시도해 보시거나, 처음 가입할 때 사용한 방식으로 로그인해 주세요.
+        </div>
+      )}
+      {isDisallowedUserAgent && (
+        <div className="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+          Google 로그인은 일부 브라우저에서 제한됩니다. <strong>Chrome 브라우저</strong>를 사용하거나, 앱/카카오톡 내 브라우저에서는 <strong>주소창에 URL 입력 후 접속</strong>해 주세요.
         </div>
       )}
       <div className="space-y-3">
@@ -82,6 +88,9 @@ function LoginForm() {
 
       <p className="mt-6 text-center text-sm text-stone-500">
         로그인하면 서비스 이용약관 및 개인정보처리방침에 동의하게 됩니다.
+      </p>
+      <p className="mt-2 text-center text-xs text-stone-400">
+        모바일에서 Google 로그인 시 Chrome 브라우저 사용을 권장합니다.
       </p>
 
       <details className="mt-6 pt-6 border-t border-stone-200">
