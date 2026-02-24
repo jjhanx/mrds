@@ -172,8 +172,8 @@ export function SheetMusicView({ sheetMusic }: SheetMusicViewProps) {
                 className="max-w-full h-auto rounded-lg"
               />
             ) : isVideo ? (
-              <div className="max-w-2xl">
-                <VideoPlayer src={sheetMusic.filepath} className="w-full aspect-video" />
+              <div className="my-2 max-w-full">
+                <VideoPlayer src={sheetMusic.filepath} className="w-full aspect-video max-w-2xl" />
                 <a
                   href={sheetMusic.filepath}
                   download

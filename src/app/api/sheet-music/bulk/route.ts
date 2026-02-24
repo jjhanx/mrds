@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { isFileAllowed, isFileSizeAllowed, getFolderHint, getMaxFileSizeLabel } from "@/constants/sheet-music";
+import { transcodeToH264 } from "@/lib/transcode-video";
 import { NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
@@ -66,9 +67,19 @@ export async function POST(request: Request) {
     const results: { id: string; title: string; filepath: string }[] = [];
 
     for (const file of validFiles) {
-      const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+      let bytes = await file.arrayBuffer();
+      let buffer = Buffer.from(bytes);
+      let outExt = (file.name.match(/\.([^.]+)$/)?.[1] || "mp4").toLowerCase();
+      const mime = file.type || (outExt === "mov" ? "video/quicktime" : `video/${outExt}`);
+      if (mime.startsWith("video/")) {
+        const transcoded = await transcodeToH264(buffer, mime);
+        if (transcoded && transcoded.length > 0) {
+          buffer = transcoded;
+          outExt = "mp4";
+        }
+      }
+      const baseName = file.name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9.-]/g, "_");
+      const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${baseName}.${outExt}`;
       const fullPath = path.join(uploadDir, filename);
       await writeFile(fullPath, buffer);
       const filepath = `/uploads/sheet-music/${filename}`;
