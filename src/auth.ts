@@ -5,7 +5,6 @@ import Kakao from "next-auth/providers/kakao";
 import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
-import crypto from "crypto";
 
 const hasOAuth =
   (process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET) ||

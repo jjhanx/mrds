@@ -107,22 +107,20 @@ export function BoardList({ userRole }: BoardListProps) {
                 )}
               </div>
             </div>
+            {userRole === "admin" && (
+              <button
+                onClick={(e) => handleToggleNotice(e, post.id)}
+                className={`shrink-0 text-xs px-2 py-1 rounded border transition-colors ${post.isNotice
+                    ? "bg-red-50 border-red-200 text-red-600 hover:bg-red-100"
+                    : "bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100"
+                  }`}
+              >
+                {post.isNotice ? "공지 내리기" : "공지로 등록"}
+              </button>
+            )}
           </div>
-          {userRole === "admin" && (
-            <button
-              onClick={(e) => handleToggleNotice(e, post.id)}
-              className={`shrink-0 text-xs px-2 py-1 rounded border transition-colors ${post.isNotice
-                  ? "bg-red-50 border-red-200 text-red-600 hover:bg-red-100"
-                  : "bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100"
-                }`}
-            >
-              {post.isNotice ? "공지 내리기" : "공지로 등록"}
-            </button>
-          )}
-        </div>
         </Link>
-  ))
-}
-    </div >
+      ))}
+    </div>
   );
 }
