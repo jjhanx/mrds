@@ -21,10 +21,11 @@ export async function PATCH(request: Request) {
 
   const body = await request.json();
   const introMessage = (body.introMessage as string)?.trim().slice(0, 500) || null;
+  const name = (body.name as string)?.trim().slice(0, 30) || (user.name ?? null);
 
   await prisma.user.update({
     where: { id: session.user.id },
-    data: { introMessage },
+    data: { introMessage, name },
   });
 
   return NextResponse.json({ success: true });

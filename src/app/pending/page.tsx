@@ -8,9 +8,9 @@ export default async function PendingPage() {
   const session = await auth();
   const user = session?.user?.id
     ? await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: { introMessage: true },
-      })
+      where: { id: session.user.id },
+      select: { introMessage: true, name: true },
+    })
     : null;
 
   return (
@@ -29,7 +29,7 @@ export default async function PendingPage() {
           </p>
 
           <div className="mb-6 pt-6 border-t border-stone-100">
-            <IntroForm initialIntro={user?.introMessage ?? null} />
+            <IntroForm initialIntro={user?.introMessage ?? null} initialName={user?.name ?? null} />
           </div>
 
           <div className="text-center">

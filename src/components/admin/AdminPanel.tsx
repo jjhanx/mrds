@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
-import { UserCheck, UserX, Loader2, ShieldPlus, Trash2 } from "lucide-react";
+import { UserCheck, UserX, Loader2, ShieldPlus, Trash2, Edit2 } from "lucide-react";
 
 interface User {
   id: string;
@@ -69,6 +69,20 @@ export function AdminPanel() {
     else {
       alert("회원 삭제에 실패했습니다.");
     }
+  };
+
+  const handleEditName = async (id: string, currentName: string | null) => {
+    const newName = window.prompt("새로운 이름을 입력하세요:", currentName || "");
+    if (newName === null || newName.trim() === currentName) return;
+
+    const res = await fetch(`/api/admin/users/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: newName.trim() }),
+    });
+
+    if (res.ok) fetchUsers();
+    else alert("이름 변경에 실패했습니다.");
   };
 
   if (loading) {
@@ -139,17 +153,24 @@ export function AdminPanel() {
               key={u.id}
               className="flex items-center justify-between p-4 hover:bg-stone-50"
             >
-              <div>
+              <div className="flex items-center gap-2">
                 <span className="font-medium">{u.name || "이름 없음"}</span>
+                <button
+                  onClick={() => handleEditName(u.id, u.name)}
+                  className="text-stone-400 hover:text-amber-600 transition-colors"
+                  title="이름 수정"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                </button>
                 <span className="text-stone-500 text-sm ml-2">{u.email}</span>
               </div>
               <div className="flex items-center gap-3">
                 <span
                   className={`text-sm px-2 py-0.5 rounded ${u.status === "approved"
-                      ? "bg-green-100 text-green-800"
-                      : u.status === "pending"
-                        ? "bg-amber-100 text-amber-800"
-                        : "bg-red-100 text-red-800"
+                    ? "bg-green-100 text-green-800"
+                    : u.status === "pending"
+                      ? "bg-amber-100 text-amber-800"
+                      : "bg-red-100 text-red-800"
                     }`}
                 >
                   {u.status === "approved"
