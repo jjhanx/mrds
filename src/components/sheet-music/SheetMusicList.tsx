@@ -578,28 +578,35 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
                   </Link>
                 </div>
                 <div className="flex items-center gap-1">
-                  {(item.nwcFiles?.length ?? 0) > 0 && (
-                    <span className="px-2 py-0.5 text-xs bg-stone-100 text-stone-600 rounded">
-                      NWC
-                    </span>
-                  )}
-                  {(item.videos?.length ?? 0) > 0 && (
-                    <span className="px-2 py-0.5 text-xs bg-amber-100 text-amber-700 rounded">
-                      동영상
-                    </span>
-                  )}
-                  {!["choir", "art-song", "nwc"].includes(
-                    currentFolder?.slug ?? item.folder?.slug ?? ""
-                  ) && (
-                    <button
-                      type="button"
-                      onClick={() => setAttachModal({ id: item.id, title: item.title })}
-                      className="p-2 text-stone-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg"
-                      title="NWC/동영상 첨부"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
-                  )}
+                  {(() => {
+                    const noAttach = ["choir", "art-song", "nwc"].includes(
+                      currentFolder?.slug ?? item.folder?.slug ?? ""
+                    );
+                    return (
+                      <>
+                        {!noAttach && (item.nwcFiles?.length ?? 0) > 0 && (
+                          <span className="px-2 py-0.5 text-xs bg-stone-100 text-stone-600 rounded">
+                            NWC
+                          </span>
+                        )}
+                        {!noAttach && (item.videos?.length ?? 0) > 0 && (
+                          <span className="px-2 py-0.5 text-xs bg-amber-100 text-amber-700 rounded">
+                            동영상
+                          </span>
+                        )}
+                        {!noAttach && (
+                          <button
+                            type="button"
+                            onClick={() => setAttachModal({ id: item.id, title: item.title })}
+                            className="p-2 text-stone-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg"
+                            title="NWC/동영상 첨부"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        )}
+                      </>
+                    );
+                  })()}
                   <button
                     type="button"
                     onClick={() => setRenameModal({ id: item.id, title: item.title })}

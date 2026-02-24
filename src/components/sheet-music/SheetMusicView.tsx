@@ -24,6 +24,9 @@ export function SheetMusicView({ sheetMusic }: SheetMusicViewProps) {
   const isExternal = sheetMusic.filepath.startsWith("http");
   const hasNwc = sheetMusic.nwcFiles && sheetMusic.nwcFiles.length > 0;
   const hasVideo = sheetMusic.videos && sheetMusic.videos.length > 0;
+  const hideAttach = ["choir", "art-song", "nwc"].includes(
+    (sheetMusic.folder?.slug ?? "").toLowerCase()
+  );
 
   const handlePrint = () => {
     if (isExternal) {
@@ -109,8 +112,8 @@ export function SheetMusicView({ sheetMusic }: SheetMusicViewProps) {
           </button>
         </div>
 
-        {/* NWC / 연습 동영상 */}
-        {(hasNwc || hasVideo) && (
+        {/* NWC / 연습 동영상 - 합창곡·애창곡·NWC 폴더에서는 숨김 */}
+        {!hideAttach && (hasNwc || hasVideo) && (
           <div className="flex flex-wrap gap-2 mb-6">
             {hasNwc &&
               sheetMusic.nwcFiles!.map((nwc) => (
