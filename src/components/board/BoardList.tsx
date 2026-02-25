@@ -12,6 +12,7 @@ interface Post {
   content: string;
   createdAt: string;
   isNotice?: boolean;
+  isFixed?: boolean;
   author: { name: string | null };
   attachments: { id: string }[];
 }
@@ -46,6 +47,17 @@ export function BoardList({ userRole }: BoardListProps) {
       fetchPosts();
     } else {
       alert("공지 설정에 실패했습니다.");
+    }
+  };
+
+  const handleToggleFixed = async (e: React.MouseEvent, postId: string) => {
+    e.preventDefault(); // prevent navigation
+    if (!confirm("이 글의 고정 상태를 변경하시겠습니까?")) return;
+    const res = await fetch(`/api/posts/${postId}/fixed`, { method: "PATCH" });
+    if (res.ok) {
+      fetchPosts();
+    } else {
+      alert("고정 설정에 실패했습니다.");
     }
   };
 
@@ -86,6 +98,11 @@ export function BoardList({ userRole }: BoardListProps) {
                     공지
                   </span>
                 )}
+                {post.isFixed && (
+                  <span className="shrink-0 px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-600">
+                    고정
+                  </span>
+                )}
                 <h2 className="font-semibold text-stone-800 truncate">
                   {post.title}
                 </h2>
@@ -108,15 +125,26 @@ export function BoardList({ userRole }: BoardListProps) {
               </div>
             </div>
             {userRole === "admin" && (
-              <button
-                onClick={(e) => handleToggleNotice(e, post.id)}
-                className={`shrink-0 text-xs px-2 py-1 rounded border transition-colors ${post.isNotice
+              <div className="shrink-0 flex flex-col gap-2">
+                <button
+                  onClick={(e) => handleToggleNotice(e, post.id)}
+                  className={`text-xs px-2 py-1 rounded border transition-colors ${post.isNotice
                     ? "bg-red-50 border-red-200 text-red-600 hover:bg-red-100"
                     : "bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100"
-                  }`}
-              >
-                {post.isNotice ? "공지 내리기" : "공지로 등록"}
-              </button>
+                    }`}
+                >
+                  {post.isNotice ? "공지 내리기" : "공지로 등록"}
+                </button>
+                <button
+                  onClick={(e) => handleToggleFixed(e, post.id)}
+                  className={`text-xs px-2 py-1 rounded border transition-colors ${post.isFixed
+                    ? "bg-blue-50 border-blue-200 text-blue-600 hover:bg-blue-100"
+                    : "bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100"
+                    }`}
+                >
+                  {post.isFixed ? "고정 내리기" : "고정으로 등록"}
+                </button>
+              </div>
             )}
           </div>
         </Link>
