@@ -3,7 +3,7 @@ import { Navbar } from "@/components/Navbar";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { AlertCircle, ChevronRight, Pin } from "lucide-react";
+import { AlertCircle, ChevronRight, Pin, MoreHorizontal } from "lucide-react";
 import { HeroImage } from "@/components/HeroImage";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
@@ -99,18 +99,13 @@ export default async function HomePage() {
                       >
                         <div className="flex flex-col gap-2 p-4 border-b border-stone-100 bg-stone-50/50">
                           <div className="flex items-start justify-between gap-3">
-                            <h3 className="font-bold text-base text-stone-800 line-clamp-1 leading-snug">{post.title}</h3>
+                            <h3 className="font-bold text-base text-stone-800 line-clamp-1 leading-snug pr-6">{post.title}</h3>
                             <span className="shrink-0 flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-600 outline outline-1 outline-blue-200 rounded-md text-xs font-bold tracking-wide">
                               <Pin className="w-3 h-3" /> 고정
                             </span>
                           </div>
-                          <div className="flex items-center gap-2 text-xs text-stone-500 font-medium">
-                            <span>{post.author.name || "관리자"}</span>
-                            <span>·</span>
-                            <span>{format(new Date(post.createdAt), "yyyy.MM.dd", { locale: ko })}</span>
-                          </div>
                         </div>
-                        <div className="p-4 overflow-hidden flex-1 relative">
+                        <div className="p-4 overflow-hidden flex-1 relative group">
                           <div
                             className="prose prose-sm prose-stone max-w-none 
                                        [&_img]:hidden [&_iframe]:hidden [&_video]:hidden"
@@ -120,13 +115,16 @@ export default async function HomePage() {
                               dangerouslySetInnerHTML={{ __html: cleanHtml }}
                             />
                           </div>
+
+                          {/* Small absolute button */}
+                          <Link
+                            href={`/board/${post.id}`}
+                            className="absolute bottom-3 right-3 p-1.5 bg-white/80 backdrop-blur-sm hover:bg-amber-100 text-stone-400 hover:text-amber-700 rounded-full transition-all shadow-sm border border-stone-200 opacity-0 group-hover:opacity-100 focus:opacity-100"
+                            aria-label="자세히 보기"
+                          >
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Link>
                         </div>
-                        <Link
-                          href={`/board/${post.id}`}
-                          className="flex items-center justify-center gap-1 w-full py-2 bg-stone-50 hover:bg-amber-50 text-stone-600 hover:text-amber-700 transition-colors text-xs font-semibold border-t border-stone-100 mt-auto"
-                        >
-                          자세히 보기 <ChevronRight className="w-3 h-3" />
-                        </Link>
                       </div>
                     );
                   })}
@@ -139,24 +137,19 @@ export default async function HomePage() {
                 return (
                   <div
                     key={post.id}
-                    className="flex flex-col bg-white rounded-2xl shadow-md border border-amber-200/60 hover:shadow-lg hover:border-amber-300 transition-all overflow-hidden h-[400px]"
+                    className="flex flex-col bg-white rounded-2xl shadow-md border border-amber-200/60 hover:shadow-lg hover:border-amber-300 transition-all overflow-hidden h-[400px] relative group"
                   >
                     <div className="flex flex-col gap-2 p-5 border-b border-stone-100 bg-stone-50/50">
                       <div className="flex items-start justify-between gap-3">
-                        <h3 className="font-bold text-lg text-stone-800 line-clamp-2 leading-snug">{post.title}</h3>
+                        <h3 className="font-bold text-lg text-stone-800 line-clamp-2 leading-snug pr-8">{post.title}</h3>
                         {post.isNotice ? (
                           <span className="shrink-0 px-2.5 py-1 bg-amber-100 text-amber-700 outline outline-1 outline-amber-200 rounded-md text-xs font-bold tracking-wide">공지</span>
                         ) : (
                           <span className="shrink-0 px-2.5 py-1 bg-stone-100 text-stone-600 outline outline-1 outline-stone-200 rounded-md text-xs font-bold tracking-wide">최신</span>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-stone-500 font-medium">
-                        <span>{post.author.name || "관리자"}</span>
-                        <span>·</span>
-                        <span>{format(new Date(post.createdAt), "yyyy.MM.dd", { locale: ko })}</span>
-                      </div>
                     </div>
-                    <div className="p-5 overflow-y-auto flex-1 custom-scrollbar">
+                    <div className="p-5 overflow-y-auto flex-1 custom-scrollbar pb-16">
                       <div
                         className="prose prose-sm prose-stone max-w-none 
                                    [&_img]:max-w-full [&_img]:rounded-lg [&_img]:border [&_img]:border-stone-200 [&_img]:max-h-64 [&_img]:mx-auto [&_img]:object-contain 
@@ -165,13 +158,15 @@ export default async function HomePage() {
                         dangerouslySetInnerHTML={{ __html: cleanHtml }}
                       />
                     </div>
-                    <div className="p-4 border-t border-stone-100 bg-white shrink-0 mt-auto">
+
+                    {/* Small absolute button */}
+                    <div className="absolute bottom-4 right-4 z-10">
                       <Link
                         href={`/board/${post.id}`}
-                        className="flex items-center justify-center gap-1 w-full py-2.5 bg-stone-50 hover:bg-amber-50 text-stone-600 hover:text-amber-700 rounded-xl transition-colors text-sm font-semibold border border-stone-200 hover:border-amber-200"
+                        className="flex items-center justify-center p-2 bg-white/90 backdrop-blur-sm hover:bg-amber-100 text-stone-400 hover:text-amber-700 shadow-md border border-stone-200 rounded-full transition-all opacity-0 group-hover:opacity-100 focus:opacity-100"
+                        aria-label="자세히 보기"
                       >
-                        자세히 보기
-                        <ChevronRight className="w-4 h-4" />
+                        <MoreHorizontal className="w-5 h-5" />
                       </Link>
                     </div>
                   </div>
