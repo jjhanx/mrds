@@ -85,21 +85,11 @@ export default async function HomePage() {
       <main className="max-w-[90rem] mx-auto px-4 py-8">
         {hasAnyPosts && (
           <div className="w-full">
-            <div className="flex items-center justify-between mb-6 px-2">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="w-6 h-6 text-amber-600" />
-                <h2 className="text-2xl font-bold text-stone-800 tracking-tight">게시판</h2>
-              </div>
-              <Link href="/board" className="text-sm font-medium text-stone-500 hover:text-amber-600 hover:underline flex items-center">
-                전체보기 <ChevronRight className="w-4 h-4 ml-0.5" />
-              </Link>
-            </div>
-
             <div className={`grid gap-6 grid-cols-1 ${useThreeColumns ? 'lg:grid-cols-3' : useTwoColumns ? 'lg:grid-cols-2' : ''}`}>
 
               {/* Left Column: Fixed Posts (split height) */}
               {fixedPosts.length > 0 && (
-                <div className="flex flex-col gap-6 lg:h-[600px] h-auto">
+                <div className="flex flex-col gap-6 lg:h-[400px] h-auto">
                   {fixedPosts.map(post => {
                     const cleanHtml = getCleanHtml(post.content, post.attachments);
                     return (
@@ -149,7 +139,7 @@ export default async function HomePage() {
                 return (
                   <div
                     key={post.id}
-                    className="flex flex-col bg-white rounded-2xl shadow-md border border-amber-200/60 hover:shadow-lg hover:border-amber-300 transition-all overflow-hidden h-[600px]"
+                    className="flex flex-col bg-white rounded-2xl shadow-md border border-amber-200/60 hover:shadow-lg hover:border-amber-300 transition-all overflow-hidden h-[400px]"
                   >
                     <div className="flex flex-col gap-2 p-5 border-b border-stone-100 bg-stone-50/50">
                       <div className="flex items-start justify-between gap-3">
