@@ -89,13 +89,13 @@ export default async function HomePage() {
 
               {/* Left Column: Fixed Posts (split height) */}
               {fixedPosts.length > 0 && (
-                <div className="flex flex-col gap-6 lg:h-[400px] h-auto">
+                <div className="flex flex-col gap-6 lg:h-[400px]">
                   {fixedPosts.map(post => {
                     const cleanHtml = getCleanHtml(post.content, post.attachments);
                     return (
                       <div
                         key={post.id}
-                        className="flex flex-col flex-1 bg-white rounded-2xl shadow-md border border-amber-200/60 hover:shadow-lg hover:border-amber-300 transition-all overflow-hidden relative"
+                        className="flex flex-col flex-1 min-h-[150px] sm:min-h-0 bg-white rounded-2xl shadow-md border border-amber-200/60 hover:shadow-lg hover:border-amber-300 transition-all overflow-hidden relative"
                       >
                         <div className="flex flex-col gap-1 p-3 sm:p-5 pb-1 sm:pb-4 border-b border-stone-100 bg-stone-50/50">
                           <div className="flex items-start justify-between gap-3">
