@@ -97,7 +97,7 @@ export default async function HomePage() {
                         key={post.id}
                         className="flex flex-col flex-1 bg-white rounded-2xl shadow-md border border-amber-200/60 hover:shadow-lg hover:border-amber-300 transition-all overflow-hidden relative"
                       >
-                        <div className="flex flex-col gap-2 p-4 sm:p-5 pb-2 sm:pb-4 border-b border-stone-100 bg-stone-50/50">
+                        <div className="flex flex-col gap-1 p-3 sm:p-5 pb-1 sm:pb-4 border-b border-stone-100 bg-stone-50/50">
                           <div className="flex items-start justify-between gap-3">
                             <h3 className="font-bold text-base text-stone-800 line-clamp-1 leading-snug pr-6">{post.title}</h3>
                             <span className="shrink-0 flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-600 outline outline-1 outline-blue-200 rounded-md text-xs font-bold tracking-wide">
@@ -105,7 +105,7 @@ export default async function HomePage() {
                             </span>
                           </div>
                         </div>
-                        <div className="p-4 pt-2 sm:pt-4 overflow-hidden flex-1 relative group">
+                        <div className="p-3 pt-1 sm:p-4 sm:pt-4 overflow-hidden flex-1 relative group">
                           <div
                             className="prose prose-sm prose-stone max-w-none [&>*:first-child]:mt-0
                                        [&_img]:hidden [&_iframe]:hidden [&_video]:hidden"
@@ -139,7 +139,7 @@ export default async function HomePage() {
                     key={post.id}
                     className="flex flex-col bg-white rounded-2xl shadow-md border border-amber-200/60 hover:shadow-lg hover:border-amber-300 transition-all overflow-hidden h-[400px] relative group"
                   >
-                    <div className="flex flex-col gap-2 p-5 pb-2.5 sm:pb-5 border-b border-stone-100 bg-stone-50/50">
+                    <div className="flex flex-col gap-1 p-3 pb-1.5 sm:p-5 sm:pb-5 border-b border-stone-100 bg-stone-50/50">
                       <div className="flex items-start justify-between gap-3">
                         <h3 className="font-bold text-lg text-stone-800 line-clamp-2 leading-snug pr-8">{post.title}</h3>
                         {post.isNotice ? (
@@ -149,7 +149,7 @@ export default async function HomePage() {
                         )}
                       </div>
                     </div>
-                    <div className="p-5 pt-2.5 sm:pt-5 overflow-y-auto flex-1 custom-scrollbar pb-16">
+                    <div className="p-3 pt-1.5 sm:p-5 sm:pt-5 overflow-y-auto flex-1 custom-scrollbar pb-16">
                       <div
                         className="prose prose-sm prose-stone max-w-none [&>*:first-child]:mt-0
                                    [&_img]:max-w-full [&_img]:rounded-lg [&_img]:border [&_img]:border-stone-200 [&_img]:max-h-64 [&_img]:mx-auto [&_img]:object-contain 
