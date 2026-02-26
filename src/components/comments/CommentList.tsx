@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { CommentItem } from "./CommentItem";
 import { CommentForm } from "./CommentForm";
+import { MessageSquarePlus } from "lucide-react";
 
 interface Comment {
     id: string;
@@ -26,6 +27,7 @@ interface CommentListProps {
 export function CommentList({ postId, sheetMusicId, currentUserId, isAdmin }: CommentListProps) {
     const [comments, setComments] = useState<Comment[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isFormOpen, setIsFormOpen] = useState(false);
 
     const fetchComments = async () => {
         try {
@@ -76,11 +78,27 @@ export function CommentList({ postId, sheetMusicId, currentUserId, isAdmin }: Co
             )}
 
             {currentUserId ? (
-                <CommentForm
-                    postId={postId}
-                    sheetMusicId={sheetMusicId}
-                    onSuccess={fetchComments}
-                />
+                isFormOpen ? (
+                    <CommentForm
+                        postId={postId}
+                        sheetMusicId={sheetMusicId}
+                        onSuccess={() => {
+                            setIsFormOpen(false);
+                            fetchComments();
+                        }}
+                        onCancel={() => setIsFormOpen(false)}
+                    />
+                ) : (
+                    <div className="mt-4 flex justify-center">
+                        <button
+                            onClick={() => setIsFormOpen(true)}
+                            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-full transition-colors"
+                        >
+                            <MessageSquarePlus className="w-4 h-4" />
+                            댓글 쓰기
+                        </button>
+                    </div>
+                )
             ) : (
                 <div className="mt-4 p-4 text-center text-sm text-stone-500 bg-stone-50 rounded-lg border border-stone-200">
                     댓글을 작성하려면 로그인이 필요합니다.

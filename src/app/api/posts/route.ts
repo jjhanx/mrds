@@ -4,21 +4,39 @@ import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { searchParams } = new URL(request.url);
+    const q = searchParams.get("q")?.trim() || "";
+
+    const whereClause: any = {};
+    if (q) {
+      if (q === "공지" || q === "공지사항") {
+        whereClause.isNotice = true;
+      } else if (q === "고정") {
+        whereClause.isFixed = true;
+      } else {
+        whereClause.OR = [
+          { title: { contains: q } },
+          { content: { contains: q } },
+        ];
+      }
+    }
+
     const posts = await prisma.post.findMany({
-      orderBy: [
-        { isNotice: "desc" },
-        { createdAt: "desc" }
-      ],
+      where: whereClause,
+      orderBy: { createdAt: "desc" },
       include: {
         author: { select: { name: true, image: true } },
         attachments: true,
+        _count: {
+          select: { comments: true }
+        }
       },
     });
 
