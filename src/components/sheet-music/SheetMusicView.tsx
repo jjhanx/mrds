@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowLeft, Printer, Download, Share2, FileDown, Video } from "lucide-react";
 import { VideoPlayer } from "@/components/board/VideoPlayer";
+import { CommentList } from "@/components/comments/CommentList";
 
 interface SheetMusicViewProps {
   sheetMusic: {
@@ -15,9 +16,10 @@ interface SheetMusicViewProps {
     videos: { id: string; part: string; videoUrl: string }[];
     nwcFiles?: { id: string; filepath: string; label: string | null }[];
   };
+  currentUserId: string;
 }
 
-export function SheetMusicView({ sheetMusic }: SheetMusicViewProps) {
+export function SheetMusicView({ sheetMusic, currentUserId }: SheetMusicViewProps) {
   const isPdf = sheetMusic.filepath.toLowerCase().endsWith(".pdf");
   const isImage = /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(sheetMusic.filepath);
   const isVideo = /\.(mp4|webm|mov|avi|mkv|m4v|ogv|wmv)(\?|$)/i.test(sheetMusic.filepath);
@@ -199,6 +201,10 @@ export function SheetMusicView({ sheetMusic }: SheetMusicViewProps) {
               </a>
             )}
           </div>
+        </div>
+
+        <div className="mt-4">
+          <CommentList sheetMusicId={sheetMusic.id} currentUserId={currentUserId} />
         </div>
       </div>
     </article>

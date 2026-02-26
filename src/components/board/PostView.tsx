@@ -9,6 +9,7 @@ import { useEffect, useRef } from "react";
 import { ArrowLeft, Trash2, Paperclip, Pencil } from "lucide-react";
 import DOMPurify from "isomorphic-dompurify";
 import { VideoPlayer } from "./VideoPlayer";
+import { CommentList } from "@/components/comments/CommentList";
 
 // YouTube/Vimeo URL to embed
 function isVideoUrl(url: string) {
@@ -281,6 +282,10 @@ export function PostView({ post, currentUserId }: PostViewProps) {
             </ul>
           </div>
         )}
+
+        <div className="mt-4">
+          <CommentList postId={post.id} currentUserId={currentUserId} />
+        </div>
       </div>
     </article>
   );

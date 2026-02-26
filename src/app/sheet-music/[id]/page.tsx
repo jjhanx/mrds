@@ -25,7 +25,7 @@ export default async function SheetMusicDetailPage({
       <Navbar />
 
       <main className="max-w-4xl mx-auto px-4 py-8">
-        <SheetMusicView sheetMusic={sheetMusic} />
+        <SheetMusicView sheetMusic={sheetMusic} currentUserId={session.user.id} />
       </main>
     </div>
   );

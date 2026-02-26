@@ -55,6 +55,7 @@ model User {
   sessions Session[]
   posts    Post[]
   messagesSent ChatMessage[]
+  comments Comment[]
 }
 
 model ChatMessage {
@@ -90,6 +91,7 @@ model Post {
 
   author      User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
   attachments PostAttachment[]
+  comments    Comment[]
 }
 
 model PostAttachment {
@@ -119,6 +121,7 @@ model SheetMusic {
   folder   SheetMusicFolder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
   videos   SheetMusicVideo[]
   nwcFiles SheetMusicNwcFile[]
+  comments Comment[]
 }
 
 model SheetMusicFolder {
@@ -153,4 +156,22 @@ model SheetMusicVideo {
   sheetMusic SheetMusic @relation(fields: [sheetMusicId], references: [id], onDelete: Cascade)
 
   @@index([sheetMusicId])
+}
+
+model Comment {
+  id           String   @id @default(cuid())
+  content      String   // HTML 포맷의 리치 텍스트 내용
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  authorId     String
+  postId       String?
+  sheetMusicId String?
+
+  author       User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  post         Post?       @relation(fields: [postId], references: [id], onDelete: Cascade)
+  sheetMusic   SheetMusic? @relation(fields: [sheetMusicId], references: [id], onDelete: Cascade)
+  
+  @@index([postId])
+  @@index([sheetMusicId])
+  @@index([authorId])
 }
