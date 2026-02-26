@@ -136,7 +136,7 @@ export function BoardList({ userRole, currentUserId }: BoardListProps) {
                 >
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                      <div className="flex items-center gap-2 mb-1 sm:mb-3">
                         {post.isNotice && (
                           <span className="shrink-0 px-1.5 py-0.5 sm:px-2 rounded text-[10px] sm:text-xs font-semibold bg-red-100 text-red-600">
                             공지
@@ -152,7 +152,7 @@ export function BoardList({ userRole, currentUserId }: BoardListProps) {
                         </h2>
                       </div>
 
-                      <div className="prose prose-sm prose-stone max-w-none 
+                      <div className="prose prose-sm prose-stone max-w-none [&>*:first-child]:mt-0
                                     [&_img]:max-w-full [&_img]:rounded-lg [&_img]:border [&_img]:border-stone-200 [&_img]:max-h-56 sm:[&_img]:max-h-64 [&_img]:object-contain 
                                     [&_iframe]:rounded-lg [&_iframe]:w-full [&_iframe]:max-w-xl [&_iframe]:aspect-video 
                                     [&_video]:max-w-full [&_video]:rounded-lg [&_video]:border [&_video]:bg-stone-900 line-clamp-[6] sm:line-clamp-[10]"
