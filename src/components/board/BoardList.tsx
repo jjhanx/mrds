@@ -132,55 +132,55 @@ export function BoardList({ userRole, currentUserId }: BoardListProps) {
               >
                 <Link
                   href={`/board/${post.id}`}
-                  className="block p-5 hover:bg-stone-50/50 transition-colors"
+                  className="block p-4 sm:p-5 hover:bg-stone-50/50 transition-colors"
                 >
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 mb-3">
+                      <div className="flex items-center gap-2 mb-2 sm:mb-3">
                         {post.isNotice && (
-                          <span className="shrink-0 px-2 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-600">
+                          <span className="shrink-0 px-1.5 py-0.5 sm:px-2 rounded text-[10px] sm:text-xs font-semibold bg-red-100 text-red-600">
                             공지
                           </span>
                         )}
                         {post.isFixed && (
-                          <span className="shrink-0 px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-600">
+                          <span className="shrink-0 px-1.5 py-0.5 sm:px-2 rounded text-[10px] sm:text-xs font-semibold bg-blue-100 text-blue-600">
                             고정
                           </span>
                         )}
-                        <h2 className="font-bold text-lg text-stone-800">
+                        <h2 className="font-bold text-base sm:text-lg text-stone-800 line-clamp-2 sm:line-clamp-1">
                           {post.title}
                         </h2>
                       </div>
 
                       <div className="prose prose-sm prose-stone max-w-none 
-                                    [&_img]:max-w-full [&_img]:rounded-lg [&_img]:border [&_img]:border-stone-200 [&_img]:max-h-64 [&_img]:object-contain 
+                                    [&_img]:max-w-full [&_img]:rounded-lg [&_img]:border [&_img]:border-stone-200 [&_img]:max-h-56 sm:[&_img]:max-h-64 [&_img]:object-contain 
                                     [&_iframe]:rounded-lg [&_iframe]:w-full [&_iframe]:max-w-xl [&_iframe]:aspect-video 
-                                    [&_video]:max-w-full [&_video]:rounded-lg [&_video]:border [&_video]:bg-stone-900 line-clamp-[10]"
+                                    [&_video]:max-w-full [&_video]:rounded-lg [&_video]:border [&_video]:bg-stone-900 line-clamp-[6] sm:line-clamp-[10]"
                         dangerouslySetInnerHTML={{ __html: getCleanHtml(post.content, post.attachments) }}
                       />
 
-                      <div className="flex items-center flex-wrap gap-3 mt-4 text-sm text-stone-500 pt-3 border-t border-stone-50">
+                      <div className="flex items-center flex-wrap gap-x-3 gap-y-1 sm:gap-y-0 mt-4 text-[13px] sm:text-sm text-stone-500 pt-3 border-t border-stone-50">
                         <span>{post.author.name || "익명"}</span>
-                        <span>·</span>
+                        <span className="hidden sm:inline">·</span>
                         <span>
                           {format(new Date(post.createdAt), "PPp", { locale: ko })}
                         </span>
                         {post.attachments?.length > 0 && (
                           <>
-                            <span>·</span>
+                            <span className="hidden sm:inline">·</span>
                             <span className="flex items-center gap-1">
                               <Paperclip className="w-3.5 h-3.5" />
-                              {post.attachments.length}개 첨부
+                              {post.attachments.length}개
                             </span>
                           </>
                         )}
                       </div>
                     </div>
                     {userRole === "admin" && (
-                      <div className="shrink-0 flex flex-col gap-2">
+                      <div className="shrink-0 flex flex-row sm:flex-col gap-2 mt-3 sm:mt-0">
                         <button
                           onClick={(e) => handleToggleNotice(e, post.id)}
-                          className={`text-xs px-2 py-1.5 rounded border transition-colors ${post.isNotice
+                          className={`flex-1 sm:flex-none text-xs px-2 py-1.5 rounded border transition-colors ${post.isNotice
                             ? "bg-red-50 border-red-200 text-red-600 hover:bg-red-100"
                             : "bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100"
                             }`}
