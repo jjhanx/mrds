@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowLeft, Printer, Download, Share2, FileDown, Video } from "lucide-react";
 import { VideoPlayer } from "@/components/board/VideoPlayer";
 import { CommentList } from "@/components/comments/CommentList";
+import { PdfViewer } from "@/components/sheet-music/PdfViewer";
 
 interface SheetMusicViewProps {
   sheetMusic: {
@@ -165,11 +166,7 @@ export function SheetMusicView({ sheetMusic, currentUserId }: SheetMusicViewProp
                 악보 열기 (새 탭)
               </a>
             ) : isPdf ? (
-              <iframe
-                src={`${sheetMusic.filepath}#view=FitH`}
-                className="w-full h-[700px] rounded-lg border border-stone-200"
-                title="악보"
-              />
+              <PdfViewer url={sheetMusic.filepath} />
             ) : isImage ? (
               <img
                 src={sheetMusic.filepath}
