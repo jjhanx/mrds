@@ -159,7 +159,7 @@ export function PostView({ post, currentUserId }: PostViewProps) {
   };
 
   return (
-    <article className="bg-white rounded-2xl border border-amber-100 shadow-sm overflow-hidden">
+    <article className="bg-white text-stone-900 rounded-2xl border border-amber-100 shadow-sm overflow-hidden">
       <div className="p-6 md:p-8">
         <Link
           href="/board"

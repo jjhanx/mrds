@@ -43,3 +43,15 @@ body {
   max-width: 100%;
   height: auto;
 }
+
+/* Force white background and dark text for all inputs and textareas to fix readability in mobile dark mode */
+@layer base {
+  input, textarea, select {
+    background-color: #ffffff !important;
+    color: #171717 !important; /* Neutral 900 */
+  }
+  input::placeholder, textarea::placeholder {
+    color: #a3a3a3 !important; /* Neutral 400 */
+  }
+}
+

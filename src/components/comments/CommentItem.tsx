@@ -61,7 +61,7 @@ export function CommentItem({ comment, currentUserId, isAdmin, onUpdate }: Comme
     }
 
     return (
-        <div className="p-4 bg-white border border-stone-100 rounded-lg shadow-sm mb-4">
+        <div className="p-4 bg-white text-stone-900 border border-stone-100 rounded-lg shadow-sm mb-4">
             <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                     {comment.author?.image ? (
