@@ -74,6 +74,11 @@ export function PdfViewer({ url }: PdfViewerProps) {
             <div className="w-full flex justify-center overflow-x-auto overflow-y-hidden custom-scrollbar bg-white shadow-sm border border-stone-100">
                 <Document
                     file={url}
+                    options={{
+                        cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
+                        cMapPacked: true,
+                        standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/standard_fonts/`,
+                    }}
                     onLoadSuccess={onDocumentLoadSuccess}
                     loading={
                         <div className="flex flex-col items-center justify-center py-20 text-stone-500">

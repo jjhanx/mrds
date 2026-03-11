@@ -395,3 +395,26 @@ git pull
 npm run build
 pm2 restart mrds
 ```
+
+---
+
+## 12. 악보 자료실 PDF 내용(텍스트/악보)이 보이지 않을 때
+
+특정 PDF 파일(예: 특정 한글 폰트나 CMap 데이터가 포함된 악보)을 웹 뷰어에서 열었을 때, 백지로 나오거나 일부 내용이 누락되는 현상이 발생할 수 있습니다. 이는 브라우저의 PDF 렌더러(`react-pdf` / `pdf.js`)가 해당 폰트 데이터를 실시간으로 그려내지 못해 발생합니다.
+
+### 해결 방법
+
+코드에서 `<Document>` 컴포넌트 옵션에 CMap 및 표준 폰트(Standard Fonts)를 불러오도록 명시적으로 설정해야 합니다. (이 설정은 코드에 이미 반영되었습니다.)
+
+```tsx
+<Document
+    file={url}
+    options={{
+        cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
+        cMapPacked: true,
+        standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/standard_fonts/`,
+    }}
+>
+```
+
+만약 비슷한 문제가 지속된다면, 로컬 네트워크나 방화벽이 `unpkg.com` 외부 CDN 접근을 막고 있지 않은지 확인해 보세요. 외부망 접근이 불가한 환경이라면 `pdfjs-dist` 라이브러리의 해당 파일들을 서버의 `public` 디렉토리에 직접 내려받아 경로를 지정하는 방식으로 해결할 수 있습니다.
