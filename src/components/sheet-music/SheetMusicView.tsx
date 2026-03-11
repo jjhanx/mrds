@@ -21,7 +21,9 @@ interface SheetMusicViewProps {
 }
 
 export function SheetMusicView({ sheetMusic, currentUserId }: SheetMusicViewProps) {
-  const isPdf = sheetMusic.filepath.toLowerCase().endsWith(".pdf");
+  const pathOnly = sheetMusic.filepath.split("?")[0];
+  const isPdf = /\.pdf$/i.test(pathOnly);
+  const isScoreFolder = ["choir", "art-song"].includes((sheetMusic.folder?.slug ?? "").toLowerCase());
   const isImage = /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(sheetMusic.filepath);
   const isVideo = /\.(mp4|webm|mov|avi|mkv|m4v|ogv|wmv)(\?|$)/i.test(sheetMusic.filepath);
   const isExternal = sheetMusic.filepath.startsWith("http");
@@ -165,7 +167,7 @@ export function SheetMusicView({ sheetMusic, currentUserId }: SheetMusicViewProp
               >
                 악보 열기 (새 탭)
               </a>
-            ) : isPdf ? (
+            ) : (isPdf || (isScoreFolder && !isImage && !isExternal)) ? (
               <PdfViewer url={sheetMusic.filepath} />
             ) : isImage ? (
               <img

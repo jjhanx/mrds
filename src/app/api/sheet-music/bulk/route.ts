@@ -69,8 +69,12 @@ export async function POST(request: Request) {
     for (const file of validFiles) {
       let bytes = await file.arrayBuffer();
       let buffer = Buffer.from(bytes);
-      let outExt = (file.name.match(/\.([^.]+)$/)?.[1] || "mp4").toLowerCase();
-      const mime = file.type || (outExt === "mov" ? "video/quicktime" : `video/${outExt}`);
+      let outExt = (file.name.match(/\.([^.]+)$/)?.[1] || "").toLowerCase();
+      if (!outExt && file.type === "application/pdf") outExt = "pdf";
+      if (!outExt && file.type?.startsWith("image/")) outExt = file.type.split("/")[1] || "png";
+      if (!outExt && file.type?.startsWith("video/")) outExt = "mp4";
+      if (!outExt) outExt = "bin";
+      const mime = file.type || "application/octet-stream";
       if (mime.startsWith("video/")) {
         const transcoded = await transcodeToH264(buffer, mime);
         if (transcoded && transcoded.length > 0) {

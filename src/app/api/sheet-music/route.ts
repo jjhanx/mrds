@@ -63,7 +63,11 @@ export async function POST(request: Request) {
       await mkdir(uploadDir, { recursive: true });
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
-      const filename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+      let ext = (file.name.match(/\.([^.]+)$/)?.[1] || "").toLowerCase();
+      if (!ext && file.type === "application/pdf") ext = "pdf";
+      if (!ext && file.type?.startsWith("image/")) ext = file.type.split("/")[1] || "png";
+      const baseName = file.name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9.-]/g, "_") || "file";
+      const filename = ext ? `${Date.now()}-${baseName}.${ext}` : `${Date.now()}-${baseName}`;
       const fullPath = path.join(uploadDir, filename);
       await writeFile(fullPath, buffer);
       filepath = `/uploads/sheet-music/${filename}`;
