@@ -464,6 +464,10 @@ sudo nano /etc/nginx/sites-available/mrds
         autoindex off;
         access_log off;
         expires max;
+        # ES Module(.mjs)을 브라우저가 자바스크립트로 인식하게 필수 설정
+        types {
+            application/javascript mjs;
+        }
     }
 
     location / {
