@@ -410,11 +410,11 @@ pm2 restart mrds
 <Document
     file={url}
     options={{
-        cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
+        cMapUrl: '/pdfjs/cmaps/',
         cMapPacked: true,
-        standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/standard_fonts/`,
+        standardFontDataUrl: '/pdfjs/standard_fonts/',
     }}
 >
 ```
 
-만약 비슷한 문제가 지속된다면, 로컬 네트워크나 방화벽이 `unpkg.com` 외부 CDN 접근을 막고 있지 않은지 확인해 보세요. 외부망 접근이 불가한 환경이라면 `pdfjs-dist` 라이브러리의 해당 파일들을 서버의 `public` 디렉토리에 직접 내려받아 경로를 지정하는 방식으로 해결할 수 있습니다.
+(참고: 외부 CDN(unpkg 등)이 방화벽에 막혀 로드되지 않는 문제를 원천 차단하기 위해, 위와 같이 `pdfjs-dist` 라이브러리의 폰트 파일들을 서버의 `public/pdfjs` 디렉토리에 직접 내려받아 경로를 지정하는 방식으로 반영되어 있습니다.)
