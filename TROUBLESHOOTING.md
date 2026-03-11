@@ -425,3 +425,57 @@ pdfjs.GlobalWorkerOptions.workerSrc = '/pdfjs/pdf.worker.min.mjs';
 ```
 
 (참고: `node_modules/pdfjs-dist` 배포판 내부의 `cmaps`, `standard_fonts` 폴더 전체와 `build/pdf.worker.min.mjs` 파일을 서버의 `public/pdfjs` 디렉토리로 직접 복사해둔 상태입니다.)
+
+---
+
+## 13. 파일 업로드는 성공했는데 새로 올린 PDF/이미지가 404(Not Found) 에러가 날 때
+
+앱에서 파일을 정상적으로 업로드하여 DB에도 주소가 잘 저장되었고, 서버의 `public/uploads` 폴더에 실제 파일이 생겼음에도 브라우저에서 열면 **404 에러**가 발생하는 경우가 있습니다.
+
+**원인:**  
+Next.js 프로덕션 모드(`npm run build` 후 `npm run start` 또는 PM2 실행)는 서버가 처음 켜질 때 `public` 폴더 안에 있는 파일 목록만 캐싱합니다. 따라서 **서버가 켜진 이후에 사용자가 새로 업로드한 파일은 Next.js가 인식하지 못해 404 에러를 반환**하게 됩니다.
+
+### 해결 방법 (Nginx 직접 서빙)
+
+이 문제는 Next.js를 거치지 않고 웹 서버인 Nginx가 해당 파일들을 직접 서빙하도록 설정하여 완벽히 해결할 수 있습니다.
+
+**1) nginx 설정 파일 수정**
+
+```bash
+sudo nano /etc/nginx/sites-available/mrds
+```
+
+**2) `/uploads/`와 `/pdfjs/` location 블록 추가**
+
+기존 `location /` 블록 **위쪽**에 아래 두 블록을 추가하세요. (`/home/ubuntu/mrds` 경로는 본인 서버의 실제 프로젝트 경로에 맞게 써야 합니다)
+
+```nginx
+    # 업로드된 정적 파일(악보, 이미지 등)은 Next.js 서버를 거치지 않고 Nginx가 다이렉트로 서빙 (404 방지)
+    location /uploads/ {
+        alias /home/ubuntu/mrds/public/uploads/;
+        autoindex off;
+        access_log off;
+        expires max;
+    }
+
+    # PDF 뷰어용 정적 폰트/워커 파일
+    location /pdfjs/ {
+        alias /home/ubuntu/mrds/public/pdfjs/;
+        autoindex off;
+        access_log off;
+        expires max;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:3001;
+        # ...
+```
+
+**3) nginx 설정 검사 및 적용**
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+이렇게 설정하면 새로 업로드하는 모든 파일이 즉각적으로 404 없이 표시됩니다!

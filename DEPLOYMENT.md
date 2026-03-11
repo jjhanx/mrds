@@ -249,6 +249,21 @@ server {
     # 이미지/파일 업로드 용량 (없으면 413 에러 발생)
     client_max_body_size 50M;
 
+    # 업로드된 정적 파일(악보, 이미지 등)은 Next.js 서버를 거치지 않고 Nginx가 다이렉트로 서빙 (404 방지)
+    location /uploads/ {
+        alias /home/ubuntu/mrds/public/uploads/;
+        autoindex off;
+        access_log off;
+        expires max;
+    }
+
+    location /pdfjs/ {
+        alias /home/ubuntu/mrds/public/pdfjs/;
+        autoindex off;
+        access_log off;
+        expires max;
+    }
+
     location / {
         proxy_pass http://127.0.0.1:3001;   # mrds는 3001 포트
         proxy_http_version 1.1;
