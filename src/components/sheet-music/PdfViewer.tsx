@@ -75,9 +75,9 @@ export function PdfViewer({ url }: PdfViewerProps) {
                 <Document
                     file={url}
                     options={{
-                        cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
+                        cMapUrl: '/pdfjs/cmaps/',
                         cMapPacked: true,
-                        standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/standard_fonts/`,
+                        standardFontDataUrl: '/pdfjs/standard_fonts/',
                     }}
                     onLoadSuccess={onDocumentLoadSuccess}
                     loading={
