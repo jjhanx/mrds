@@ -404,9 +404,16 @@ pm2 restart mrds
 
 ### 해결 방법
 
-코드에서 `<Document>` 컴포넌트 옵션에 CMap 및 표준 폰트(Standard Fonts)를 불러오도록 명시적으로 설정해야 합니다. (이 설정은 코드에 이미 반영되었습니다.)
+코드에서 `<Document>` 컴포넌트 옵션에 CMap 및 표준 폰트를 로컬에서 불러오도록, 그리고 `pdf.worker.min.mjs` 워커 스크립트 역시 로컬에서 실행되도록 수정해야 합니다. (이 설정은 코드에 이미 반영되었습니다.)
 
 ```tsx
+// 1. 워커(Worker) 스크립트를 로컬(서버)에서 불러옵니다.
+// 외부 CDN을 쓰면 워커 내부에서 상대경로로 폰트를 찾을 때 CDN 주소를 참조하여 404 에러나 CORS 에러가 발생합니다.
+pdfjs.GlobalWorkerOptions.workerSrc = '/pdfjs/pdf.worker.min.mjs';
+
+// ...
+
+// 2. Document 옵션에 로컬 폰트 경로를 연결합니다.
 <Document
     file={url}
     options={{
@@ -417,4 +424,4 @@ pm2 restart mrds
 >
 ```
 
-(참고: 외부 CDN(unpkg 등)이 방화벽에 막혀 로드되지 않는 문제를 원천 차단하기 위해, 위와 같이 `pdfjs-dist` 라이브러리의 폰트 파일들을 서버의 `public/pdfjs` 디렉토리에 직접 내려받아 경로를 지정하는 방식으로 반영되어 있습니다.)
+(참고: `node_modules/pdfjs-dist` 배포판 내부의 `cmaps`, `standard_fonts` 폴더 전체와 `build/pdf.worker.min.mjs` 파일을 서버의 `public/pdfjs` 디렉토리로 직접 복사해둔 상태입니다.)

@@ -7,7 +7,7 @@ import 'react-pdf/dist/Page/TextLayer.css';
 import { Loader2, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
 
 // Next.js (App Router) 호환 워커 설정
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+pdfjs.GlobalWorkerOptions.workerSrc = '/pdfjs/pdf.worker.min.mjs';
 
 interface PdfViewerProps {
     url: string;
@@ -99,6 +99,16 @@ export function PdfViewer({ url }: PdfViewerProps) {
                         scale={scale}
                         renderTextLayer={false}
                         renderAnnotationLayer={false}
+                        onLoadError={(error) => console.error("Page Load Error:", error)}
+                        onRenderError={(error) => console.error("Page Render Error:", error)}
+                        error={
+                            <div className="flex flex-col items-center py-10 text-red-500">
+                                <p className="text-sm font-semibold mb-1">페이지 렌더링 오류</p>
+                                <p className="text-xs text-stone-500 max-w-sm text-center">
+                                    설정이나 브라우저 환경에서 지원되지 않는 PDF 형식 요소가 있을 수 있습니다.
+                                </p>
+                            </div>
+                        }
                         loading={
                             <div className="flex justify-center py-20">
                                 <Loader2 className="w-6 h-6 animate-spin text-stone-400" />
