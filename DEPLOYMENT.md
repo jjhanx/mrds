@@ -249,23 +249,14 @@ server {
     # 이미지/파일 업로드 용량 (없으면 413 에러 발생)
     client_max_body_size 50M;
 
+```nginx
     # 업로드된 정적 파일(악보, 이미지 등)은 Next.js 서버를 거치지 않고 Nginx가 다이렉트로 서빙 (404 방지)
     location /uploads/ {
+        # 주의: 아래 경로는 실제 서버의 프로젝트 경로(예: /home/사용자명/mrds/public/uploads/)로 맞춰야 합니다.
         alias /home/ubuntu/mrds/public/uploads/;
         autoindex off;
         access_log off;
         expires max;
-    }
-
-    location /pdfjs/ {
-        alias /home/ubuntu/mrds/public/pdfjs/;
-        autoindex off;
-        access_log off;
-        expires max;
-        # ES Module(.mjs)을 브라우저가 자바스크립트로 인식하게 필수 설정
-        types {
-            application/javascript mjs;
-        }
     }
 
     location / {
