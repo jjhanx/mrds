@@ -18,6 +18,8 @@ export function PdfViewer({ url }: PdfViewerProps) {
     const [pageNumber, setPageNumber] = useState<number>(1);
     const [scale, setScale] = useState<number>(1.0);
     const [containerWidth, setContainerWidth] = useState<number>();
+    const [docError, setDocError] = useState<Error | null>(null);
+    const [pageError, setPageError] = useState<Error | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -35,6 +37,7 @@ export function PdfViewer({ url }: PdfViewerProps) {
     function onDocumentLoadSuccess({ numPages }: { numPages: number }): void {
         setNumPages(numPages);
         setPageNumber(1);
+        setDocError(null);
     }
 
     return (
@@ -80,6 +83,10 @@ export function PdfViewer({ url }: PdfViewerProps) {
                         standardFontDataUrl: '/pdfjs/standard_fonts/',
                     }}
                     onLoadSuccess={onDocumentLoadSuccess}
+                    onLoadError={(err) => {
+                        console.error('Document Load Error:', err);
+                        setDocError(err);
+                    }}
                     loading={
                         <div className="flex flex-col items-center justify-center py-20 text-stone-500">
                             <Loader2 className="w-8 h-8 animate-spin mb-4" />
@@ -87,9 +94,11 @@ export function PdfViewer({ url }: PdfViewerProps) {
                         </div>
                     }
                     error={
-                        <div className="py-20 text-red-500 text-center px-4">
-                            <p className="mb-2">문서를 바로 불러올 수 없습니다.</p>
-                            <p className="text-sm text-stone-500">다운로드 또는 외부 열기 버튼을 이용해주세요.</p>
+                        <div className="py-20 text-red-600 text-center px-4 w-full break-all">
+                            <p className="mb-2 font-bold bg-red-50 p-2 rounded border border-red-200">
+                                {docError?.message || "문서를 바로 불러올 수 없습니다."}
+                            </p>
+                            <p className="text-sm text-stone-500">위 상세 에러 메시지를 확인해주세요. 다운로드 또는 외부 열기 버튼을 이용해주세요.</p>
                         </div>
                     }
                 >
@@ -99,11 +108,19 @@ export function PdfViewer({ url }: PdfViewerProps) {
                         scale={scale}
                         renderTextLayer={false}
                         renderAnnotationLayer={false}
-                        onLoadError={(error) => console.error("Page Load Error:", error)}
-                        onRenderError={(error) => console.error("Page Render Error:", error)}
+                        onLoadError={(error) => {
+                            console.error("Page Load Error:", error);
+                            setPageError(error);
+                        }}
+                        onRenderError={(error) => {
+                            console.error("Page Render Error:", error);
+                            setPageError(error);
+                        }}
                         error={
-                            <div className="flex flex-col items-center py-10 text-red-500">
-                                <p className="text-sm font-semibold mb-1">페이지 렌더링 오류</p>
+                            <div className="flex flex-col items-center py-10 text-red-600 w-full break-all">
+                                <p className="text-sm font-bold bg-red-50 p-2 rounded border border-red-200 mb-1 w-full max-w-sm text-center">
+                                    {pageError?.message || "페이지 렌더링 오류"}
+                                </p>
                                 <p className="text-xs text-stone-500 max-w-sm text-center">
                                     설정이나 브라우저 환경에서 지원되지 않는 PDF 형식 요소가 있을 수 있습니다.
                                 </p>
