@@ -82,8 +82,8 @@ export async function POST(request: Request) {
           outExt = "mp4";
         }
       }
-      const baseName = file.name.replace(/\.[^.]+$/, "").replace(/[^\w\s가-힣.-]/g, "_");
-      const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${baseName.replace(/\s+/g, '_')}.${outExt}`;
+      // Use purely random ASCII filenames to prevent Nginx/Linux 404 NFD/NFC encoding mismatches
+      const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${outExt}`;
       const fullPath = path.join(uploadDir, filename);
       await writeFile(fullPath, buffer);
       const filepath = `/uploads/sheet-music/${filename}`;

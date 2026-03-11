@@ -66,8 +66,8 @@ export async function POST(request: Request) {
       let ext = (file.name.match(/\.([^.]+)$/)?.[1] || "").toLowerCase();
       if (!ext && file.type === "application/pdf") ext = "pdf";
       if (!ext && file.type?.startsWith("image/")) ext = file.type.split("/")[1] || "png";
-      const baseName = file.name.replace(/\.[^.]+$/, "").replace(/[^\w\s가-힣.-]/g, "_") || "file";
-      const filename = ext ? `${Date.now()}-${baseName.replace(/\s+/g, '_')}.${ext}` : `${Date.now()}-${baseName.replace(/\s+/g, '_')}`;
+      // Use purely random ASCII filenames to prevent Nginx/Linux 404 NFD/NFC encoding mismatches
+      const filename = ext ? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}` : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       const fullPath = path.join(uploadDir, filename);
       await writeFile(fullPath, buffer);
       filepath = `/uploads/sheet-music/${filename}`;
@@ -103,8 +103,8 @@ export async function POST(request: Request) {
       await mkdir(uploadDir, { recursive: true });
       const bytes = await nwcFile.arrayBuffer();
       const buffer = Buffer.from(bytes);
-      const safeName = nwcFile.name.replace(/[^\w\s가-힣.-]/g, "_").replace(/\s+/g, '_');
-      const filename = `${Date.now()}-${safeName}`;
+      // Safe random filename to avoid encoding issues
+      const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.nwc`;
       const fullPath = path.join(uploadDir, filename);
       await writeFile(fullPath, buffer);
       await prisma.sheetMusicNwcFile.create({
