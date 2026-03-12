@@ -19,6 +19,7 @@ import {
   Download,
   Share2,
   X,
+  Search,
 } from "lucide-react";
 
 function getFileIcon(filepath: string) {
