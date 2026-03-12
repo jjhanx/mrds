@@ -1,13 +1,14 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { stat, readFile } from 'fs/promises';
 import path from 'path';
 
 export async function GET(
-    request: Request,
+    request: NextRequest,
     { params }: { params: { path: string[] } }
 ) {
     try {
-        const filePath = path.join(process.cwd(), 'public', 'pdfjs', ...params.path);
+        const { path: pathParams } = params;
+        const filePath = path.join(process.cwd(), 'public', 'pdfjs', ...pathParams);
 
         try {
             const stats = await stat(filePath);
