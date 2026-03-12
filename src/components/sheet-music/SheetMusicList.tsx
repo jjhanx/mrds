@@ -103,14 +103,14 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
       .catch(() => {});
   }, []);
 
-  const loadItems = useCallback(() => {
+  const loadItems = useCallback((query: string = "") => {
     setLoading(true);
     let url = folderIdParam
       ? `/api/sheet-music?folderId=${encodeURIComponent(folderIdParam)}`
       : "/api/sheet-music";
-    if (searchQuery.trim()) {
+    if (query.trim()) {
       const sep = url.includes("?") ? "&" : "?";
-      url += `${sep}q=${encodeURIComponent(searchQuery.trim())}`;
+      url += `${sep}q=${encodeURIComponent(query.trim())}`;
     }
     fetch(url, { credentials: "include" })
       .then((res) => res.json())
@@ -120,19 +120,21 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [folderIdParam, searchQuery]);
+  }, [folderIdParam]);
 
   useEffect(() => {
     loadFolders();
   }, [loadFolders]);
 
   useEffect(() => {
+    // folder change should reset results and also clear current search term
+    setSearchQuery("");
     loadItems();
-  }, [loadItems]);
+  }, [folderIdParam, loadItems]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    loadItems();
+    loadItems(searchQuery);
   };
 
   const currentFolder = useMemo(
