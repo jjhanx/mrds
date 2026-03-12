@@ -5,6 +5,8 @@ import { transcodeToH264 } from "@/lib/transcode-video";
 import { NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
+// pdf-lib을 사용해 PDF를 재저장(무료손실 재생성)하여 pdf.js가 못 읽는 문서들을 보정
+import { PDFDocument } from "pdf-lib";
 
 export async function POST(request: Request) {
   try {
@@ -80,6 +82,15 @@ export async function POST(request: Request) {
         if (transcoded && transcoded.length > 0) {
           buffer = Buffer.from(transcoded);
           outExt = "mp4";
+        }
+      }
+      // PDF 특수 파일에 대한 보정: pdf-lib으로 로드/저장하여 간혹 pdf.js가 빈 페이지를 출력하는 문제를 완화
+      if (outExt === "pdf") {
+        try {
+          const pdfDoc = await PDFDocument.load(buffer);
+          buffer = Buffer.from(await pdfDoc.save());
+        } catch (normErr) {
+          console.warn("PDF normalization failed", normErr);
         }
       }
       // Use purely random ASCII filenames to prevent Nginx/Linux 404 NFD/NFC encoding mismatches

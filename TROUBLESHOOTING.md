@@ -426,6 +426,8 @@ pdfjs.GlobalWorkerOptions.workerSrc = '/pdfjs/pdf.worker.min.mjs';
 
 (참고: `node_modules/pdfjs-dist` 배포판 내부의 `cmaps`, `standard_fonts` 폴더 전체와 `build/pdf.worker.min.mjs` 파일을 서버의 `public/pdfjs` 디렉토리로 직접 복사해둔 상태입니다.)
 
+> **추가**: 가끔 Adobe Reader에서는 문제 없이 보이지만 웹뷰어에서는 백지만 나오는 PDF가 있습니다. 이 경우 업로드 시 서버가 `pdf-lib`로 문서를 로드/재저장(normalize)하여 대부분 해결합니다. (서버에 qpdf/ghostscript가 있다면 업로드 후 `qpdf --linearize`로 처리해도 됩니다.)
+
 ---
 
 ## 13. 파일 업로드는 성공했는데 새로 올린 PDF/이미지가 404(Not Found) 에러가 날 때
