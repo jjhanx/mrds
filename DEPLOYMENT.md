@@ -71,6 +71,18 @@ sudo apt install -y ffmpeg
 ffmpeg -version   # 확인
 ```
 
+### 2-5. (선택) PDF 정합성 도구 설치
+
+웹뷰어에서 백지만 나오는 PDF 문제를 완화하기 위해 서버 업로드 처리 시 `pdf-lib`로 문서를 재저장합니다. `pdf-lib`는 JavaScript 의존성이므로 `npm install`로 이미 설치되었습니다. 그러나 추가로 고급 복구가 필요할 경우 `qpdf`나 `ghostscript`를 설치하면 좋습니다.
+
+```bash
+sudo apt install -y qpdf      # linearize 등 기능
+# 또는
+sudo apt install -y ghostscript
+```
+
+이 도구가 있으면 백지 PDF가 올라왔을 때 `qpdf --linearize input.pdf output.pdf` 식으로 수동 복구할 수 있습니다.
+
 > ffmpeg가 없으면 원본 파일 그대로 저장됩니다. iPhone 녹화(MOV/HEVC)는 PC에서 재생이 안 될 수 있습니다.
 
 ---
@@ -91,9 +103,11 @@ cd mrds
 ### 3-2. 의존성 설치 및 빌드
 
 ```bash
-npm install
-npm run build
+npm install          # 새로 추가된 패키지도 함께 설치됨(pdf-lib 등)
+npm run build        # 빌드
 ```
+
+*주의*: GitHub에서 코드를 다시 내려받거나 새 커밋을 풀 받은 후에는 `npm install`을 반드시 재실행해야 합니다. 새로운 라이브러리가 추가됐을 수 있습니다.
 
 ### 3-3. 환경 변수 설정
 
