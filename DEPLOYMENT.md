@@ -103,7 +103,11 @@ cd mrds
 ### 3-2. 의존성 설치 및 빌드
 
 ```bash
-npm install          # 새로 추가된 패키지도 함께 설치됨(pdf-lib 등)
+npm install          # 새로 추가된 패키지도 함께 설치됨(pdf-lib, pdf-parse 등)
+
+# 새로운 Prisma 스키마 변경(텍스트 검색용 필드 추가)이 있을 수 있으므로
+npx prisma migrate deploy   # 또는 개발 환경에서는 npx prisma migrate dev
+
 npm run build        # 빌드
 ```
 

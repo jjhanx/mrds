@@ -21,6 +21,7 @@ export async function GET(request: Request) {
           { title: { contains: q, mode: "insensitive" } },
           { description: { contains: q, mode: "insensitive" } },
           { composer: { contains: q, mode: "insensitive" } },
+          { textContent: { contains: q, mode: "insensitive" } },
         ],
       };
     } else if (folderId) {
@@ -68,6 +69,7 @@ export async function POST(request: Request) {
     }
 
     let filepath = "";
+    let textContent: string | undefined;
     const file = formData.get("file") as File | null;
     if (file && (file.size ?? 0) > 0) {
       const { writeFile, mkdir } = await import("fs/promises");
@@ -88,6 +90,14 @@ export async function POST(request: Request) {
           buffer = Buffer.from(await pdfDoc.save());
         } catch (err) {
           console.warn("PDF normalization failed", err);
+        }
+        // 텍스트 추출
+        try {
+          const pdfParse = (await import("pdf-parse")).default;
+          const parsed = await pdfParse(buffer);
+          textContent = parsed.text;
+        } catch (err) {
+          console.warn("PDF text extraction failed", err);
         }
       }
       // Use purely random ASCII filenames to prevent Nginx/Linux 404 NFD/NFC encoding mismatches
@@ -132,6 +142,7 @@ export async function POST(request: Request) {
         description: description?.trim() || null,
         composer: composer?.trim() || null,
         filepath,
+        textContent: textContent || null,
       },
     });
 

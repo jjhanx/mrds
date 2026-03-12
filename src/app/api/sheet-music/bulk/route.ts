@@ -71,6 +71,7 @@ export async function POST(request: Request) {
     for (const file of validFiles) {
       let bytes = await file.arrayBuffer();
       let buffer = Buffer.from(bytes);
+      let textContent: string | undefined;
       let outExt = (file.name.match(/\.([^.]+)$/)?.[1] || "").toLowerCase();
       if (!outExt && file.type === "application/pdf") outExt = "pdf";
       if (!outExt && file.type?.startsWith("image/")) outExt = file.type.split("/")[1] || "png";
@@ -91,6 +92,14 @@ export async function POST(request: Request) {
           buffer = Buffer.from(await pdfDoc.save());
         } catch (normErr) {
           console.warn("PDF normalization failed", normErr);
+        }
+        // 텍스트 추출
+        try {
+          const pdfParse = (await import("pdf-parse")).default;
+          const parsed = await pdfParse(buffer);
+          textContent = parsed.text;
+        } catch (err) {
+          console.warn("Bulk PDF text extraction failed", err);
         }
       }
       // Use purely random ASCII filenames to prevent Nginx/Linux 404 NFD/NFC encoding mismatches
@@ -123,6 +132,7 @@ export async function POST(request: Request) {
           folderId,
           title,
           filepath,
+          textContent: textContent || null,
         },
       });
       results.push({

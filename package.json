@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "pdf-lib": "^1.17.1",  
-
+    "pdf-parse": "^1.1.1",
     "@auth/prisma-adapter": "^2.11.1",
     "@prisma/client": "^5.22.0",
     "@tiptap/extension-file-handler": "^3.20.0",
