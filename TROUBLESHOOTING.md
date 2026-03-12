@@ -472,3 +472,40 @@ sudo systemctl reload nginx
 ```
 
 이렇게 설정하면 새로 업로드하는 모든 파일이 즉각적으로 404 없이 표시됩니다!
+---
+
+## 14. Next.js 빌드 시 `RouteHandlerConfig` 타입 오류 발생
+
+Next.js 16으로 업그레이드했거나 Turbopack 사용 중일 때 `app/` 디렉토리 내부의 **커스텀 라우트(route.ts)** 를 작성하면 다음과 같은 타입 에러가 날 수 있습니다:
+
+```
+Type error: Type 'typeof import(".../route")' does not satisfy the constraint 'RouteHandlerConfig<"/pdfjs/[...path]">'.
+Types of property 'GET' are incompatible.
+  Type '(request: NextRequest, { params }: { params: { path: string[]; }; }) => Promise<NextResponse<unknown>>' ...
+```
+
+### 원인
+
+App Router가 기대하는 핸들러 시그니처가 변경되어 `params`가 **Promise** 형태로 전달됩니다. 기존 코드에서 `params`를 바로 비구조화하거나 `Request` 대신 일반 `Request` 타입을 사용하면 컴파일 오류가 발생합니다.
+
+### 해결 방법
+
+`route.ts` 파일의 함수 선언을 다음과 같이 수정하세요:
+
+```ts
+import { NextRequest, NextResponse } from 'next/server';
+
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ path: string[] }> }
+) {
+  const { path: pathParams } = await context.params;
+  // ...기존 로직 유지
+}
+```
+
+또는 POST/PUT 등 다른 메소드를 정의할 때도 동일한 구조를 따르세요.
+
+> 이 문제는 다른 다이나믹 라우트(`[...path]`, `[id]` 등)에도 동일하게 적용됩니다.
+
+---
