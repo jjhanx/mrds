@@ -1,15 +1,16 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { stat, readFile } from 'fs/promises';
 import { createReadStream } from 'fs';
 import path from 'path';
 
 export async function GET(
-    request: Request,
-    { params }: { params: { path: string[] } }
+    request: NextRequest,
+    context: { params: Promise<{ path: string[] }> }
 ) {
     try {
+        const { path: pathParams } = await context.params;
         // Construct the absolute path to the file in the public directory
-        const filePath = path.join(process.cwd(), 'public', 'uploads', ...params.path);
+        const filePath = path.join(process.cwd(), 'public', 'uploads', ...pathParams);
 
         // Verify file exists
         try {
