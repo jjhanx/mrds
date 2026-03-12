@@ -68,7 +68,8 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
   const [folders, setFolders] = useState<SheetMusicFolder[]>([]);
   const [items, setItems] = useState<SheetMusicItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [globalQuery, setGlobalQuery] = useState("");        // sidebar global search
+  const [folderQuery, setFolderQuery] = useState("");        // within-folder search
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -105,6 +106,7 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
 
   const loadItems = useCallback((query: string = "") => {
     setLoading(true);
+    // always respect folder when querying
     let url = folderIdParam
       ? `/api/sheet-music?folderId=${encodeURIComponent(folderIdParam)}`
       : "/api/sheet-music";
@@ -127,18 +129,26 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
   }, [loadFolders]);
 
   useEffect(() => {
-    // folder change should reset results and also clear current search term
-    setSearchQuery("");
+    // folder change resets folder search and reloads
+    setFolderQuery("");
     loadItems();
   }, [folderIdParam, loadItems]);
 
-  const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleFolderSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // read final value from form in case state hasn't updated (IME composition)
     const data = new FormData(e.currentTarget);
     const q = (data.get("q") as string) || "";
-    setSearchQuery(q);
+    setFolderQuery(q);
     loadItems(q);
+  };
+
+  const handleGlobalSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const data = new FormData(e.currentTarget);
+    const q = (data.get("q") as string) || "";
+    setGlobalQuery(q);
+    // navigate to root with query
+    window.location.href = `/sheet-music${q ? `?q=${encodeURIComponent(q)}` : ""}`;
   };
 
   const currentFolder = useMemo(
@@ -356,14 +366,14 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
     <div className="flex flex-col md:flex-row gap-6">
       {/* 폴더 사이드바 */}
       <aside className="w-full md:w-64 flex-shrink-0">
-        {/* 검색창 */}
-        <form onSubmit={handleSearchSubmit} className="relative px-4 py-2">
+        {/* global 검색창 */}
+        <form onSubmit={handleGlobalSearchSubmit} className="relative px-4 py-2">
           <input
             name="q"
             type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="제목/작곡가/내용 검색..."
+            value={globalQuery}
+            onChange={(e) => setGlobalQuery(e.target.value)}
+            placeholder="전체 악보 검색..."
             className="w-full pl-10 pr-3 py-2 rounded-full border border-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm bg-white shadow-sm"
           />
           <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-500" />
@@ -491,6 +501,20 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
             </p>
             <p className="text-sm text-stone-400 mt-1">{uploadHint} 여러 개 업로드 가능</p>
           </div>
+        )}
+        {/* folder-specific search */}
+        {folderIdParam && (
+          <form onSubmit={handleFolderSearchSubmit} className="relative mb-4">
+            <input
+              name="q"
+              type="text"
+              value={folderQuery}
+              onChange={(e) => setFolderQuery(e.target.value)}
+              placeholder="이 폴더 내 검색..."
+              className="w-full pl-10 pr-3 py-2 rounded-full border border-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm bg-white shadow-sm"
+            />
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-500" />
+          </form>
         )}
 
         {selected.size > 0 && (
