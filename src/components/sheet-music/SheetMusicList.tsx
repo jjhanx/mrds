@@ -132,9 +132,13 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
     loadItems();
   }, [folderIdParam, loadItems]);
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
+  const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    loadItems(searchQuery);
+    // read final value from form in case state hasn't updated (IME composition)
+    const data = new FormData(e.currentTarget);
+    const q = (data.get("q") as string) || "";
+    setSearchQuery(q);
+    loadItems(q);
   };
 
   const currentFolder = useMemo(
@@ -355,6 +359,7 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
         {/* 검색창 */}
         <form onSubmit={handleSearchSubmit} className="relative px-4 py-2">
           <input
+            name="q"
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -537,7 +542,9 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
           <div className="text-center py-16 bg-white rounded-xl border border-amber-100">
             <FileMusic className="w-12 h-12 text-amber-300 mx-auto mb-4" />
             <p className="text-stone-600 mb-2">
-              {folderIdParam
+              {searchQuery
+                ? "검색 결과가 없습니다."
+                : folderIdParam
                 ? "이 폴더에 악보가 없습니다. 위에 파일을 끌어다 놓으세요."
                 : "폴더를 선택하거나 악보를 업로드하세요."}
             </p>
