@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Component, ReactNode } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
@@ -11,6 +11,30 @@ pdfjs.GlobalWorkerOptions.workerSrc = '/pdfjs/pdf.worker.min.mjs';
 
 interface PdfViewerProps {
     url: string;
+}
+
+class PdfErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean}> {
+    constructor(props: any) {
+        super(props);
+        this.state = { hasError: false };
+    }
+    static getDerivedStateFromError() {
+        return { hasError: true };
+    }
+    componentDidCatch(error: Error, info: any) {
+        console.error('PdfViewer error boundary caught', error, info);
+    }
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div className="py-20 text-center text-red-600">
+                    <p className="font-bold">PDF 뷰어에서 오류가 발생했습니다.</p>
+                    <p>다운로드 버튼을 눌러 파일을 열어보세요.</p>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
 }
 
 export function PdfViewer({ url }: PdfViewerProps) {
@@ -75,6 +99,7 @@ export function PdfViewer({ url }: PdfViewerProps) {
             </div>
 
             <div className="w-full flex justify-center overflow-x-auto overflow-y-hidden custom-scrollbar bg-white shadow-sm border border-stone-100">
+                <PdfErrorBoundary>
                 <Document
                     file={url}
                     options={{
@@ -133,6 +158,7 @@ export function PdfViewer({ url }: PdfViewerProps) {
                         }
                     />
                 </Document>
+            </PdfErrorBoundary>
             </div>
         </div>
     );

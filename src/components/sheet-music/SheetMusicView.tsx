@@ -63,6 +63,7 @@ export function SheetMusicView({ sheetMusic, currentUserId }: SheetMusicViewProp
     }
   };
 
+  const safeUrl = encodeURI(sheetMusic.filepath);
   return (
     <article className="bg-white rounded-2xl border border-amber-100 shadow-sm overflow-hidden">
       <div className="p-6 md:p-8">
@@ -168,7 +169,7 @@ export function SheetMusicView({ sheetMusic, currentUserId }: SheetMusicViewProp
                 악보 열기 (새 탭)
               </a>
             ) : (isPdf || (isScoreFolder && !isImage && !isExternal)) ? (
-              <PdfViewer url={sheetMusic.filepath} />
+              <PdfViewer url={safeUrl} />
             ) : isImage ? (
               <img
                 src={sheetMusic.filepath}
