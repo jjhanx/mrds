@@ -15,8 +15,8 @@ export async function GET(request: Request) {
 
     let where: any = {};
     if (q) {
-      // when searching, ignore folder restriction and match text anywhere
-      where = {
+      // apply text filter; if folderId also given, require that too
+      const textFilter = {
         OR: [
           { title: { contains: q, mode: "insensitive" } },
           { description: { contains: q, mode: "insensitive" } },
@@ -24,6 +24,11 @@ export async function GET(request: Request) {
           { textContent: { contains: q, mode: "insensitive" } },
         ],
       };
+      if (folderId) {
+        where = { AND: [{ folderId }, textFilter] };
+      } else {
+        where = textFilter;
+      }
     } else if (folderId) {
       where.folderId = folderId;
     }
