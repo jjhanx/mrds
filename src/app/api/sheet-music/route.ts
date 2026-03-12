@@ -14,16 +14,17 @@ export async function GET(request: Request) {
     const q = searchParams.get("q")?.trim() || undefined;
 
     let where: any = {};
-    if (folderId) where.folderId = folderId;
     if (q) {
-      const textFilter = {
+      // when searching, ignore folder restriction and match text anywhere
+      where = {
         OR: [
           { title: { contains: q, mode: "insensitive" } },
           { description: { contains: q, mode: "insensitive" } },
           { composer: { contains: q, mode: "insensitive" } },
         ],
       };
-      where = Object.keys(where).length ? { AND: [where, textFilter] } : textFilter;
+    } else if (folderId) {
+      where.folderId = folderId;
     }
 
     const sheetMusic = await prisma.sheetMusic.findMany({
