@@ -67,6 +67,7 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
   const [folders, setFolders] = useState<SheetMusicFolder[]>([]);
   const [items, setItems] = useState<SheetMusicItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -103,9 +104,13 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
 
   const loadItems = useCallback(() => {
     setLoading(true);
-    const url = folderIdParam
+    let url = folderIdParam
       ? `/api/sheet-music?folderId=${encodeURIComponent(folderIdParam)}`
       : "/api/sheet-music";
+    if (searchQuery.trim()) {
+      const sep = url.includes("?") ? "&" : "?";
+      url += `${sep}q=${encodeURIComponent(searchQuery.trim())}`;
+    }
     fetch(url, { credentials: "include" })
       .then((res) => res.json())
       .then((data) => {
@@ -114,7 +119,7 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [folderIdParam]);
+  }, [folderIdParam, searchQuery]);
 
   useEffect(() => {
     loadFolders();
@@ -123,6 +128,11 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
   useEffect(() => {
     loadItems();
   }, [loadItems]);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    loadItems();
+  };
 
   const currentFolder = useMemo(
     () => folders.find((f) => f.id === folderIdParam),
@@ -339,6 +349,17 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
     <div className="flex flex-col md:flex-row gap-6">
       {/* 폴더 사이드바 */}
       <aside className="w-full md:w-64 flex-shrink-0">
+        {/* 검색창 */}
+        <form onSubmit={handleSearchSubmit} className="relative px-4 py-2">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="제목/작곡가/내용 검색..."
+            className="w-full pl-10 pr-3 py-2 rounded-full border border-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm bg-white shadow-sm"
+          />
+          <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-500" />
+        </form>
         <div className="bg-white rounded-xl border border-amber-100 overflow-hidden">
           <div className="px-4 py-3 border-b border-amber-100 flex items-center gap-2 font-medium text-stone-700">
             <Folder className="w-4 h-4" />
