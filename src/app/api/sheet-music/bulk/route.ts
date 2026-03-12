@@ -92,22 +92,6 @@ export async function POST(request: Request) {
         } catch (normErr) {
           console.warn("PDF normalization failed", normErr);
         }
-        // qpdf linearize 시도
-        try {
-          const { execFile } = await import("child_process");
-          const tmpPath = path.join(uploadDir, `tmp-${Date.now()}.pdf`);
-          await new Promise<void>((resolve, reject) => {
-            execFile("qpdf", ["--linearize", "-", tmpPath], { input: buffer }, (err) => {
-              if (err) return reject(err);
-              resolve();
-            });
-          });
-          const { readFile } = await import("fs/promises");
-          buffer = await readFile(tmpPath);
-          // optional: delete temp file
-        } catch (qerr) {
-          // qpdf 실패 시 무시
-        }
       }
       // Use purely random ASCII filenames to prevent Nginx/Linux 404 NFD/NFC encoding mismatches
       const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${outExt}`;
