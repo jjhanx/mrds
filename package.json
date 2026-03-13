@@ -11,7 +11,8 @@
     "postinstall": "prisma generate",
     "db:seed": "prisma db seed",
     "db:recover-sheet-music": "node scripts/recover-sheet-music.js",
-    "db:check-sheet-music": "node scripts/check-sheet-music-db.js"
+    "db:check-sheet-music": "node scripts/check-sheet-music-db.js",
+    "db:fix-sheet-music-titles": "node scripts/fix-sheet-music-titles.js"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
