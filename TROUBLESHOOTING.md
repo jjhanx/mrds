@@ -302,6 +302,64 @@ sudo systemctl reload nginx
 
 ---
 
+## 8b. 악보 자료실 대용량 파일 업로드 504 (Gateway Timeout)
+
+644MB 등 **대용량 파일** 업로드 시 **504 Bad Gateway**가 나면, 다음 두 가지가 원인입니다.
+
+1. **nginx `client_max_body_size`** — 기본값(1MB) 또는 50M 설정이면 644MB를 거부합니다.
+2. **nginx 프록시 타임아웃** — 기본 60초인데, 대용량 업로드·처리는 수 분 걸립니다.
+
+### 해결 방법
+
+**1) nginx 설정 파일 수정**
+
+```bash
+sudo nano /etc/nginx/sites-available/mrds
+```
+
+**2) `server { }` 블록 안에 다음 추가/수정**
+
+```nginx
+server {
+    listen 80;
+    server_name mrds215.duckdns.org;
+
+    # 대용량 악보/동영상 업로드 허용 (644MB 이상 가능)
+    client_max_body_size 2G;
+
+    location / {
+        proxy_pass http://127.0.0.1:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+
+        # 대용량 업로드·트랜스코딩 대기 (10분)
+        proxy_connect_timeout 600;
+        proxy_send_timeout 600;
+        proxy_read_timeout 600;
+    }
+}
+```
+
+**3) nginx 적용**
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+**4) 다시 업로드 시도**
+
+- Next.js는 이미 `next.config.ts`에서 2GB 용량을 허용합니다.
+- 업로드 진행률은 화면의 진행 막대로 확인할 수 있습니다.
+
+---
+
 ## 9. 악보 자료실 동영상 업로드 504 (Gateway Timeout)
 
 동영상 업로드 시 **504 Bad Gateway**가 나면, nginx의 프록시 타임아웃(기본 60초)에 걸린 것입니다. ffmpeg 트랜스코딩은 수 분 걸릴 수 있습니다.

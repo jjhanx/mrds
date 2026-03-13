@@ -22,6 +22,13 @@ import {
   X,
 } from "lucide-react";
 
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+}
+
 function getFileIcon(filepath: string) {
   const ext = (filepath.split(".").pop() || "").toLowerCase();
   const videoExt = ["mp4", "webm", "mov", "avi", "mkv", "m4v", "ogv", "wmv"];
@@ -72,6 +79,7 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
+  const [uploadByteProgress, setUploadByteProgress] = useState<{ loaded: number; total: number } | null>(null);
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [editFolderName, setEditFolderName] = useState("");
   const [attachModal, setAttachModal] = useState<{ id: string; title: string } | null>(null);
@@ -182,26 +190,44 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
 
     setUploading(true);
     setUploadProgress({ done: 0, total: files.length });
+    setUploadByteProgress(null);
     const CHUNK_SIZE = 5;
+
+    const uploadWithProgress = (
+      formData: FormData,
+      onProgress: (loaded: number, total: number) => void
+    ): Promise<{ ok: boolean; status: number; text: string }> => {
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.withCredentials = true;
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) onProgress(e.loaded, e.total);
+          else onProgress(e.loaded, 0);
+        };
+        xhr.onload = () =>
+          resolve({ ok: xhr.status >= 200 && xhr.status < 300, status: xhr.status, text: xhr.responseText });
+        xhr.onerror = () => reject(new Error("네트워크 오류"));
+        xhr.open("POST", "/api/sheet-music/bulk");
+        xhr.send(formData);
+      });
+    };
 
     try {
       for (let i = 0; i < files.length; i += CHUNK_SIZE) {
         const chunk = files.slice(i, i + CHUNK_SIZE);
         setUploadProgress({ done: i, total: files.length });
+        setUploadByteProgress({ loaded: 0, total: 0 });
         const formData = new FormData();
         formData.append("folderId", folderIdParam);
         chunk.forEach((f) => formData.append("files", f));
 
-        const res = await fetch("/api/sheet-music/bulk", {
-          method: "POST",
-          body: formData,
-          credentials: "include",
+        const res = await uploadWithProgress(formData, (loaded, total) => {
+          setUploadByteProgress(total > 0 ? { loaded, total } : loaded > 0 ? { loaded, total: 0 } : null);
         });
 
-        const text = await res.text();
         let data: { error?: string };
         try {
-          data = text ? JSON.parse(text) : {};
+          data = res.text ? JSON.parse(res.text) : {};
         } catch {
           const msg = res.status === 413 ? "파일 용량이 너무 큽니다. 개수가 많으면 자동으로 나눠 업로드됩니다." : `업로드 실패 (${res.status})`;
           throw new Error(res.ok ? "응답 형식 오류" : msg);
@@ -212,6 +238,7 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
         }
       }
       setUploadProgress({ done: files.length, total: files.length });
+      setUploadByteProgress(null);
       loadItems();
       loadFolders();
     } catch (err) {
@@ -219,6 +246,7 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
     } finally {
       setUploading(false);
       setUploadProgress(null);
+      setUploadByteProgress(null);
     }
   };
 
@@ -481,6 +509,29 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
                   : "업로드 중..."
                 : "여기에 파일을 끌어다 놓으세요"}
             </p>
+            {uploading && (uploadByteProgress || uploadProgress) && (
+              <div className="mt-3 w-full max-w-md mx-auto">
+                <div className="h-2 bg-stone-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-amber-500 transition-all duration-300 ease-out"
+                    style={{
+                      width: uploadByteProgress?.total
+                        ? `${Math.min(100, (uploadByteProgress.loaded / uploadByteProgress.total) * 100)}%`
+                        : uploadProgress
+                          ? `${(uploadProgress.done / uploadProgress.total) * 100}%`
+                          : "0%",
+                    }}
+                  />
+                </div>
+                <p className="text-xs text-stone-500 mt-1">
+                  {uploadByteProgress?.total
+                    ? `${formatBytes(uploadByteProgress.loaded)} / ${formatBytes(uploadByteProgress.total)}`
+                    : uploadProgress
+                      ? `${uploadProgress.done} / ${uploadProgress.total} 파일`
+                      : null}
+                </p>
+              </div>
+            )}
             <p className="text-sm text-stone-400 mt-1">{uploadHint} 여러 개 업로드 가능</p>
           </div>
         )}

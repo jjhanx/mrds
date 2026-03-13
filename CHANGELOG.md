@@ -11,6 +11,8 @@
 - **악보 자료실**: 제목·내용·작곡가 검색 기능 추가 (게시판과 동일한 방식)
 
 ### 수정
+- **악보 자료실**: 대용량 파일 업로드 504 해결 — TROUBLESHOOTING.md에 nginx `client_max_body_size 2G`, 프록시 타임아웃 600초 가이드 추가, DEPLOYMENT.md nginx 예시 수정
+- **악보 자료실**: 업로드 진행률 막대 표시 — XMLHttpRequest `upload.onprogress`로 바이트 단위 진행률 표시 (644MB 등 대용량 업로드 시 유용)
 - **nwc-viewer**: 한글 제목·가사 표시 — EUC-KR 우선 디코딩, 시스템 폰트(Malgun Gothic 등) 우선, fillStyle 명시
 - **nwc-viewer**: 줌 범위 25%~100%로 제한
 - **nwc-viewer**: 선택된 Staff 파란색 표시
