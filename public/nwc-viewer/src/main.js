@@ -488,7 +488,16 @@ document.addEventListener('click', (e) => {
 	const panel = document.getElementById('voice_select_panel')
 	if (panel) panel.style.display = 'none'
 })
-document.getElementById('voice_select_panel')?.addEventListener('click', (e) => e.stopPropagation())
+document.getElementById('voice_select_panel')?.addEventListener('click', (e) => {
+	e.stopPropagation()
+	const lab = e.target.closest('label')
+	const cb = (e.target.type === 'checkbox' ? e.target : null) || (lab?.querySelector('input[type="checkbox"]'))
+	if (cb && cb.type === 'checkbox') {
+		e.preventDefault()
+		cb.checked = !cb.checked
+		updateVoiceSelectFromPanel()
+	}
+})
 
 function getPlaybackStaffFilter() {
 	const idx = window._selectedStaffIndices
