@@ -482,7 +482,9 @@ document.getElementById('voice_select_btn')?.addEventListener('click', (e) => {
 	if (!panel) return
 	panel.style.display = panel.style.display === 'none' ? 'block' : 'none'
 })
-document.addEventListener('click', () => {
+document.addEventListener('click', (e) => {
+	const wrap = document.getElementById('voice_select_wrap')
+	if (wrap && wrap.contains(e.target)) return
 	const panel = document.getElementById('voice_select_panel')
 	if (panel) panel.style.display = 'none'
 })
