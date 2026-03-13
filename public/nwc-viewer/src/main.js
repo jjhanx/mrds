@@ -479,8 +479,18 @@ function updateVoiceSelectFromPanel() {
 document.getElementById('voice_select_btn')?.addEventListener('click', (e) => {
 	e.stopPropagation()
 	const panel = document.getElementById('voice_select_panel')
-	if (!panel) return
-	panel.style.display = panel.style.display === 'none' ? 'block' : 'none'
+	const btn = document.getElementById('voice_select_btn')
+	if (!panel || !btn) return
+	const isOpen = panel.style.display !== 'none'
+	if (isOpen) {
+		panel.style.display = 'none'
+	} else {
+		const r = btn.getBoundingClientRect()
+		panel.style.position = 'fixed'
+		panel.style.top = (r.bottom + 2) + 'px'
+		panel.style.left = r.left + 'px'
+		panel.style.display = 'block'
+	}
 })
 document.addEventListener('click', (e) => {
 	const wrap = document.getElementById('voice_select_wrap')
@@ -491,25 +501,11 @@ document.addEventListener('click', (e) => {
 ;(function () {
 	const panel = document.getElementById('voice_select_panel')
 	if (!panel) return
-	function getCheckbox(el) {
-		if (!el || el.nodeType !== 1) return null
-		return (el.tagName === 'INPUT' && el.type === 'checkbox') ? el : el.closest('label')?.querySelector('input[type="checkbox"]')
-	}
-	panel.addEventListener('mousedown', function (e) {
-		const el = e.target?.nodeType === 3 ? e.target.parentElement : e.target
-		const cb = getCheckbox(el)
-		if (cb) {
-			e.preventDefault()
-			e.stopPropagation()
-			cb.checked = !cb.checked
-			updateVoiceSelectFromPanel()
-		} else {
-			e.stopPropagation()
-		}
-	}, true)
-	panel.addEventListener('click', function (e) {
-		if (getCheckbox(e.target?.nodeType === 3 ? e.target.parentElement : e.target)) e.preventDefault()
-		e.stopPropagation()
+	// 클릭이 document로 전파되어 패널이 닫히지 않도록
+	panel.addEventListener('click', (e) => e.stopPropagation(), true)
+	// change 위임: 체크박스 변경 시 상태 동기화 (네이티브 동작 활용)
+	panel.addEventListener('change', (e) => {
+		if (e.target && e.target.type === 'checkbox') updateVoiceSelectFromPanel()
 	}, true)
 })()
 
@@ -602,14 +598,12 @@ function updateVoiceSelect(data) {
 	panel.appendChild((() => {
 		const lab = document.createElement('label')
 		lab.innerHTML = '<input type="checkbox" data-voice="all" id="' + allId + '" checked> 전체'
-		lab.querySelector('input').onchange = () => updateVoiceSelectFromPanel()
 		return lab
 	})())
 	for (let i = 0; i < staves.length; i++) {
 		const name = staves[i].staff_label || staves[i].staff_name || '파트 ' + (i + 1)
 		const lab = document.createElement('label')
 		lab.innerHTML = '<input type="checkbox" data-voice="' + i + '" value="' + i + '"> ' + name
-		lab.querySelector('input').onchange = () => updateVoiceSelectFromPanel()
 		panel.appendChild(lab)
 	}
 	window._selectedStaffIndices = undefined
