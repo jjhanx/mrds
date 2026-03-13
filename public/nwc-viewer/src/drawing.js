@@ -212,8 +212,7 @@ class Stave extends Draw {
 
 	draw(ctx) {
 		const { width, size } = this
-
-		ctx.strokeStyle = '#000'
+		ctx.strokeStyle = getStaffHighlightColor(this) || '#000'
 		ctx.lineWidth = getFontSize() / 32 // 1.3
 
 		// 5 lines
@@ -240,6 +239,7 @@ class Line extends Draw {
 	}
 
 	draw(ctx) {
+		ctx.strokeStyle = getStaffHighlightColor(this) || ctx.strokeStyle || '#000'
 		ctx.beginPath()
 		ctx.lineWidth = getFontSize() / 24 // 1.4
 		ctx.moveTo(this.x, this.y)
@@ -257,6 +257,8 @@ class Path extends Draw {
 	}
 
 	draw(ctx) {
+		const c = getStaffHighlightColor(this)
+		if (c) ctx.strokeStyle = ctx.fillStyle = c
 		this._drawFn(ctx)
 	}
 }
@@ -269,6 +271,12 @@ function cacheGet(key, loader) {
 	}
 
 	return glyphCache[key]
+}
+
+function getStaffHighlightColor(el) {
+	if (typeof window === 'undefined') return null
+	if (window._selectedStaffIndex === undefined || el.staveIndex === undefined) return null
+	return el.staveIndex === window._selectedStaffIndex ? '#1976d2' : null
 }
 
 // todo clear the cache when font sizes invalides
@@ -310,8 +318,7 @@ class Glyph extends Draw {
 	}
 
 	draw(ctx) {
-		ctx.fillStyle = '#000'
-
+		ctx.fillStyle = getStaffHighlightColor(this) || '#000'
 		this.path.draw(ctx)
 
 		if (window._debug_glyph) this.debug(ctx)
@@ -457,6 +464,7 @@ class Ledger extends Draw {
 	}
 
 	draw(ctx) {
+		ctx.strokeStyle = getStaffHighlightColor(this) || ctx.strokeStyle || '#000'
 		for (let i = 0; i < this.to; i += 2) {
 			ctx.beginPath()
 			ctx.moveTo(-4, this.unitsToY(i))
@@ -476,6 +484,7 @@ class Stem extends Draw {
 	}
 
 	draw(ctx) {
+		ctx.strokeStyle = getStaffHighlightColor(this) || ctx.strokeStyle || '#000'
 		ctx.beginPath()
 		ctx.lineWidth = getFontSize() / 30 // 1.2
 		ctx.moveTo(0, 0)
@@ -495,6 +504,7 @@ class Barline extends Draw {
 	}
 
 	draw(ctx) {
+		ctx.strokeStyle = getStaffHighlightColor(this) || ctx.strokeStyle || '#000'
 		const fs = getFontSize()
 		const thinLw = fs / 30
 		const thickLw = fs / 8
@@ -649,6 +659,7 @@ class Text extends Draw {
 	}
 
 	draw(ctx) {
+		ctx.fillStyle = getStaffHighlightColor(this) || ctx.fillStyle || '#000'
 		ctx.font = this.font || 'italic bold 12px ' + LYRIC_FONT_STACK
 		if (this.textAlign) ctx.textAlign = this.textAlign
 		ctx.fillText(this.text, 0, 0)

@@ -547,6 +547,18 @@ function quickDraw(dataOrContext, x, y) {
 	var zoom = getZoomLevel()
 	if (zoom !== 1) ctx.scale(zoom, zoom)
 	drawing.draw(ctx)
+	// Red playback position indicator
+	const playX = typeof window !== 'undefined' && window._playbackX
+	if (playX != null) {
+		ctx.save()
+		ctx.strokeStyle = '#e53935'
+		ctx.lineWidth = 2 / zoom
+		ctx.beginPath()
+		ctx.moveTo(playX, -50)
+		ctx.lineTo(playX, (typeof maxCanvasHeight !== 'undefined' ? maxCanvasHeight : 2000) + 50)
+		ctx.stroke()
+		ctx.restore()
+	}
 	ctx.restore()
 }
 
@@ -1018,6 +1030,7 @@ function scoreWrapLayout(drawing, data, staves, stavePointers, ctx, canvas) {
 
 		for (var si = 0; si < staves.length; si++) {
 			var staveEl = new Stave(justifiedWidth)
+			staveEl.staveIndex = si
 			staveEl.moveTo(leftMargin, getStaffY(si) + yOffset)
 			drawing.add(staveEl)
 		}
@@ -1033,7 +1046,7 @@ function scoreWrapLayout(drawing, data, staves, stavePointers, ctx, canvas) {
 					getStaffY(si) + yOffset
 				)
 				for (var cei = 0; cei < elements.length; cei++) {
-					// Position courtesy items after the left margin
+					elements[cei].staveIndex = si
 					elements[cei].x += leftMargin
 					drawing.add(elements[cei])
 				}
@@ -1148,6 +1161,7 @@ function drawStaffLabels(drawing, staves, yOffset, leftMarginOverride) {
 			font: Math.round(fs * 0.6) + 'px ' + LYRIC_FONT_STACK,
 			textAlign: 'left',
 		})
+		labelDraw.staveIndex = li
 		labelDraw.moveTo(labelX, labelY)
 		drawing.add(labelDraw)
 	}
@@ -1268,6 +1282,7 @@ function getStaffY(staffIndex) {
 function addStave(cursor, staveIndex) {
 	const width = cursor.staveX - cursor.lastBarline
 	const s = new Stave(width)
+	s.staveIndex = staveIndex
 	s.moveTo(cursor.lastBarline, getStaffY(staveIndex))
 	drawing.add(s)
 }
@@ -1301,6 +1316,7 @@ function handleToken(token, tokenIndex, staveIndex, cursor) {
 
 		case 'Clef':
 			clef = clefFromString(token.clef)
+			clef.staveIndex = staveIndex
 			cursor.posGlyph(clef)
 			drawing.add(clef)
 			cursor.incStaveX(clef.width + spacerWidth())
@@ -1314,18 +1330,16 @@ function handleToken(token, tokenIndex, staveIndex, cursor) {
 
 			if (name) {
 				t = new TimeSignature(name, 4)
+				t.staveIndex = staveIndex
 				cursor.posGlyph(t)
 				drawing.add(t)
-
 				cursor.incStaveX(t.width * 2)
 			} else if (token.group && token.beat) {
-				// Numeric time signature: stack numerator (top) and denominator (bottom)
-				// Both glyphs share the same x position — they are vertically stacked.
-				const numerator   = new TimeSignature(token.group, 6)   // upper staff half
-				const denominator = new TimeSignature(token.beat,  2)   // lower staff half
-
+				const numerator   = new TimeSignature(token.group, 6)
+				const denominator = new TimeSignature(token.beat,  2)
+				numerator.staveIndex = denominator.staveIndex = staveIndex
 				cursor.posGlyph(numerator)
-				cursor.posGlyph(denominator)  // same x — intentionally stacked
+				cursor.posGlyph(denominator)
 				drawing.add(numerator)
 				drawing.add(denominator)
 
@@ -1335,6 +1349,7 @@ function handleToken(token, tokenIndex, staveIndex, cursor) {
 			break
 		case 'KeySignature':
 			const key = new KeySignature(token.accidentals, token.clef)
+			key.staveIndex = staveIndex
 			cursor.posGlyph(key)
 			drawing.add(key)
 
@@ -1353,11 +1368,12 @@ function handleToken(token, tokenIndex, staveIndex, cursor) {
 
 			if (!sym) console.log('FAIL REST', token, duration)
 
-			s = new Glyph(sym, token.position + 4) // + 4
+			s = new Glyph(sym, token.position + 4)
+			s.staveIndex = staveIndex
 			cursor.posGlyph(s)
 			s._text = info
 			drawing.add(s)
-			token.drawingNoteHead = s  // reuse same field as notes for anchor collection
+			token.drawingNoteHead = s
 
 			cursor.incStaveX(s.width * 1)
 			cursor.tokenPadRight(s.width * calculatePadding(token.durValue))
@@ -1365,6 +1381,7 @@ function handleToken(token, tokenIndex, staveIndex, cursor) {
 
 		case 'Barline':
 			s = new Barline(0, 8, token.barline || 0)
+			s.staveIndex = staveIndex
 			cursor.posGlyph(s)
 			s._text = info
 			drawing.add(s)
@@ -1410,6 +1427,7 @@ function handleToken(token, tokenIndex, staveIndex, cursor) {
 						ctx.lineTo(barX, nextY)
 						ctx.stroke()
 					})
+					connPath.staveIndex = staveIndex
 					drawing.add(connPath)
 				}
 			}
@@ -1433,37 +1451,30 @@ function handleToken(token, tokenIndex, staveIndex, cursor) {
 			drawForNote(token, cursor, token)
 			break
 		case 'Text':
-			// token.position is user-facing NWC convention (positive=above, 0=center).
-			// Convert to rendering coords: pass -(pos + 4) so Text's internal
-			// negation yields positionY(pos + 4)  — same mapping notes use.
 			var pos = token.position !== undefined ? token.position : 11
 			var text = new Text(token.text, -(pos + 4))
+			text.staveIndex = staveIndex
 			cursor.posGlyph(text)
 			drawing.add(text)
 			break
 		case 'PerformanceStyle':
 			var pos = token.position !== undefined ? token.position : 9
-			var text = new Text(token.text, -(pos + 4), {
-				font: 'italic 11px ' + LYRIC_FONT_STACK,
-			})
+			var text = new Text(token.text, -(pos + 4), { font: 'italic 11px ' + LYRIC_FONT_STACK })
+			text.staveIndex = staveIndex
 			cursor.posGlyph(text)
 			drawing.add(text)
 			break
 		case 'Tempo':
 			var pos = token.position !== undefined ? token.position : 11
-			var text = new Text(
-				`(${token.duration})`,
-				-(pos + 4),
-				{ font: '11px ' + LYRIC_FONT_STACK }
-			)
+			var text = new Text(`(${token.duration})`, -(pos + 4), { font: '11px ' + LYRIC_FONT_STACK })
+			text.staveIndex = staveIndex
 			cursor.posGlyph(text)
 			drawing.add(text)
 			break
 		case 'Dynamic':
 			var pos = token.position !== undefined ? token.position : -13
-			var text = new Text(token.dynamic, -(pos + 4), {
-				font: 'italic bold 12px ' + LYRIC_FONT_STACK,
-			})
+			var text = new Text(token.dynamic, -(pos + 4), { font: 'italic bold 12px ' + LYRIC_FONT_STACK })
+			text.staveIndex = staveIndex
 			cursor.posGlyph(text)
 			drawing.add(text)
 			break
@@ -1492,25 +1503,26 @@ function drawForNote(token, cursor, durToken) {
 
 	if (token.accidental) {
 		var acc = new Accidental(token.accidental, relativePos)
+		acc.staveIndex = cursor.staveIndex
 		cursor.posGlyph(acc)
 		acc.offsetX = -acc.width * 1.2
 		drawing.add(acc)
 	}
 
-	// note head
 	const noteHead = new Glyph(sym, relativePos)
+	noteHead.staveIndex = cursor.staveIndex
 	cursor.posGlyph(noteHead)
-	// noteHead._text = info + '.' // + ':' + token.name;
 	drawing.add(noteHead)
 	const noteHeadWidth = noteHead.width
 
-	// ledger lines
 	if (relativePos < 0) {
 		const ledger = new Ledger(((relativePos / 2) | 0) * 2, 0)
+		ledger.staveIndex = cursor.staveIndex
 		cursor.posGlyph(ledger)
 		drawing.add(ledger)
 	} else if (relativePos > 8) {
 		const ledger = new Ledger((((relativePos + 1) / 2) | 0) * 2, 8)
+		ledger.staveIndex = cursor.staveIndex
 		cursor.posGlyph(ledger)
 		drawing.add(ledger)
 	}
@@ -1550,6 +1562,7 @@ function drawForNote(token, cursor, durToken) {
 				font: lyricFontSize + 'px ' + LYRIC_FONT_STACK,
 				textAlign: 'left',
 			})
+			text.staveIndex = cursor.staveIndex
 			cursor.posGlyph(text)
 			text.offsetY = lyricOffsetY
 			drawing.add(text)
@@ -1615,6 +1628,7 @@ function drawForNote(token, cursor, durToken) {
 	for (let i = 0; i < token.dots; i++) {
 		var adjust = isOnLine(relativePos) ? 1 : 0
 		const dot = new Dot(relativePos + adjust - 0.2)
+		dot.staveIndex = cursor.staveIndex
 		cursor.posGlyph(dot)
 		drawing.add(dot)
 		cursor.incStaveX(dot.width)

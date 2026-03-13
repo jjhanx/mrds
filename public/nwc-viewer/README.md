@@ -105,10 +105,10 @@ Parse Binary NWC => Tokens => Interpret => Scoring (Typesetting) => Drawing
 
 When used via `?file=` parameter (embedded mode):
 
-- **Korean lyrics**: EUC-KR/CP949 decoding; lyric font stack includes Malgun Gothic, Apple SD Gothic Neo, Nanum Gothic, Noto Sans KR
-- **Default zoom 25%**: More measures per line (4+ bars visible)
-- **Voice selector**: Choose which staff/part to play when multiple voices
-- **Playback sync**: Tempo base (whole/half/quarter/eighth) → quarter-note BPM conversion; score auto-scrolls to follow playback
+- **Korean title/lyrics**: Google Fonts Noto Sans KR; EUC-KR/CP949 decoding; lyric font stack
+- **Zoom 25%~100%**: Default 25% for more measures per line; slider limited to this range
+- **Voice selector**: Choose staff/part to play; selected staff highlighted in blue
+- **Playback sync**: Red vertical line at current position; tempo base conversion; auto-scroll
 
 ---
 

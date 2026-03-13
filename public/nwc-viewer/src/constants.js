@@ -33,7 +33,7 @@ function getLayoutMode() {
 // Use setFontSize() to change the actual music engraving size (requires re-layout).
 let zoomLevel = 1.0
 const ZOOM_MIN = 0.25
-const ZOOM_MAX = 4.0
+const ZOOM_MAX = 1.0
 
 function setZoomLevel(n) {
 	zoomLevel = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, n))
@@ -43,8 +43,8 @@ function getZoomLevel() {
 	return zoomLevel
 }
 
-// Lyric/text font stack with Korean support (Malgun Gothic = Win, Apple SD Gothic = Mac)
-const LYRIC_FONT_STACK = "'Malgun Gothic', 'Apple SD Gothic Neo', 'Nanum Gothic', 'Noto Sans KR', 'Dotum', 'AppleGothic', sans-serif"
+// Lyric/text font stack — Noto Sans KR first (loaded from Google Fonts) for reliable Korean
+const LYRIC_FONT_STACK = "'Noto Sans KR', 'Malgun Gothic', 'Apple SD Gothic Neo', 'Nanum Gothic', 'Dotum', sans-serif"
 
 function isNode() {
 	return typeof module !== 'undefined'

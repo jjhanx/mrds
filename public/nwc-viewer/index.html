@@ -4,6 +4,9 @@
 			Notably Music Editor
 		</title>
 		<meta charset="UTF-8" />
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
 		<meta
 			name="description"
 			content="Notably, a simple, lightweight music viewer for nwc (noteworthy composer) files"
@@ -119,7 +122,7 @@
 				<span style="width: 20px;"></span>
 				Zoom:
 				<input type="range" id="zoom_slider"
-					min="0.25" max="4.0" step="0.01" value="1.0"
+					min="0.25" max="1.0" step="0.01" value="1.0"
 					oninput="applyZoom(parseFloat(this.value))"
 					style="width: 100px; vertical-align: middle;"
 				/>

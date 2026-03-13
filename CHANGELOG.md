@@ -11,9 +11,10 @@
 - **악보 자료실**: 제목·내용·작곡가 검색 기능 추가 (게시판과 동일한 방식)
 
 ### 수정
-- **nwc-viewer**: 한글 가사 미표시 수정 — lyric/텍스트에 Malgun Gothic, Apple SD Gothic Neo, Nanum Gothic, Noto Sans KR 등 한글 지원 폰트 스택 적용
-- **nwc-viewer**: 임베드 모드(`?file=`) 기본 줌 25%로 축소 — 한 줄에 4마디 이상 표시
-- **nwc-viewer**: 재생·악보 동기화 수정 — Tempo base(whole/half/quarter/eighth)에 따른 quarter-note BPM 변환, 재생 시 악보 자동 스크롤
+- **nwc-viewer**: 한글 제목·가사 표시 수정 — Google Fonts Noto Sans KR 로드, 한글 폰트 스택 적용
+- **nwc-viewer**: 줌 범위 25%~100%로 제한
+- **nwc-viewer**: 선택된 Staff 파란색 표시
+- **nwc-viewer**: 재생 위치 빨간색 세로선 표시, Tempo base 변환 및 악보 자동 스크롤
 
 - **PDF 뷰어**: 에러 메시지 에러 시에만 표시
   - 로딩 메시지 제거(스피너만 표시), Document/Page `error={null}`로 react-pdf 플래시 방지

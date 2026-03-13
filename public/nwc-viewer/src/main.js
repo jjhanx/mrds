@@ -382,9 +382,9 @@ playback.onTime((t, dur) => {
 		// Scroll score to follow playback
 		const map = window._tickToXMap
 		const tempo = window._tempoMap
+		let playbackX = null
 		if (map?.length && tempo?.length) {
 			const tick = secondsToTicks(t, tempo)
-			// Find x by interpolation
 			let x = map[0].x
 			if (tick <= map[0].tick) x = map[0].x
 			else if (tick >= map[map.length - 1].tick) x = map[map.length - 1].x
@@ -398,6 +398,7 @@ playback.onTime((t, dur) => {
 					}
 				}
 			}
+			playbackX = x
 			const scoreEl = document.getElementById('score')
 			if (scoreEl) {
 				const zoom = getZoomLevel()
@@ -405,6 +406,13 @@ playback.onTime((t, dur) => {
 				scoreEl.scrollLeft = targetLeft
 			}
 		}
+		window._playbackX = playbackX
+		if (playbackX != null && window.quickDraw) {
+			const se = document.getElementById('score')
+			if (se) window.quickDraw(null, -se.scrollLeft, -se.scrollTop)
+		}
+	} else {
+		window._playbackX = null
 	}
 	timeLabel.textContent = formatTime(t) + ' / ' + formatTime(dur)
 })
@@ -416,7 +424,21 @@ playback.onStateChange((playing) => {
 playback.onEnd(() => {
 	playBtn.textContent = 'Play'
 	progressBar.value = 0
+	window._playbackX = null
 	timeLabel.textContent = formatTime(0) + ' / ' + formatTime(playback.duration)
+	const scoreEl = document.getElementById('score')
+	if (scoreEl && window.quickDraw) window.quickDraw(null, -scoreEl.scrollLeft, -scoreEl.scrollTop)
+})
+
+document.getElementById('voice_select')?.addEventListener('change', () => {
+	window._selectedStaffIndex = (() => {
+		const sel = document.getElementById('voice_select')
+		if (!sel || sel.value === 'all') return undefined
+		const v = parseInt(sel.value, 10)
+		return isNaN(v) || v < 0 ? undefined : v
+	})()
+	const se = document.getElementById('score')
+	if (window.quickDraw && se) window.quickDraw(null, -se.scrollLeft, -se.scrollTop)
 })
 
 function getPlaybackStaffFilter() {
@@ -509,6 +531,7 @@ function updateVoiceSelect(data) {
 		sel.appendChild(new Option(name, String(i)))
 	}
 	sel.style.display = staves.length > 1 ? '' : 'none'
+	window._selectedStaffIndex = sel.value === 'all' ? undefined : parseInt(sel.value, 10)
 }
 
 function setDataAndRender(_data) {
