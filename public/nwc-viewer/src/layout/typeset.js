@@ -69,6 +69,13 @@ class StaveCursor {
 	}
 }
 
+/** Canonical key for tick values so Fraction/number from different staves match */
+function tickKey(t) {
+	if (t == null) return ''
+	const n = typeof t === 'number' ? t : (t && typeof t.value === 'function' ? t.value() : 0)
+	return n.toFixed(8)
+}
+
 /**
  * Aligns tokens by their time values.
  * The tokens that uses the most space
@@ -87,12 +94,13 @@ class TickTracker {
 	add(token, cursor) {
 		if (token.Visibility === 'hidden') return
 
-		const refValue = token.tabUntilValue
-		const which = this.maxTicks[refValue]
+		const key = tickKey(token.tabUntilValue)
+		if (!key) return
 
 		const x = cursor.staveX + cursor.lastPadRight * X_STRETCH || 0
+		const which = this.maxTicks[key]
 		if (!which || x > which.staveX) {
-			this.maxTicks[refValue] = {
+			this.maxTicks[key] = {
 				cursor,
 				staveX: x,
 				token: token,
@@ -109,12 +117,9 @@ class TickTracker {
 			moveX += cursor.lastPadRight * 4
 		}
 
-		// increments staveX or align with item which already contains staveX for tabValue
-		const key = token.tabValue
+		const key = tickKey(token.tabValue)
 		if (key && key in this.maxTicks) {
-			const which = this.maxTicks[key]
-
-			moveX = which.staveX
+			moveX = this.maxTicks[key].staveX
 		}
 
 		cursor.staveX = moveX
@@ -699,10 +704,11 @@ function score(dataOrContext) {
 		stavePointers.forEach((cursor) => {
 			const token = cursor.peek()
 			if (!token) return
-			const tick = token.tabValue || 0
+			const tk = tickKey(token.tabValue)
+			const tickNum = tk ? parseFloat(tk) : Infinity
 
-			if (tick < smallestTick) {
-				smallestTick = tick
+			if (tickNum < smallestTick) {
+				smallestTick = tickNum
 				smallestIndex = cursor.staveIndex
 			}
 		})

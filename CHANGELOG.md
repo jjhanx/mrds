@@ -15,6 +15,7 @@
 - **nwc-viewer**: 줌 범위 25%~100%로 제한
 - **nwc-viewer**: 선택된 Staff 파란색 표시
 - **nwc-viewer**: 재생선 viewport 60px 고정, 악보만 스크롤; 끝에 닿으면 재생선이 악보 따라 이동
+- **nwc-viewer**: 마디 길이 가장 긴 Staff 기준으로 맞춤 (TickTracker tickKey로 정렬)
 
 - **PDF 뷰어**: 에러 메시지 에러 시에만 표시
   - 로딩 메시지 제거(스피너만 표시), Document/Page `error={null}`로 react-pdf 플래시 방지
