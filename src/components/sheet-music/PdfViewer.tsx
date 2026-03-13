@@ -37,12 +37,40 @@ class PdfErrorBoundary extends Component<{children: ReactNode}, {hasError: boole
     }
 }
 
+const ErrorMessage = () => (
+    <div className="py-20 text-stone-500 text-center px-4">
+        <p className="font-medium">??? ? ????.</p>
+        <p className="text-sm mt-1">???? ???? ??? ?????.</p>
+    </div>
+);
+
 export function PdfViewer({ url }: PdfViewerProps) {
     const [numPages, setNumPages] = useState<number>();
     const [pageNumber, setPageNumber] = useState<number>(1);
     const [scale, setScale] = useState<number>(1.0);
     const [containerWidth, setContainerWidth] = useState<number>();
+    const [showError, setShowError] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
+    const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(() => {
+        setShowError(false);
+        if (errorTimerRef.current) {
+            clearTimeout(errorTimerRef.current);
+            errorTimerRef.current = null;
+        }
+        return () => {
+            if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+        };
+    }, [url]);
+
+    useEffect(() => {
+        setShowError(false);
+        if (errorTimerRef.current) {
+            clearTimeout(errorTimerRef.current);
+            errorTimerRef.current = null;
+        }
+    }, [pageNumber]);
 
     useEffect(() => {
         const updateWidth = () => {
@@ -58,6 +86,26 @@ export function PdfViewer({ url }: PdfViewerProps) {
     function onDocumentLoadSuccess({ numPages }: { numPages: number }): void {
         setNumPages(numPages);
         setPageNumber(1);
+        setShowError(false);
+        if (errorTimerRef.current) {
+            clearTimeout(errorTimerRef.current);
+            errorTimerRef.current = null;
+        }
+    }
+
+    function onDocumentLoadError(err: Error): void {
+        console.error("Document Load Error:", err);
+        scheduleErrorDisplay();
+    }
+
+    function onPageError(): void {
+        console.error("Page Load/Render Error");
+        scheduleErrorDisplay();
+    }
+
+    function scheduleErrorDisplay(): void {
+        if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+        errorTimerRef.current = setTimeout(() => setShowError(true), 400);
     }
 
     return (
@@ -95,6 +143,9 @@ export function PdfViewer({ url }: PdfViewerProps) {
 
             <div className="w-full flex justify-center overflow-x-auto overflow-y-hidden custom-scrollbar bg-white shadow-sm border border-stone-100">
                 <PdfErrorBoundary>
+                {showError ? (
+                    <ErrorMessage />
+                ) : (
                 <Document
                     file={url}
                     options={{
@@ -103,19 +154,13 @@ export function PdfViewer({ url }: PdfViewerProps) {
                         standardFontDataUrl: '/pdfjs/standard_fonts/',
                     }}
                     onLoadSuccess={onDocumentLoadSuccess}
-                    onLoadError={(err) => console.error("Document Load Error:", err)}
+                    onLoadError={onDocumentLoadError}
                     loading={
-                        <div className="flex flex-col items-center justify-center py-20 text-stone-500">
-                            <Loader2 className="w-8 h-8 animate-spin mb-4" />
-                            <p className="text-sm">??(PDF)? ???? ????...</p>
+                        <div className="flex flex-col items-center justify-center py-20">
+                            <Loader2 className="w-8 h-8 animate-spin text-stone-400" />
                         </div>
                     }
-                    error={
-                        <div className="py-20 text-stone-500 text-center px-4">
-                            <p className="font-medium">??? ? ????.</p>
-                            <p className="text-sm mt-1">???? ???? ??? ?????.</p>
-                        </div>
-                    }
+                    error={null}
                 >
                     <Page
                         pageNumber={pageNumber}
@@ -123,14 +168,9 @@ export function PdfViewer({ url }: PdfViewerProps) {
                         scale={scale}
                         renderTextLayer={false}
                         renderAnnotationLayer={false}
-                        onLoadError={(error) => console.error("Page Load Error:", error)}
-                        onRenderError={(error) => console.error("Page Render Error:", error)}
-                        error={
-                            <div className="flex flex-col items-center py-10 text-stone-500 w-full">
-                                <p className="text-sm font-medium">??? ? ????.</p>
-                                <p className="text-xs mt-1">???? ???? ??? ?????.</p>
-                            </div>
-                        }
+                        onLoadError={onPageError}
+                        onRenderError={onPageError}
+                        error={null}
                         loading={
                             <div className="flex justify-center py-20">
                                 <Loader2 className="w-6 h-6 animate-spin text-stone-400" />
@@ -138,6 +178,7 @@ export function PdfViewer({ url }: PdfViewerProps) {
                         }
                     />
                 </Document>
+                )}
             </PdfErrorBoundary>
             </div>
         </div>

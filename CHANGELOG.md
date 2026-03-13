@@ -3,6 +3,9 @@
 ## [Unreleased]
 
 ### 수정
+- **PDF 뷰어**: 에러 메시지 에러 시에만 표시
+  - 로딩 메시지 제거(스피너만 표시), Document/Page `error={null}`로 react-pdf 플래시 방지
+  - `onLoadError`로 실제 에러 감지 후 400ms 지연 표시(일시적 플래시 제외)
 - **PDF 뷰어**: 에러 메시지 스타일 정리
   - 빨간색 에러 UI 제거, 회색(text-stone-500)으로 통일해 "번쩍" 보이는 현상 완화
   - docError/pageError 상태 제거, 에러는 콘솔 로그로만 처리
