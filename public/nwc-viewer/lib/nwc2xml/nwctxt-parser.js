@@ -10,6 +10,33 @@ function fieldValue(f) {
   return idx === -1 ? '' : f.substring(idx + 1);
 }
 
+// Tokenize NWC lyric text into syllables (space=word, hyphen=continuation, etc.)
+function tokenizeLyricText(text) {
+  if (!text || typeof text !== 'string') return [];
+  const len = text.length;
+  let cursor = 0, marker = -1;
+  const tokens = [];
+  while (cursor < len) {
+    const ch = text[cursor];
+    if (/\s/m.test(ch)) {
+      if (marker >= 0 && cursor > marker) tokens.push(text.substring(marker, cursor));
+      marker = -1;
+      cursor++;
+    } else if (/[-;.!_,]/.test(ch)) {
+      if (marker >= 0) {
+        tokens.push(text.substring(marker, cursor + 1));
+      }
+      marker = -1;
+      cursor++;
+    } else {
+      if (marker < 0) marker = cursor;
+      cursor++;
+    }
+  }
+  if (marker >= 0 && marker < len) tokens.push(text.substring(marker, len));
+  return tokens;
+}
+
 class NWCTxtObj {
   constructor(type, staff) { this.type = type; this.staff = staff; this.children = []; }
 }
@@ -401,6 +428,43 @@ export function parseNWCTxt(text) {
       } else if (type === 'StaffInstrument' && staff) {
         for (const f of fields) {
           if (f.startsWith('Patch:')) staff.patchName = parseInt(fieldValue(f)) || 0;
+        }
+      } else if (type === 'Lyrics' && staff) {
+        // |Lyrics|Placement:Bottom|Align:...|  (may have Lyric1|Text: on same line)
+        for (let i = 0; i < fields.length; i++) {
+          const m = fields[i].match(/^Lyric(\d)$/);
+          if (m && i + 1 < fields.length && fields[i + 1].startsWith('Text:')) {
+            const idx = parseInt(m[1], 10) - 1;
+            const raw = fieldValue(fields[i + 1]);
+            const text = (raw.startsWith('"') && raw.endsWith('"') ? raw.slice(1, -1) : raw)
+              .replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+            const syllables = tokenizeLyricText(text);
+            if (syllables.length > 0) {
+              while (staff.lyrics.length <= idx) staff.lyrics.push([]);
+              staff.lyrics[idx] = syllables;
+            }
+            i++;
+          }
+        }
+      } else if (/^Lyric\d$/.test(type) && staff) {
+        // |Lyric1|Text:"..."|  (LyricN on its own line)
+        const m = type.match(/^Lyric(\d)$/);
+        if (m) {
+          const idx = parseInt(m[1], 10) - 1;
+          let text = '';
+          for (const f of fields) {
+            if (f.startsWith('Text:')) {
+              const raw = fieldValue(f);
+              text = (raw.startsWith('"') && raw.endsWith('"') ? raw.slice(1, -1) : raw)
+                .replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+              break;
+            }
+          }
+          const syllables = tokenizeLyricText(text);
+          if (syllables.length > 0) {
+            while (staff.lyrics.length <= idx) staff.lyrics.push([]);
+            staff.lyrics[idx] = syllables;
+          }
         }
       } else if (staff) {
         let obj = null;

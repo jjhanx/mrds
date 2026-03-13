@@ -72,7 +72,7 @@ Features:
 - Time signatures and key signatures
 - Clefs (treble, bass, alto, tenor)
 - Dynamics and tempo markings
-- Lyrics
+- Lyrics (binary formats + NWC 2.75 NWCTXT `|Lyrics|` `|Lyric1|`~`|Lyric8|` with UTF-8)
 - Articulations and ornaments
 - Beaming and stems
 

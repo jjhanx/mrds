@@ -16,6 +16,7 @@
 - **nwc-viewer**: 선택된 Staff 파란색 표시
 - **nwc-viewer**: 재생선 viewport 60px 고정, 악보만 스크롤; 끝에 닿으면 재생선이 악보 따라 이동
 - **nwc-viewer**: 마디 길이 가장 긴 Staff 기준으로 맞춤 (TickTracker tickKey로 정렬)
+- **nwc-viewer**: NWC 2.75(NWCTXT) 가사 표시 — UTF-8 디코딩 + Lyrics/Lyric1~8 파싱 추가 (`남촌 D프렛.nwc` 등 한글 가사 정상 표시)
 
 - **PDF 뷰어**: 에러 메시지 에러 시에만 표시
   - 로딩 메시지 제거(스피너만 표시), Document/Page `error={null}`로 react-pdf 플래시 방지

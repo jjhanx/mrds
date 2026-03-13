@@ -11,6 +11,11 @@ And if you like this project, you can also chat me up [@blurspline on twitter](h
 
 ## Changelog
 
+### v2.2.1 - February 2026 (mrds)
+- **NWC 2.75 lyrics**: NWCTXT 포맷에서 `|Lyrics|` / `|Lyric1|`~`|Lyric8|` 파싱 지원
+- **UTF-8**: V275 NWCTXT 디코딩 시 UTF-8 우선 (한글 등 유니코드 정상 표시)
+- **디버그**: `?trace=1` 또는 `?trace=lyrics` 쿼리로 가사 흐름 로그 활성화
+
 ### v2.2 - March 2026
 - **Wrap layout** with DP-optimal line breaking and anchor-point justification
 - **Lyrics** — syllable assignment respecting slur/tie/LyricSyllable rules, inter-syllable dashes

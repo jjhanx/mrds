@@ -78,10 +78,15 @@ export function parseNWC(buffer) {
   if (!isValidVersion(file.version)) throw new Error(`Unsupported NWC version: ${file.version.toString(16)}`);
   
   // V275 (0x24b) has embedded NWCTXT - find and parse it.
-  // The embedded text is Windows-1252 encoded (not UTF-8), so we must use that
-  // decoder to correctly handle non-ASCII characters (accented letters, ©, etc.).
+  // As of NWC 2.75, nwctxt uses UTF-8. Try UTF-8 first for Korean/Unicode.
   if (file.version === NWC_Version.V275) {
-    const str = new TextDecoder('windows-1252').decode(data);
+    let str;
+    try {
+      str = new TextDecoder('utf-8').decode(data);
+      if (str.indexOf('!NoteWorthyComposer(') < 0) throw new Error('UTF-8 no header');
+    } catch {
+      str = new TextDecoder('windows-1252').decode(data);
+    }
     const idx = str.indexOf('!NoteWorthyComposer(');
     if (idx >= 0) return parseNWCTxt(str.substring(idx));
   }
@@ -167,7 +172,7 @@ function loadStaff(r, file) {
     if (file.version >= NWC_Version.V205) r.readStringNul(); // extra string in V205
   }
   staff.group = r.readStringNul();
-  
+  const doTrace = typeof window !== 'undefined' && typeof location !== 'undefined' && (location.search.includes('trace=1') || location.search.includes('trace=lyrics'));
   // V205 has different staff data structure - use marker-based parsing
   if (file.version >= NWC_Version.V205) {
     // Skip to 0xff marker, then parse from there (matching nwc.js)
@@ -178,6 +183,7 @@ function loadStaff(r, file) {
     r.skip(2); // unknown
     const numLyric = r.readInt16();
     const noLyrics = r.readInt16();
+    if (typeof window !== 'undefined') console.log('[Lyrics Trace] V205 parser: staff', staff.name, 'numLyric=', numLyric, 'noLyrics=', noLyrics, 'condition=', numLyric > 0 && noLyrics > 0 && noLyrics < 100);
     
     if (numLyric > 0 && noLyrics > 0 && noLyrics < 100) {
       r.skip(5); // lyricsOption(2) + skip(3)
@@ -194,10 +200,13 @@ function loadStaff(r, file) {
             syllables.push(s);
           }
           staff.lyrics.push(syllables);
+          if (doTrace) console.log('[Lyrics Trace] V205 loaded line', i, 'syllables=', syllables.length, 'sample=', syllables.slice(0, 3));
           r.seek(start + blockSize);
         }
       }
       r.skip(1); // unknown after lyrics
+    } else if (doTrace && (numLyric !== 0 || noLyrics !== 0)) {
+      console.log('[Lyrics Trace] V205 SKIPPED lyrics. numLyric=', numLyric, 'noLyrics=', noLyrics);
     }
     
     r.skip(1); // unknown
@@ -283,6 +292,7 @@ function loadStaff(r, file) {
   let numLyric = r.readInt16();
   // Handle corrupted numLyric (0xCDCD)
   if ((numLyric & 0xFFFF) === 0xCDCD) numLyric = 0;
+  if (doTrace) console.log('[Lyrics Trace] V<205: staff', staff.name, 'numLyric=', numLyric);
   
   // V150+ reads alignment(2) + staffOffset(2) if numLyric > 0
   if (numLyric > 0 && file.version >= NWC_Version.V150) r.skip(4);
@@ -301,6 +311,7 @@ function loadStaff(r, file) {
         syllables.push(s);
       }
       staff.lyrics.push(syllables);
+      if (doTrace) console.log('[Lyrics Trace] V<205 loaded line', i, 'syllables=', syllables.length, 'sample=', syllables.slice(0, 3));
       r.seek(start + blockSize);
     } else {
       staff.lyrics.push([]);

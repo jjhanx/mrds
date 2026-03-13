@@ -99,6 +99,7 @@ Items marked `[x]` are implemented; `[ ]` are outstanding.
 ## Lyrics
 
 - [x] Lyrics parsed from staff data
+- [x] **NWC 2.75 (NWCTXT) lyrics** — |Lyrics| |Lyric1|~|Lyric8| 파싱, UTF-8 디코딩
 - [x] Syllables assigned to note tokens via tokenizer
 - [x] Rendered left-aligned to note X position
 - [x] Font size proportional to staff height (38% of fontSize)

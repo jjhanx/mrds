@@ -128,6 +128,8 @@ SightReader.prototype.read = function (staves) {
 
 		lyricsToken = null
 		var lyrics = staff.lyrics
+		const doTrace = typeof window !== 'undefined' && typeof location !== 'undefined' && (location.search.includes('trace=1') || location.search.includes('trace=lyrics'));
+		if (doTrace) console.log('[Lyrics Trace] Interpreter staff', staff.staff_name || staff.name, 'lyrics=', !!lyrics, 'length=', lyrics?.length);
 		if (lyrics && lyrics.length) {
 			var firstLine = lyrics[0]
 			if (Array.isArray(firstLine)) {
@@ -157,9 +159,11 @@ SightReader.prototype.read = function (staves) {
 					}
 					lyricsToken.push(trimmed)
 				}
+				if (doTrace) console.log('[Lyrics Trace] Interpreter lyricsToken length=', lyricsToken.length, 'sample=', lyricsToken.slice(0, 5));
 			} else {
 				// Old parser: raw string that needs tokenizing
 				lyricsToken = tokenizeLyrics(firstLine)
+				if (doTrace) console.log('[Lyrics Trace] Interpreter lyricsToken (tokenized) length=', lyricsToken.length);
 			}
 		}
 		staff.tokens.forEach((token) => {
@@ -455,6 +459,7 @@ SightReader.prototype.Note = function (token) {
 			}
 		}
 	}
+	// [Lyrics Trace] Uncomment to debug: if (token.text) console.log('Note got lyric:', token.text)
 
 	// duration of this note
 	this._handle_duration(token)

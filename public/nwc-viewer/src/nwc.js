@@ -409,12 +409,17 @@ function convertFromNewParser(nwcFile) {
 					boundaryBottom: staff.boundaryBottom || 0,
 					endingBar: staff.endingBar || 0,
 					lines: staff.lines || 5,
-					lyrics: (staff.lyrics || []).map(function(lyric) {
-						// New parser produces pre-split syllable arrays where each
-						// element maps 1:1 to notes.  Pass them through directly.
-						// Old parser produces raw strings that need tokenizing.
-						return Array.isArray(lyric) ? lyric : (lyric || '')
-					}),
+					lyrics: (() => {
+						const mapped = (staff.lyrics || []).map(function(lyric) {
+							// New parser produces pre-split syllable arrays where each
+							// element maps 1:1 to notes.  Pass them through directly.
+							// Old parser produces raw strings that need tokenizing.
+							return Array.isArray(lyric) ? lyric : (lyric || '')
+						});
+						const doTrace = typeof window !== 'undefined' && typeof location !== 'undefined' && (location.search.includes('trace=1') || location.search.includes('trace=lyrics'));
+						if (doTrace) console.log('[Lyrics Trace] Adapter staff', staff.name, 'lyrics=', mapped.length, 'firstLine=', mapped[0] ? (Array.isArray(mapped[0]) ? mapped[0].slice(0, 3) : String(mapped[0]).slice(0, 30)) : 'empty');
+						return mapped;
+					})(),
 					tokens: (staff.objects || []).map(adaptObject)
 				}
 			})
