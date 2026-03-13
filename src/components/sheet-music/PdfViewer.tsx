@@ -27,9 +27,9 @@ class PdfErrorBoundary extends Component<{children: ReactNode}, {hasError: boole
     render() {
         if (this.state.hasError) {
             return (
-                <div className="py-20 text-center text-red-600">
-                    <p className="font-bold">PDF 뷰어에서 오류가 발생했습니다.</p>
-                    <p>다운로드 버튼을 눌러 파일을 열어보세요.</p>
+                <div className="py-16 text-center text-stone-600">
+                    <p className="font-medium mb-1">표시할 수 없습니다.</p>
+                    <p className="text-sm">다운로드 버튼으로 파일을 열어보세요.</p>
                 </div>
             );
         }
@@ -44,6 +44,8 @@ export function PdfViewer({ url }: PdfViewerProps) {
     const [containerWidth, setContainerWidth] = useState<number>();
     const [docError, setDocError] = useState<Error | null>(null);
     const [pageError, setPageError] = useState<Error | null>(null);
+    const [pageReady, setPageReady] = useState(false);
+    const [docLoaded, setDocLoaded] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -52,7 +54,6 @@ export function PdfViewer({ url }: PdfViewerProps) {
                 setContainerWidth(containerRef.current.clientWidth);
             }
         };
-        // 약간의 딜레이를 주어 부모 컨테이너가 마운트된 후 너비 취득
         setTimeout(updateWidth, 100);
         window.addEventListener('resize', updateWidth);
         return () => window.removeEventListener('resize', updateWidth);
@@ -62,7 +63,19 @@ export function PdfViewer({ url }: PdfViewerProps) {
         setNumPages(numPages);
         setPageNumber(1);
         setDocError(null);
+        setDocLoaded(true);
+        setPageReady(false);
     }
+
+    useEffect(() => {
+        setPageReady(false);
+    }, [pageNumber]);
+
+    useEffect(() => {
+        setDocLoaded(false);
+        setDocError(null);
+        setPageError(null);
+    }, [url]);
 
     return (
         <div className="flex flex-col items-center w-full bg-stone-50 rounded-lg p-2 sm:p-4 border border-stone-200" ref={containerRef}>
@@ -98,7 +111,14 @@ export function PdfViewer({ url }: PdfViewerProps) {
                 </div>
             </div>
 
-            <div className="w-full flex justify-center overflow-x-auto overflow-y-hidden custom-scrollbar bg-white shadow-sm border border-stone-100">
+            <div className="relative w-full min-h-[400px] flex justify-center overflow-x-auto overflow-y-hidden custom-scrollbar bg-white shadow-sm border border-stone-100 rounded-lg">
+                {/* 로딩 오버레이: 페이지가 준비될 때까지 깔끔하게 유지 */}
+                {(!docLoaded || !pageReady) && !docError && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-stone-50/95 z-10 rounded-lg transition-opacity duration-200">
+                        <Loader2 className="w-8 h-8 animate-spin text-amber-500 mb-3" aria-hidden />
+                        <p className="text-sm text-stone-600">불러오는 중...</p>
+                    </div>
+                )}
                 <PdfErrorBoundary>
                 <Document
                     file={url}
@@ -112,18 +132,11 @@ export function PdfViewer({ url }: PdfViewerProps) {
                         console.error('Document Load Error:', err);
                         setDocError(err);
                     }}
-                    loading={
-                        <div className="flex flex-col items-center justify-center py-20 text-stone-500">
-                            <Loader2 className="w-8 h-8 animate-spin mb-4" />
-                            <p className="text-sm">악보(PDF)를 불러오는 중입니다...</p>
-                        </div>
-                    }
+                    loading={null}
                     error={
-                        <div className="py-20 text-red-600 text-center px-4 w-full break-all">
-                            <p className="mb-2 font-bold bg-red-50 p-2 rounded border border-red-200">
-                                {docError?.message || "문서를 바로 불러올 수 없습니다."}
-                            </p>
-                            <p className="text-sm text-stone-500">위 상세 에러 메시지를 확인해주세요. 다운로드 또는 외부 열기 버튼을 이용해주세요.</p>
+                        <div className="py-16 text-stone-600 text-center px-4">
+                            <p className="font-medium mb-1">표시할 수 없습니다.</p>
+                            <p className="text-sm">다운로드 버튼으로 파일을 열어보세요.</p>
                         </div>
                     }
                 >
@@ -133,29 +146,24 @@ export function PdfViewer({ url }: PdfViewerProps) {
                         scale={scale}
                         renderTextLayer={false}
                         renderAnnotationLayer={false}
+                        onLoadSuccess={() => setPageReady(true)}
                         onLoadError={(error) => {
                             console.error("Page Load Error:", error);
                             setPageError(error);
+                            setPageReady(true);
                         }}
                         onRenderError={(error) => {
                             console.error("Page Render Error:", error);
                             setPageError(error);
+                            setPageReady(true);
                         }}
                         error={
-                            <div className="flex flex-col items-center py-10 text-red-600 w-full break-all">
-                                <p className="text-sm font-bold bg-red-50 p-2 rounded border border-red-200 mb-1 w-full max-w-sm text-center">
-                                    {pageError?.message || "페이지 렌더링 오류"}
-                                </p>
-                                <p className="text-xs text-stone-500 max-w-sm text-center">
-                                    설정이나 브라우저 환경에서 지원되지 않는 PDF 형식 요소가 있을 수 있습니다.
-                                </p>
+                            <div className="flex flex-col items-center py-10 text-stone-600 w-full">
+                                <p className="text-sm font-medium mb-1">표시할 수 없습니다.</p>
+                                <p className="text-xs">다운로드 버튼으로 파일을 열어보세요.</p>
                             </div>
                         }
-                        loading={
-                            <div className="flex justify-center py-20">
-                                <Loader2 className="w-6 h-6 animate-spin text-stone-400" />
-                            </div>
-                        }
+                        loading={null}
                     />
                 </Document>
             </PdfErrorBoundary>

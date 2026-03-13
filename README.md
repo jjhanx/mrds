@@ -87,6 +87,10 @@ npm run dev
 
 http://localhost:3000 에서 접속하세요. 로그인하지 않으면 로그인 페이지로 리디렉션됩니다.
 
+## 변경 이력
+
+[CHANGELOG.md](./CHANGELOG.md) 참고
+
 ## 디렉토리 구조
 
 - `src/app/` - 페이지 및 API 라우트
