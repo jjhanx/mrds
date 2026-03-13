@@ -595,14 +595,17 @@ const STAFF_STRIP_WIDTH = 56
 function buildStaffStrip() {
 	const strip = document.getElementById('staff_strip')
 	const wrap = document.getElementById('voice_select_wrap')
+	const scoreContent = document.getElementById('score_content')
 	if (!strip || !wrap) return
 	const staves = getCurrentStaves()
 	if (!staves || staves.length < 2) {
 		wrap.style.display = 'none'
 		strip.innerHTML = ''
+		strip.style.display = 'none'
 		return
 	}
 	wrap.style.display = ''
+	strip.style.display = ''
 	const staffYMap = getStaffYMap()
 	const zoom = getZoomLevel()
 	const fs = getFontSize()

@@ -1227,7 +1227,8 @@ function sizeSpacerAndRender(canvas, canvasWidth, canvasHeight) {
 	invisible_canvas.style.width = `${contentW}px`
 	invisible_canvas.style.height = `${contentH}px`
 	if (scoreContent) {
-		scoreContent.style.width = `${STAFF_STRIP_WIDTH + contentW}px`
+		var stripW = (currentStaves.length >= 2) ? STAFF_STRIP_WIDTH : 0
+		scoreContent.style.width = `${stripW + contentW}px`
 		scoreContent.style.height = `${contentH}px`
 	}
 
