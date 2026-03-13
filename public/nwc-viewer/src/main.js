@@ -5,7 +5,8 @@ import { decodeNwcArrayBuffer, getUseNewParser, setUseNewParser } from './nwc.js
 import { interpret } from './interpreter.js'
 import { setup, resizeToFit } from './drawing.js'
 import { exportLilypond } from './exporter.js'
-import { score } from './layout/typeset.js'
+import { score, getStaffYMap, getCurrentStaves } from './layout/typeset.js'
+import { getFontSize } from './constants.js'
 import { blank } from './editing.js'
 import { MusicContext } from './context.js'
 import { PlaybackController, buildTempoMap, secondsToTicks } from './audio.js'
@@ -473,6 +474,7 @@ function updateVoiceSelectFromPanel() {
 		}
 	}
 	syncVoiceSelectUI()
+	updateStaffStripSelection()
 	const se = document.getElementById('score')
 	if (window.quickDraw && se) window.quickDraw(null, -se.scrollLeft, -se.scrollTop)
 }
@@ -572,10 +574,11 @@ const rerender = () => {
 			(canvas) => {
 				console.log('ok')
 				var score_div = document.getElementById('score')
-				var invisible_canvas = document.getElementById('invisible_canvas')
+				var score_content = document.getElementById('score_content')
 
-				score_div.insertBefore(canvas, invisible_canvas)
+				score_div.insertBefore(canvas, score_content)
 				resizeToFit()
+				buildStaffStrip()
 			}
 		)
 	} catch (error) {
@@ -585,6 +588,81 @@ const rerender = () => {
 }
 
 window.exportLilypond = exportLilypond
+window.buildStaffStrip = buildStaffStrip
+
+const STAFF_STRIP_WIDTH = 56
+
+function buildStaffStrip() {
+	const strip = document.getElementById('staff_strip')
+	const wrap = document.getElementById('voice_select_wrap')
+	if (!strip || !wrap) return
+	const staves = getCurrentStaves()
+	if (!staves || staves.length < 2) {
+		wrap.style.display = 'none'
+		strip.innerHTML = ''
+		return
+	}
+	wrap.style.display = ''
+	const staffYMap = getStaffYMap()
+	const zoom = getZoomLevel()
+	const fs = getFontSize()
+	strip.innerHTML = ''
+	let stackedOffset = 0
+	for (let i = 0; i < staves.length; i++) {
+		const name = staves[i].staff_label || staves[i].staff_name || '파트 ' + (i + 1)
+		const y = staffYMap[i] || 0
+		let h
+		if (i < staffYMap.length - 1 && staffYMap[i + 1] > y) {
+			h = (staffYMap[i + 1] - y) * zoom
+		} else if (i > 0 && staffYMap[i - 1] < y) {
+			h = (y - staffYMap[i - 1]) * zoom
+		} else {
+			h = Math.max(24, fs * 1.5 * zoom)
+		}
+		if (i > 0 && staffYMap[i] === staffYMap[i - 1]) {
+			stackedOffset += 20
+		} else {
+			stackedOffset = 0
+		}
+		const el = document.createElement('div')
+		el.className = 'staff-strip-item'
+		el.textContent = name
+		el.dataset.staffIndex = String(i)
+		el.style.top = (y * zoom + stackedOffset) + 'px'
+		el.style.height = (h > 20 ? h : 20) + 'px'
+		el.addEventListener('mousedown', (e) => e.stopPropagation())
+		el.addEventListener('click', (e) => {
+			e.stopPropagation()
+			const idx = window._selectedStaffIndices
+			const i = parseInt(el.dataset.staffIndex, 10)
+			let next
+			if (!idx || idx.length === 0) {
+				next = [i]
+			} else if (idx.includes(i)) {
+				next = idx.filter((j) => j !== i)
+			} else {
+				next = [...idx, i].sort((a, b) => a - b)
+			}
+			window._selectedStaffIndices = next.length > 0 ? next : undefined
+			updateStaffStripSelection()
+			syncVoiceSelectUI()
+			const se = document.getElementById('score')
+			if (window.quickDraw && se) window.quickDraw(null, -se.scrollLeft, -se.scrollTop)
+		})
+		strip.appendChild(el)
+	}
+	updateStaffStripSelection()
+}
+
+function updateStaffStripSelection() {
+	const strip = document.getElementById('staff_strip')
+	if (!strip) return
+	const idx = window._selectedStaffIndices
+	strip.querySelectorAll('.staff-strip-item').forEach((el) => {
+		const i = parseInt(el.dataset.staffIndex, 10)
+		el.classList.toggle('selected', idx ? idx.includes(i) : false)
+	})
+}
 
 function updateVoiceSelect(data) {
 	const wrap = document.getElementById('voice_select_wrap')

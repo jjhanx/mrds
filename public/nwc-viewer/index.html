@@ -74,6 +74,35 @@
 				position: relative;
 				z-index: 0;
 			}
+			#score_content {
+				display: flex;
+				flex-shrink: 0;
+			}
+			#staff_strip {
+				width: 56px;
+				flex-shrink: 0;
+				position: relative;
+				z-index: 10;
+				pointer-events: auto;
+				background: rgba(255,255,255,0.92);
+				border-right: 1px solid #e0e0e0;
+			}
+			.staff-strip-item {
+				position: absolute;
+				left: 0;
+				right: 0;
+				min-height: 20px;
+				display: flex;
+				align-items: center;
+				padding: 0 4px;
+				font-size: 11px;
+				cursor: pointer;
+				user-select: none;
+				border-radius: 3px;
+				transition: background 0.15s;
+			}
+			.staff-strip-item:hover { background: rgba(0,0,0,0.06); }
+			.staff-strip-item.selected { background: rgba(66,133,244,0.25); color: #1a73e8; font-weight: 600; }
 
 			#container {
 				display: flex;
@@ -112,7 +141,7 @@
 					<input type="file" id="opener" hidden />
 					<select id="samples" class="embed-hide"></select>
 
-				<div id="voice_select_wrap" class="voice-select-wrap" title="재생할 파트 선택 (여러 개 선택 가능)" style="margin-right: 8px; position: relative; display: inline-block; vertical-align: middle; z-index: 1100;">
+				<div id="voice_select_wrap" class="voice-select-wrap" title="재생할 파트 선택: 왼쪽 악보 파트명 클릭 또는 드롭다운에서 선택" style="margin-right: 8px; position: relative; display: inline-block; vertical-align: middle; z-index: 1100;">
 					<button type="button" id="voice_select_btn" style="min-width: 120px; padding: 4px 8px; background: #3f3f3f; color: #fefefe; border: 1px solid #2e2e2e; cursor: pointer; text-align: left; font-size: 13px;">전체</button>
 					<div id="voice_select_panel" class="voice-select-panel" style="display: none; position: absolute; top: 100%; left: 0; margin-top: 2px; background: #2a2a2a; border: 1px solid #444; border-radius: 4px; padding: 6px; min-width: 140px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); z-index: 99999;"></div>
 				</div>
@@ -177,7 +206,10 @@
 			</div>
 
 			<div id="score">
-				<div id="invisible_canvas"></div>
+				<div id="score_content">
+					<div id="staff_strip"></div>
+					<div id="invisible_canvas"></div>
+				</div>
 			</div>
 
 			<div id="footer" class="embed-hide">
@@ -265,15 +297,23 @@
 				// Resize the invisible_canvas spacer so scroll bounds are correct
 				// before we set the new scroll position.
 				var ic = document.getElementById('invisible_canvas')
+				var sc = document.getElementById('score_content')
 				if (ic && typeof maxCanvasWidth !== 'undefined') {
-					ic.style.width  = (maxCanvasWidth  * zoom) + 'px'
-					ic.style.height = Math.max(maxCanvasHeight * zoom, scoreElm.clientHeight) + 'px'
+					var cw = maxCanvasWidth * zoom
+					var ch = Math.max(maxCanvasHeight * zoom, scoreElm.clientHeight)
+					ic.style.width  = cw + 'px'
+					ic.style.height = ch + 'px'
+					if (sc) {
+						sc.style.width  = (56 + cw) + 'px'
+						sc.style.height = ch + 'px'
+					}
 				}
 
 				scoreElm.scrollLeft = cx * zoom - scoreElm.clientWidth  / 2
 				scoreElm.scrollTop  = cy * zoom - scoreElm.clientHeight / 2
 
 				quickDraw(null, -scoreElm.scrollLeft, -scoreElm.scrollTop)
+				if (typeof window.buildStaffStrip === 'function') window.buildStaffStrip()
 			}
 
 			window.applyZoom = applyZoom
