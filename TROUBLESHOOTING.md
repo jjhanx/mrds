@@ -398,121 +398,36 @@ pm2 restart mrds
 
 ---
 
-## 12. 악보 자료실 PDF 내용(텍스트/악보)이 보이지 않을 때
+## 12. 악보 자료실 DB 초기화 후 복구
 
-특정 PDF 파일(예: 특정 한글 폰트나 CMap 데이터가 포함된 악보)을 웹 뷰어에서 열었을 때, 백지로 나오거나 일부 내용이 누락되는 현상이 발생할 수 있습니다. 이는 브라우저의 PDF 렌더러(`react-pdf` / `pdf.js`)가 해당 폰트 데이터를 실시간으로 그려내지 못해 발생합니다.
+다른 DB 도구(Prisma Studio, SQLite 브라우저 등)를 쓰다가 실수로 테이블을 비우거나 DB를 초기화해 **악보 목록이 사라진 경우**에 대한 복구 방법입니다.
 
-### 해결 방법
+### 전제 조건
 
-코드에서 `<Document>` 컴포넌트 옵션에 CMap 및 표준 폰트를 로컬에서 불러오도록, 그리고 `pdf.worker.min.mjs` 워커 스크립트 역시 로컬에서 실행되도록 수정해야 합니다. (이 설정은 코드에 이미 반영되었습니다.)
+- **업로드 파일이 디스크에 남아 있어야** 합니다.
+- 악보 파일은 `public/uploads/sheet-music/` 에 저장됩니다.
+- DB만 초기화했고, 이 폴더와 그 안 파일이 그대로라면 복구 가능합니다.
 
----
+### 복구 방법
 
-### 악보 자료실 검색
-
-전체 목록이나 특정 폴더 페이지 상단의 검색창에서 **제목/설명/작곡가 키워드**로 검색할 수 있는 기능이 추가되었습니다. `?q=` 쿼리 파라미터가 API로 전달되어 서버 측에서도 필터링하므로, URL을 직접 조작하여 외부에서 검색 결과를 공유할 수 있습니다.
-// 외부 CDN을 쓰면 워커 내부에서 상대경로로 폰트를 찾을 때 CDN 주소를 참조하여 404 에러나 CORS 에러가 발생합니다.
-pdfjs.GlobalWorkerOptions.workerSrc = '/pdfjs/pdf.worker.min.mjs';
-
-// ...
-
-// 2. Document 옵션에 로컬 폰트 경로를 연결합니다.
-<Document
-    file={url}
-    options={{
-        cMapUrl: '/pdfjs/cmaps/',
-        cMapPacked: true,
-        standardFontDataUrl: '/pdfjs/standard_fonts/',
-    }}
->
-```
-
-(참고: `node_modules/pdfjs-dist` 배포판 내부의 `cmaps`, `standard_fonts` 폴더 전체와 `build/pdf.worker.min.mjs` 파일을 서버의 `public/pdfjs` 디렉토리로 직접 복사해둔 상태입니다.)
-
-> **추가**: 가끔 Adobe Reader에서는 문제 없이 보이지만 웹뷰어에서는 백지만 나오는 PDF가 있습니다. 이 경우 **서버 업로드 처리 단계에서 `pdf-lib`로 문서를 자동 로드·재저장하고, 가능한 경우 `qpdf --linearize`를 실행하여 문서를 보정합니다**. 이 기능은 2026년 3월 패치 이후 기본 동작하므로 사용자는 별도 조치 없이 업로드하면 됩니다. (수동 복구가 필요할 경우에는 여전히 `qpdf`/Ghostscript를 사용해도 됩니다.)>
-> **URL 인코딩**: 파일 이름에 공백이나 한글이 들어가도 자동으로 `encodeURI` 처리하여 브라우저가 올바르게 요청하도록 변경됐습니다. 클라이언트 측에서는 이제 PDF 뷰어에서 치명적 오류가 발생해도 전체 페이지가 깨지지 않도록 에러 바운더리가 추가되었습니다.
->
-> **PDF 텍스트 검색**: 업로드된 PDF 파일에서 본문 텍스트를 자동으로 추출하여 `textContent` 필드에 저장합니다. 이로 인해 제목 외에 PDF 내 텍스트도 검색할 수 있게 되었습니다. 검색 기능은 전체/폴더별 모두 적용됩니다. 텍스트 추출은 `pdf-parse` 라이브러리를 사용하므로, 배포 시 반드시 `npm install` 후 마이그레이션을 실행하세요.
----
-
-## 13. 파일 업로드는 성공했는데 새로 올린 PDF/이미지가 404(Not Found) 에러가 날 때
-
-앱에서 파일을 정상적으로 업로드하여 DB에도 주소가 잘 저장되었고, 서버의 `public/uploads` 폴더에 실제 파일이 생겼음에도 브라우저에서 열면 **404 에러**가 발생하는 경우가 있습니다.
-
-**원인:**  
-Next.js 프로덕션 모드(`npm run build` 후 `npm run start` 또는 PM2 실행)는 서버가 처음 켜질 때 `public` 폴더 안에 있는 파일 목록만 캐싱합니다. 따라서 **서버가 켜진 이후에 사용자가 새로 업로드한 파일은 Next.js가 인식하지 못해 404 에러를 반환**하게 됩니다.
-
-### 해결 방법 (Nginx 직접 서빙)
-
-이 문제는 Next.js를 거치지 않고 웹 서버인 Nginx가 해당 파일들을 직접 서빙하도록 설정하여 완벽히 해결할 수 있습니다.
-
-**1) nginx 설정 파일 수정**
+**1) 프로젝트 루트에서 복구 스크립트 실행:**
 
 ```bash
-sudo nano /etc/nginx/sites-available/mrds
+npm run db:recover-sheet-music
 ```
 
-**2) `/uploads/`와 `/pdfjs/` location 블록 추가**
+스크립트가 `public/uploads/sheet-music/` 를 스캔해 DB에 SheetMusic 레코드를 다시 생성합니다.
 
-기존 `location /` 블록 **위쪽**에 아래 두 블록을 추가하세요. (`/home/ubuntu/mrds` 경로는 본인 서버의 실제 프로젝트 경로에 맞게 써야 합니다)
-
-```nginx
-    # 업로드된 정적 파일(악보, 이미지 등)은 Next.js 서버를 거치지 않고 Nginx가 다이렉트로 서빙 (404 방지)
-    location /uploads/ {
-        # 주의: 아래 경로는 실제 서버의 프로젝트 경로(예: /home/사용자명/mrds/public/uploads/)로 맞춰야 합니다.
-        alias /home/ubuntu/mrds/public/uploads/;
-        autoindex off;
-        access_log off;
-        expires max;
-    }
-
-    location / {
-        proxy_pass http://127.0.0.1:3001;
-        # ...
-```
-
-**3) nginx 설정 검사 및 적용**
+**2) 특정 폴더로 일괄 지정:**
 
 ```bash
-sudo nginx -t
-sudo systemctl reload nginx
+node scripts/recover-sheet-music.js --folder=choir
 ```
 
-이렇게 설정하면 새로 업로드하는 모든 파일이 즉각적으로 404 없이 표시됩니다!
----
+`choir`(합창곡), `art-song`(애창곡), `nwc`, `utility`, `video`, `education` 등 slug로 지정 가능합니다.
 
-## 14. Next.js 빌드 시 `RouteHandlerConfig` 타입 오류 발생
+**3) 파일까지 삭제된 경우**
 
-Next.js 16으로 업그레이드했거나 Turbopack 사용 중일 때 `app/` 디렉토리 내부의 **커스텀 라우트(route.ts)** 를 작성하면 다음과 같은 타입 에러가 날 수 있습니다:
-
-```
-Type error: Type 'typeof import(".../route")' does not satisfy the constraint 'RouteHandlerConfig<"/pdfjs/[...path]">'.
-Types of property 'GET' are incompatible.
-  Type '(request: NextRequest, { params }: { params: { path: string[]; }; }) => Promise<NextResponse<unknown>>' ...
-```
-
-### 원인
-
-App Router가 기대하는 핸들러 시그니처가 변경되어 `params`가 **Promise** 형태로 전달됩니다. 기존 코드에서 `params`를 바로 비구조화하거나 `Request` 대신 일반 `Request` 타입을 사용하면 컴파일 오류가 발생합니다.
-
-### 해결 방법
-
-`route.ts` 파일의 함수 선언을 다음과 같이 수정하세요:
-
-```ts
-import { NextRequest, NextResponse } from 'next/server';
-
-export async function GET(
-  request: NextRequest,
-  context: { params: Promise<{ path: string[] }> }
-) {
-  const { path: pathParams } = await context.params;
-  // ...기존 로직 유지
-}
-```
-
-또는 POST/PUT 등 다른 메소드를 정의할 때도 동일한 구조를 따르세요.
-
-> 이 문제는 다른 다이나믹 라우트(`[...path]`, `[id]` 등)에도 동일하게 적용됩니다.
-
----
+- DB와 함께 `public/uploads/sheet-music/` 이 삭제되었다면 **파일 자체를 복구할 수 없습니다**.
+- Windows: 휴지통, **이전 버전** (폴더 우클릭 → 속성 → 이전 버전) 확인.
+- 서버: 서버 전체 백업, 스냅샷이 있다면 복원 시도.
