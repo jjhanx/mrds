@@ -43,8 +43,8 @@ function getZoomLevel() {
 	return zoomLevel
 }
 
-// Lyric/text font stack — Noto Sans KR first (loaded from Google Fonts) for reliable Korean
-const LYRIC_FONT_STACK = "'Noto Sans KR', 'Malgun Gothic', 'Apple SD Gothic Neo', 'Nanum Gothic', 'Dotum', sans-serif"
+// 한글: 시스템 폰트 우선 (Malgun=Win, Apple SD=Mac), Google Fonts 보조
+const LYRIC_FONT_STACK = "'Malgun Gothic', 'Apple SD Gothic Neo', 'Gulim', 'Dotum', 'Noto Sans KR', sans-serif"
 
 function isNode() {
 	return typeof module !== 'undefined'

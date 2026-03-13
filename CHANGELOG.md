@@ -11,7 +11,7 @@
 - **악보 자료실**: 제목·내용·작곡가 검색 기능 추가 (게시판과 동일한 방식)
 
 ### 수정
-- **nwc-viewer**: 한글 제목·가사 표시 — document.fonts.load('Noto Sans KR') 후 렌더
+- **nwc-viewer**: 한글 제목·가사 표시 — EUC-KR 우선 디코딩, 시스템 폰트(Malgun Gothic 등) 우선, fillStyle 명시
 - **nwc-viewer**: 줌 범위 25%~100%로 제한
 - **nwc-viewer**: 선택된 Staff 파란색 표시
 - **nwc-viewer**: 재생선 viewport 60px 고정, 악보만 스크롤; 끝에 닿으면 재생선이 악보 따라 이동

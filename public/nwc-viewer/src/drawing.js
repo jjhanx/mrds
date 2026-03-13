@@ -659,10 +659,10 @@ class Text extends Draw {
 	}
 
 	draw(ctx) {
-		ctx.fillStyle = getStaffHighlightColor(this) || ctx.fillStyle || '#000'
+		ctx.fillStyle = getStaffHighlightColor(this) || '#000'
 		ctx.font = this.font || 'italic bold 12px ' + LYRIC_FONT_STACK
 		if (this.textAlign) ctx.textAlign = this.textAlign
-		ctx.fillText(this.text, 0, 0)
+		if (this.text) ctx.fillText(this.text, 0, 0)
 	}
 }
 

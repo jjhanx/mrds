@@ -51,7 +51,17 @@ export class BinaryReader {
 }
 
 function decodeString(bytes) {
-  // NWC files: Windows app. Try UTF-8 first, then CP949/EUC-KR (Korean), then Windows-1252.
+  // NWC on Windows: 한글은 CP949/EUC-KR. 고바이트 있으면 EUC-KR 우선 시도.
+  const hasHigh = bytes.length > 0 && bytes.some(b => b > 127);
+  if (hasHigh) {
+    try {
+      const s = new TextDecoder('euc-kr').decode(bytes);
+      if (s && s.indexOf('\uFFFD') < 0) return s;
+    } catch {}
+    try {
+      return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    } catch {}
+  }
   try {
     return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
   } catch {

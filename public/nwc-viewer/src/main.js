@@ -557,14 +557,16 @@ function processData(payload, filename) {
 		window.__currentFile = filename || '(unknown)'
 		window.__renderComplete = null
 		var data = decodeNwcArrayBuffer(payload)
-		// 한글 폰트 로드 대기 후 렌더 (Noto Sans KR)
 		const doRender = () => setDataAndRender(data)
+		// 한글: 시스템 폰트 또는 Noto Sans KR 로드 후 렌더
+		const fontFam = '"Malgun Gothic", "Noto Sans KR"'
 		if (document.fonts && document.fonts.load) {
-			document.fonts.load('16px "Noto Sans KR"').then(doRender).catch(doRender)
-		} else if (document.fonts && document.fonts.ready) {
-			document.fonts.ready.then(doRender)
+			Promise.all([
+				document.fonts.load(`16px ${fontFam}`),
+				document.fonts.load(`12px ${fontFam}`),
+			]).then(doRender).catch(doRender)
 		} else {
-			doRender()
+			setTimeout(doRender, 100)
 		}
 	} catch (error) {
 		console.error('Failed to process NWC file:', error)
