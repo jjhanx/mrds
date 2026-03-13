@@ -488,21 +488,30 @@ document.addEventListener('click', (e) => {
 	const panel = document.getElementById('voice_select_panel')
 	if (panel) panel.style.display = 'none'
 })
-// 패널 내 체크박스 클릭: capture로 먼저 처리 (다른 요소가 막기 전에)
-document.addEventListener('click', (e) => {
+;(function () {
 	const panel = document.getElementById('voice_select_panel')
-	if (!panel || !panel.contains(e.target) || panel.style.display === 'none') return
-	const el = e.target.nodeType === 1 ? e.target : (e.target && e.target.parentElement)
-	if (!el || !el.closest) return
-	const lab = el.closest('label')
-	const cb = (el.type === 'checkbox' ? el : null) || (lab && lab.querySelector('input[type="checkbox"]'))
-	if (cb) {
-		e.preventDefault()
-		e.stopPropagation()
-		cb.checked = !cb.checked
-		updateVoiceSelectFromPanel()
+	if (!panel) return
+	function getCheckbox(el) {
+		if (!el || el.nodeType !== 1) return null
+		return (el.tagName === 'INPUT' && el.type === 'checkbox') ? el : el.closest('label')?.querySelector('input[type="checkbox"]')
 	}
-}, true)
+	panel.addEventListener('mousedown', function (e) {
+		const el = e.target?.nodeType === 3 ? e.target.parentElement : e.target
+		const cb = getCheckbox(el)
+		if (cb) {
+			e.preventDefault()
+			e.stopPropagation()
+			cb.checked = !cb.checked
+			updateVoiceSelectFromPanel()
+		} else {
+			e.stopPropagation()
+		}
+	}, true)
+	panel.addEventListener('click', function (e) {
+		if (getCheckbox(e.target?.nodeType === 3 ? e.target.parentElement : e.target)) e.preventDefault()
+		e.stopPropagation()
+	}, true)
+})()
 
 function getPlaybackStaffFilter() {
 	const idx = window._selectedStaffIndices
