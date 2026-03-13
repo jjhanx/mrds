@@ -8,4 +8,4 @@
   - 오버레이 제거 후 PDF가 정상 렌더링되도록 복구
 
 ### 수정
-- **PDF 뷰어**: `min-h` 로딩 placeholder가 PDF 렌더 실패 유발 → Document/Page에 정상 loading UI 복원
+- **PDF 뷰어**: 마지막 동작 버전(e95927f)으로 완전 복원, 미들웨어에서 `/pdfjs/` 제외 (worker·cmaps·폰트 로드 보장)
