@@ -547,19 +547,19 @@ function quickDraw(dataOrContext, x, y) {
 	var zoom = getZoomLevel()
 	if (zoom !== 1) ctx.scale(zoom, zoom)
 	drawing.draw(ctx)
-	// Red playback position indicator
+	ctx.restore()
+	// Red playback line: viewport 고정(60px) — 악보만 스크롤되며 선 아래를 지남
 	const playX = typeof window !== 'undefined' && window._playbackX
 	if (playX != null) {
 		ctx.save()
 		ctx.strokeStyle = '#e53935'
-		ctx.lineWidth = 2 / zoom
+		ctx.lineWidth = 2
 		ctx.beginPath()
-		ctx.moveTo(playX, -50)
-		ctx.lineTo(playX, (typeof maxCanvasHeight !== 'undefined' ? maxCanvasHeight : 2000) + 50)
+		ctx.moveTo(60, 0)
+		ctx.lineTo(60, canvas.height)
 		ctx.stroke()
 		ctx.restore()
 	}
-	ctx.restore()
 }
 
 window.quickDraw = quickDraw

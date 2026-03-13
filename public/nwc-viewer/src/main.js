@@ -1,5 +1,5 @@
 import './constants.js'
-import { getLayoutMode, setZoomLevel } from './constants.js'
+import { getLayoutMode, setZoomLevel, setLayoutMode } from './constants.js'
 import { ajax } from './loaders.js'
 import { decodeNwcArrayBuffer, getUseNewParser, setUseNewParser } from './nwc.js'
 import { interpret } from './interpreter.js'
@@ -88,8 +88,8 @@ sample_dom.onchange = function () {
 const fileParam = new URLSearchParams(location.search).get('file')
 if (fileParam) {
 	const url = fileParam.startsWith('/') ? location.origin + fileParam : fileParam
-	// Embedded mode: default zoom 1/4 for more measures per line (4+ per line)
 	setZoomLevel(0.25)
+	setLayoutMode('scroll')  // 한 줄에 길게, 오른쪽으로 스크롤
 	const slider = document.getElementById('zoom_slider')
 	const label = document.getElementById('zoom_label')
 	if (slider) slider.value = 0.25
@@ -402,8 +402,8 @@ playback.onTime((t, dur) => {
 			const scoreEl = document.getElementById('score')
 			if (scoreEl) {
 				const zoom = getZoomLevel()
-				const targetLeft = Math.max(0, x * zoom - scoreEl.clientWidth / 4)
-				scoreEl.scrollLeft = targetLeft
+				const PLAYHEAD_PX = 60  // 빨간선 고정 위치 (좌측에서 px)
+				scoreEl.scrollLeft = Math.max(0, x * zoom - PLAYHEAD_PX)
 			}
 		}
 		window._playbackX = playbackX
@@ -548,7 +548,15 @@ function processData(payload, filename) {
 		window.__currentFile = filename || '(unknown)'
 		window.__renderComplete = null
 		var data = decodeNwcArrayBuffer(payload)
-		setDataAndRender(data)
+		// 한글 폰트 로드 대기 후 렌더 (Noto Sans KR)
+		const doRender = () => setDataAndRender(data)
+		if (document.fonts && document.fonts.load) {
+			document.fonts.load('16px "Noto Sans KR"').then(doRender).catch(doRender)
+		} else if (document.fonts && document.fonts.ready) {
+			document.fonts.ready.then(doRender)
+		} else {
+			doRender()
+		}
 	} catch (error) {
 		console.error('Failed to process NWC file:', error)
 		// Log the full stack so the root cause is visible in DevTools, then
@@ -609,9 +617,11 @@ window.toggleLayout = function () {
 	rerender()
 }
 
-// Restore persisted layout preference
+// Restore persisted layout preference (임베드 모드면 항상 scroll)
 const storedLayout = localStorage.getItem(LAYOUT_STORAGE_KEY)
-if (storedLayout === 'wrap' || storedLayout === 'scroll') {
+if (fileParam) {
+	setLayoutMode('scroll')
+} else if (storedLayout === 'wrap' || storedLayout === 'scroll') {
 	setLayoutMode(storedLayout)
 }
 updateLayoutButton()
