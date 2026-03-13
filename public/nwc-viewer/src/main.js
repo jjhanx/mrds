@@ -488,17 +488,21 @@ document.addEventListener('click', (e) => {
 	const panel = document.getElementById('voice_select_panel')
 	if (panel) panel.style.display = 'none'
 })
-document.getElementById('voice_select_panel')?.addEventListener('click', (e) => {
-	e.stopPropagation()
-	const el = e.target?.nodeType === 3 ? e.target.parentElement : e.target
-	const lab = el?.closest?.('label')
-	const cb = (el?.type === 'checkbox' ? el : null) || lab?.querySelector?.('input[type="checkbox"]')
-	if (cb && cb.type === 'checkbox') {
+// 패널 내 체크박스 클릭: capture로 먼저 처리 (다른 요소가 막기 전에)
+document.addEventListener('click', (e) => {
+	const panel = document.getElementById('voice_select_panel')
+	if (!panel || !panel.contains(e.target) || panel.style.display === 'none') return
+	const el = e.target.nodeType === 1 ? e.target : (e.target && e.target.parentElement)
+	if (!el || !el.closest) return
+	const lab = el.closest('label')
+	const cb = (el.type === 'checkbox' ? el : null) || (lab && lab.querySelector('input[type="checkbox"]'))
+	if (cb) {
 		e.preventDefault()
+		e.stopPropagation()
 		cb.checked = !cb.checked
 		updateVoiceSelectFromPanel()
 	}
-})
+}, true)
 
 function getPlaybackStaffFilter() {
 	const idx = window._selectedStaffIndices
