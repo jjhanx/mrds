@@ -108,7 +108,7 @@ When used via `?file=` parameter (embedded mode):
 - **Korean title/lyrics**: Google Fonts Noto Sans KR; EUC-KR/CP949 decoding; lyric font stack
 - **Zoom 25%~100%**: Default 25% for more measures per line; slider limited to this range
 - **Voice selector**: Choose staff/part to play; selected staff highlighted in blue
-- **Playback sync**: Red line fixed at 60px (score scrolls underneath); scroll layout in embedded; auto-scroll
+- **Playback sync**: Red line fixed at 60px; at end of score, line follows playback; auto-scroll
 
 ---
 

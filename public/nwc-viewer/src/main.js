@@ -402,9 +402,16 @@ playback.onTime((t, dur) => {
 			const scoreEl = document.getElementById('score')
 			if (scoreEl) {
 				const zoom = getZoomLevel()
-				const PLAYHEAD_PX = 60  // 빨간선 고정 위치 (좌측에서 px)
-				scoreEl.scrollLeft = Math.max(0, x * zoom - PLAYHEAD_PX)
+				const PLAYHEAD_PX = 60
+				const targetLeft = Math.max(0, x * zoom - PLAYHEAD_PX)
+				scoreEl.scrollLeft = targetLeft
+				const maxLeft = scoreEl.scrollWidth - scoreEl.clientWidth
+				window._playbackAtEnd = maxLeft > 10 && scoreEl.scrollLeft >= maxLeft - 2
+			} else {
+				window._playbackAtEnd = false
 			}
+		} else {
+			window._playbackAtEnd = false
 		}
 		window._playbackX = playbackX
 		if (playbackX != null && window.quickDraw) {
@@ -413,6 +420,7 @@ playback.onTime((t, dur) => {
 		}
 	} else {
 		window._playbackX = null
+		window._playbackAtEnd = false
 	}
 	timeLabel.textContent = formatTime(t) + ' / ' + formatTime(dur)
 })
@@ -425,6 +433,7 @@ playback.onEnd(() => {
 	playBtn.textContent = 'Play'
 	progressBar.value = 0
 	window._playbackX = null
+	window._playbackAtEnd = false
 	timeLabel.textContent = formatTime(0) + ' / ' + formatTime(playback.duration)
 	const scoreEl = document.getElementById('score')
 	if (scoreEl && window.quickDraw) window.quickDraw(null, -scoreEl.scrollLeft, -scoreEl.scrollTop)
