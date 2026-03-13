@@ -1,0 +1,23 @@
+---
+description: 수정 후 CHANGELOG·문서 업데이트 및 GitHub 푸시 필수
+alwaysApply: true
+---
+
+# 수정 후 문서·GitHub 업데이트
+
+코드 수정 작업을 완료한 후 **반드시** 다음을 수행한다.
+
+## 1. 문서 업데이트
+- **CHANGELOG.md**: 변경 이력의 `[Unreleased]` 섹션에 수정 내용 추가
+- 기타 관련 문서(README, DEPLOYMENT 등)도 변경이 있으면 함께 수정
+
+## 2. GitHub 반영
+```bash
+git add .
+git commit -m "적절한 커밋 메시지"
+git push origin main
+```
+
+## 주의
+- CHANGELOG는 "수정", "추가", "삭제" 등 유형별로 구분해 작성
+- 커밋 메시지는 변경 내용이 드러나도록 간결하게
