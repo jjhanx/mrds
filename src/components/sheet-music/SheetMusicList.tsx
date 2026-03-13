@@ -80,6 +80,8 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
   const [uploadByteProgress, setUploadByteProgress] = useState<{ loaded: number; total: number } | null>(null);
+  const [serverProcessing, setServerProcessing] = useState(false);
+  const [uploadBatch, setUploadBatch] = useState<{ index: number; total: number } | null>(null);
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [editFolderName, setEditFolderName] = useState("");
   const [attachModal, setAttachModal] = useState<{ id: string; title: string } | null>(null);
@@ -191,7 +193,9 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
     setUploading(true);
     setUploadProgress({ done: 0, total: files.length });
     setUploadByteProgress(null);
+    setServerProcessing(false);
     const CHUNK_SIZE = 5;
+    const totalBatches = Math.ceil(files.length / CHUNK_SIZE);
 
     const uploadWithProgress = (
       formData: FormData,
@@ -215,15 +219,21 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
     try {
       for (let i = 0; i < files.length; i += CHUNK_SIZE) {
         const chunk = files.slice(i, i + CHUNK_SIZE);
+        const batchIndex = Math.floor(i / CHUNK_SIZE);
         setUploadProgress({ done: i, total: files.length });
+        setUploadBatch({ index: batchIndex, total: totalBatches });
         setUploadByteProgress({ loaded: 0, total: 0 });
+        setServerProcessing(false);
         const formData = new FormData();
         formData.append("folderId", folderIdParam);
         chunk.forEach((f) => formData.append("files", f));
 
         const res = await uploadWithProgress(formData, (loaded, total) => {
           setUploadByteProgress(total > 0 ? { loaded, total } : loaded > 0 ? { loaded, total: 0 } : null);
+          setServerProcessing(total > 0 && loaded >= total);
         });
+
+        setServerProcessing(false);
 
         let data: { error?: string };
         try {
@@ -239,6 +249,7 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
       }
       setUploadProgress({ done: files.length, total: files.length });
       setUploadByteProgress(null);
+      setUploadBatch(null);
       loadItems();
       loadFolders();
     } catch (err) {
@@ -247,6 +258,8 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
       setUploading(false);
       setUploadProgress(null);
       setUploadByteProgress(null);
+      setServerProcessing(false);
+      setUploadBatch(null);
     }
   };
 
@@ -504,31 +517,40 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
             <Upload className="w-10 h-10 text-amber-500 mx-auto mb-2" />
             <p className="text-stone-600 font-medium">
               {uploading
-                ? uploadProgress
-                  ? `${uploadProgress.done}/${uploadProgress.total} 업로드 중...`
-                  : "업로드 중..."
+                ? serverProcessing
+                  ? "서버 처리 중... (저장·변환)"
+                  : uploadProgress
+                    ? `${uploadProgress.done}/${uploadProgress.total} 업로드 중...`
+                    : "업로드 중..."
                 : "여기에 파일을 끌어다 놓으세요"}
             </p>
-            {uploading && (uploadByteProgress || uploadProgress) && (
+            {uploading && (uploadByteProgress || uploadProgress || uploadBatch) && (
               <div className="mt-3 w-full max-w-md mx-auto">
                 <div className="h-2 bg-stone-200 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-amber-500 transition-all duration-300 ease-out"
                     style={{
-                      width: uploadByteProgress?.total
-                        ? `${Math.min(100, (uploadByteProgress.loaded / uploadByteProgress.total) * 100)}%`
-                        : uploadProgress
-                          ? `${(uploadProgress.done / uploadProgress.total) * 100}%`
-                          : "0%",
+                      width: (() => {
+                        const batch = uploadBatch;
+                        if (!batch) return uploadProgress ? `${(uploadProgress.done / uploadProgress.total) * 100}%` : "0%";
+                        const uploadPct =
+                          uploadByteProgress?.total && uploadByteProgress.total > 0
+                            ? (uploadByteProgress.loaded / uploadByteProgress.total) * 0.9
+                            : 0;
+                        const batchPct = (batch.index + uploadPct) / batch.total;
+                        return `${Math.min(100, batchPct * 100)}%`;
+                      })(),
                     }}
                   />
                 </div>
                 <p className="text-xs text-stone-500 mt-1">
-                  {uploadByteProgress?.total
-                    ? `${formatBytes(uploadByteProgress.loaded)} / ${formatBytes(uploadByteProgress.total)}`
-                    : uploadProgress
-                      ? `${uploadProgress.done} / ${uploadProgress.total} 파일`
-                      : null}
+                  {serverProcessing
+                    ? "파일 저장·변환 중... (잠시만 기다려 주세요)"
+                    : uploadByteProgress?.total
+                      ? `${formatBytes(uploadByteProgress.loaded)} / ${formatBytes(uploadByteProgress.total)} 전송`
+                      : uploadProgress
+                        ? `${uploadProgress.done} / ${uploadProgress.total} 파일`
+                        : null}
                 </p>
               </div>
             )}
