@@ -490,8 +490,9 @@ document.addEventListener('click', (e) => {
 })
 document.getElementById('voice_select_panel')?.addEventListener('click', (e) => {
 	e.stopPropagation()
-	const lab = e.target.closest('label')
-	const cb = (e.target.type === 'checkbox' ? e.target : null) || (lab?.querySelector('input[type="checkbox"]'))
+	const el = e.target?.nodeType === 3 ? e.target.parentElement : e.target
+	const lab = el?.closest?.('label')
+	const cb = (el?.type === 'checkbox' ? el : null) || lab?.querySelector?.('input[type="checkbox"]')
 	if (cb && cb.type === 'checkbox') {
 		e.preventDefault()
 		cb.checked = !cb.checked
