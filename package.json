@@ -10,7 +10,8 @@
     "lint": "eslint",
     "postinstall": "prisma generate",
     "db:seed": "prisma db seed",
-    "db:recover-sheet-music": "node scripts/recover-sheet-music.js"
+    "db:recover-sheet-music": "node scripts/recover-sheet-music.js",
+    "db:check-sheet-music": "node scripts/check-sheet-music-db.js"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

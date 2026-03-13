@@ -431,3 +431,21 @@ node scripts/recover-sheet-music.js --folder=choir
 - DB와 함께 `public/uploads/sheet-music/` 이 삭제되었다면 **파일 자체를 복구할 수 없습니다**.
 - Windows: 휴지통, **이전 버전** (폴더 우클릭 → 속성 → 이전 버전) 확인.
 - 서버: 서버 전체 백업, 스냅샷이 있다면 복원 시도.
+
+**4) 복구했는데 여전히 안 보일 때 - DB 경로 불일치**
+
+다른 도구(Prisma Studio, DB Browser 등)로 SQLite를 바꾸거나 마이그레이션했을 경우, **복구 스크립트가 쓰는 DB와 Next.js 앱이 읽는 DB가 다를 수** 있습니다.
+
+**진단 실행:**
+
+```bash
+npm run db:check-sheet-music
+```
+
+- `DATABASE_URL` 경로, 레코드 수, 폴더, 샘플 데이터를 출력합니다.
+
+**확인할 점:**
+
+1. **DB 파일 위치**: `.env`의 `DATABASE_URL`이 가리키는 파일이 실제로 사용 중인 DB인지
+2. **DB 파일이 여러 개인 경우**: `prisma/dev.db`, `data/dev.db`, `dev.db` 등 - 앱(PM2)과 스크립트가 **같은 파일**을 봐야 함
+3. **PM2 실행 시**: `cd ~/mrds` 후 `npm start`이면 `file:./dev.db`는 `~/mrds/prisma/dev.db`를 가리킴
