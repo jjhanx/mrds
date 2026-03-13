@@ -15,7 +15,7 @@ And if you like this project, you can also chat me up [@blurspline on twitter](h
 - **NWC 2.75 lyrics**: NWCTXT 포맷에서 `|Lyrics|` / `|Lyric1|`~`|Lyric8|` 파싱 지원
 - **UTF-8**: V275 NWCTXT 디코딩 시 UTF-8 우선 (한글 등 유니코드 정상 표시)
 - **디버그**: `?trace=1` 또는 `?trace=lyrics` 쿼리로 가사 흐름 로그 활성화
-- **Multi-staff playback**: 악보 왼쪽 파트명 strip 클릭 또는 드롭다운 체크박스로 둘 이상 파트 선택 시 해당 파트들만 함께 재생
+- **Multi-staff playback**: [전체] [파트1] [파트2] ... 버튼으로 둘 이상 파트 선택 시 해당 파트들만 함께 재생
 
 ### v2.2 - March 2026
 - **Wrap layout** with DP-optimal line breaking and anchor-point justification

@@ -5,8 +5,7 @@ import { decodeNwcArrayBuffer, getUseNewParser, setUseNewParser } from './nwc.js
 import { interpret } from './interpreter.js'
 import { setup, resizeToFit } from './drawing.js'
 import { exportLilypond } from './exporter.js'
-import { score, getStaffYMap, getCurrentStaves } from './layout/typeset.js'
-import { getFontSize } from './constants.js'
+import { score } from './layout/typeset.js'
 import { blank } from './editing.js'
 import { MusicContext } from './context.js'
 import { PlaybackController, buildTempoMap, secondsToTicks } from './audio.js'
@@ -440,76 +439,20 @@ playback.onEnd(() => {
 	if (scoreEl && window.quickDraw) window.quickDraw(null, -scoreEl.scrollLeft, -scoreEl.scrollTop)
 })
 
-// Voice select: multi-staff checkbox panel
-function syncVoiceSelectUI() {
-	const btn = document.getElementById('voice_select_btn')
-	if (!btn) return
-	const idx = window._selectedStaffIndices
-	if (!idx || idx.length === 0) {
-		btn.textContent = '전체'
-	} else {
-		const staves = (scoreManager.getData()?.score?.staves || [])
-		const names = idx.map(i => staves[i]?.staff_label || staves[i]?.staff_name || `파트 ${i + 1}`)
-		btn.textContent = names.length > 2 ? `${names.length}개 파트` : names.join(', ')
-	}
-}
-function updateVoiceSelectFromPanel() {
-	const panel = document.getElementById('voice_select_panel')
-	if (!panel) return
-	const allCb = panel.querySelector('[data-voice="all"]')
-	const staffCbs = panel.querySelectorAll('[data-voice]:not([data-voice="all"])')
-	if (allCb?.checked) {
-		window._selectedStaffIndices = undefined
-		staffCbs.forEach(cb => { cb.checked = false })
-	} else {
-		const idx = []
-		staffCbs.forEach(cb => {
-			if (cb.checked) idx.push(parseInt(cb.value, 10))
-		})
-		window._selectedStaffIndices = idx.length > 0 ? idx : undefined
-		if (idx.length > 0) {
-			allCb.checked = false
-		} else {
-			allCb.checked = true
-		}
-	}
-	syncVoiceSelectUI()
-	updateStaffStripSelection()
-	const se = document.getElementById('score')
-	if (window.quickDraw && se) window.quickDraw(null, -se.scrollLeft, -se.scrollTop)
-}
-document.getElementById('voice_select_btn')?.addEventListener('click', (e) => {
-	e.stopPropagation()
-	const panel = document.getElementById('voice_select_panel')
-	const btn = document.getElementById('voice_select_btn')
-	if (!panel || !btn) return
-	const isOpen = panel.style.display !== 'none'
-	if (isOpen) {
-		panel.style.display = 'none'
-	} else {
-		const r = btn.getBoundingClientRect()
-		panel.style.position = 'fixed'
-		panel.style.top = (r.bottom + 2) + 'px'
-		panel.style.left = r.left + 'px'
-		panel.style.display = 'block'
-	}
-})
-document.addEventListener('click', (e) => {
+// Voice select: 버튼 방식 (전체 + 파트별 버튼)
+function updateStaffButtonsSelection() {
 	const wrap = document.getElementById('voice_select_wrap')
-	if (wrap && wrap.contains(e.target)) return
-	const panel = document.getElementById('voice_select_panel')
-	if (panel) panel.style.display = 'none'
-})
-;(function () {
-	const panel = document.getElementById('voice_select_panel')
-	if (!panel) return
-	// 클릭이 document로 전파되어 패널이 닫히지 않도록
-	panel.addEventListener('click', (e) => e.stopPropagation(), true)
-	// change 위임: 체크박스 변경 시 상태 동기화 (네이티브 동작 활용)
-	panel.addEventListener('change', (e) => {
-		if (e.target && e.target.type === 'checkbox') updateVoiceSelectFromPanel()
-	}, true)
-})()
+	if (!wrap) return
+	const idx = window._selectedStaffIndices
+	wrap.querySelectorAll('.staff-btn').forEach((el) => {
+		const i = el.dataset.staffIndex
+		if (i === 'all') {
+			el.classList.toggle('selected', !idx || idx.length === 0)
+		} else {
+			el.classList.toggle('selected', idx ? idx.includes(parseInt(i, 10)) : false)
+		}
+	})
+}
 
 function getPlaybackStaffFilter() {
 	const idx = window._selectedStaffIndices
@@ -574,11 +517,10 @@ const rerender = () => {
 			(canvas) => {
 				console.log('ok')
 				var score_div = document.getElementById('score')
-				var score_content = document.getElementById('score_content')
+				var invisible_canvas = document.getElementById('invisible_canvas')
 
-				score_div.insertBefore(canvas, score_content)
+				score_div.insertBefore(canvas, invisible_canvas)
 				resizeToFit()
-				buildStaffStrip()
 			}
 		)
 	} catch (error) {
@@ -588,56 +530,37 @@ const rerender = () => {
 }
 
 window.exportLilypond = exportLilypond
-window.buildStaffStrip = buildStaffStrip
 
-const STAFF_STRIP_WIDTH = 56
-
-function buildStaffStrip() {
-	const strip = document.getElementById('staff_strip')
+function updateVoiceSelect(data) {
 	const wrap = document.getElementById('voice_select_wrap')
-	const scoreContent = document.getElementById('score_content')
-	if (!strip || !wrap) return
-	const staves = getCurrentStaves()
-	if (!staves || staves.length < 2) {
-		wrap.style.display = 'none'
-		strip.innerHTML = ''
-		strip.style.display = 'none'
-		return
-	}
-	wrap.style.display = ''
-	strip.style.display = ''
-	const staffYMap = getStaffYMap()
-	const zoom = getZoomLevel()
-	const fs = getFontSize()
-	strip.innerHTML = ''
-	let stackedOffset = 0
+	if (!wrap) return
+	const staves = data?.score?.staves || []
+	wrap.style.display = staves.length > 1 ? '' : 'none'
+	wrap.innerHTML = ''
+	if (staves.length < 2) return
+
+	const allBtn = document.createElement('button')
+	allBtn.type = 'button'
+	allBtn.className = 'staff-btn selected'
+	allBtn.dataset.staffIndex = 'all'
+	allBtn.textContent = '전체'
+	allBtn.addEventListener('click', () => {
+		window._selectedStaffIndices = undefined
+		updateStaffButtonsSelection()
+		const se = document.getElementById('score')
+		if (window.quickDraw && se) window.quickDraw(null, -se.scrollLeft, -se.scrollTop)
+	})
+	wrap.appendChild(allBtn)
+
 	for (let i = 0; i < staves.length; i++) {
 		const name = staves[i].staff_label || staves[i].staff_name || '파트 ' + (i + 1)
-		const y = staffYMap[i] || 0
-		let h
-		if (i < staffYMap.length - 1 && staffYMap[i + 1] > y) {
-			h = (staffYMap[i + 1] - y) * zoom
-		} else if (i > 0 && staffYMap[i - 1] < y) {
-			h = (y - staffYMap[i - 1]) * zoom
-		} else {
-			h = Math.max(24, fs * 1.5 * zoom)
-		}
-		if (i > 0 && staffYMap[i] === staffYMap[i - 1]) {
-			stackedOffset += 20
-		} else {
-			stackedOffset = 0
-		}
-		const el = document.createElement('div')
-		el.className = 'staff-strip-item'
-		el.textContent = name
-		el.dataset.staffIndex = String(i)
-		el.style.top = (y * zoom + stackedOffset) + 'px'
-		el.style.height = (h > 20 ? h : 20) + 'px'
-		el.addEventListener('mousedown', (e) => e.stopPropagation())
-		el.addEventListener('click', (e) => {
-			e.stopPropagation()
+		const btn = document.createElement('button')
+		btn.type = 'button'
+		btn.className = 'staff-btn'
+		btn.dataset.staffIndex = String(i)
+		btn.textContent = name
+		btn.addEventListener('click', () => {
 			const idx = window._selectedStaffIndices
-			const i = parseInt(el.dataset.staffIndex, 10)
 			let next
 			if (!idx || idx.length === 0) {
 				next = [i]
@@ -647,48 +570,14 @@ function buildStaffStrip() {
 				next = [...idx, i].sort((a, b) => a - b)
 			}
 			window._selectedStaffIndices = next.length > 0 ? next : undefined
-			updateStaffStripSelection()
-			syncVoiceSelectUI()
+			updateStaffButtonsSelection()
 			const se = document.getElementById('score')
 			if (window.quickDraw && se) window.quickDraw(null, -se.scrollLeft, -se.scrollTop)
 		})
-		strip.appendChild(el)
-	}
-	updateStaffStripSelection()
-}
-
-function updateStaffStripSelection() {
-	const strip = document.getElementById('staff_strip')
-	if (!strip) return
-	const idx = window._selectedStaffIndices
-	strip.querySelectorAll('.staff-strip-item').forEach((el) => {
-		const i = parseInt(el.dataset.staffIndex, 10)
-		el.classList.toggle('selected', idx ? idx.includes(i) : false)
-	})
-}
-
-function updateVoiceSelect(data) {
-	const wrap = document.getElementById('voice_select_wrap')
-	const btn = document.getElementById('voice_select_btn')
-	const panel = document.getElementById('voice_select_panel')
-	if (!wrap || !panel) return
-	const staves = data?.score?.staves || []
-	wrap.style.display = staves.length > 1 ? '' : 'none'
-	panel.innerHTML = ''
-	const allId = 'voice_all'
-	panel.appendChild((() => {
-		const lab = document.createElement('label')
-		lab.innerHTML = '<input type="checkbox" data-voice="all" id="' + allId + '" checked> 전체'
-		return lab
-	})())
-	for (let i = 0; i < staves.length; i++) {
-		const name = staves[i].staff_label || staves[i].staff_name || '파트 ' + (i + 1)
-		const lab = document.createElement('label')
-		lab.innerHTML = '<input type="checkbox" data-voice="' + i + '" value="' + i + '"> ' + name
-		panel.appendChild(lab)
+		wrap.appendChild(btn)
 	}
 	window._selectedStaffIndices = undefined
-	syncVoiceSelectUI()
+	updateStaffButtonsSelection()
 }
 
 function setDataAndRender(_data) {

@@ -1215,22 +1215,15 @@ function drawTitleAndAuthor(drawing, data, canvasWidth) {
 /**
  * Size the invisible_canvas spacer and trigger the initial render.
  */
-var STAFF_STRIP_WIDTH = 56
-
 function sizeSpacerAndRender(canvas, canvasWidth, canvasHeight) {
 	var invisible_canvas = document.getElementById('invisible_canvas')
-	var scoreContent = document.getElementById('score_content')
 	var scoreElm = document.getElementById('score')
 	var zoom = getZoomLevel()
-	var contentH = Math.max(canvasHeight * zoom, scoreElm.clientHeight)
-	var contentW = canvasWidth * zoom
-	invisible_canvas.style.width = `${contentW}px`
-	invisible_canvas.style.height = `${contentH}px`
-	if (scoreContent) {
-		var stripW = (currentStaves.length >= 2) ? STAFF_STRIP_WIDTH : 0
-		scoreContent.style.width = `${stripW + contentW}px`
-		scoreContent.style.height = `${contentH}px`
-	}
+	invisible_canvas.style.width = `${canvasWidth * zoom}px`
+	invisible_canvas.style.height = `${Math.max(
+		canvasHeight * zoom,
+		scoreElm.clientHeight
+	)}px`
 
 	if (canvas) {
 		resizeToFit()
@@ -1697,13 +1690,6 @@ function clefFromString(str) {
 			console.log('ERR unknown clef', str)
 			return new Claire.AltoClef()
 	}
-}
-
-export function getStaffYMap() {
-	return staffYMap.slice()
-}
-export function getCurrentStaves() {
-	return currentStaves
 }
 
 export { score, computeSystemBreaks, dpOptimalBreaks, computeBadness, buildBarlineMap, computeJustifyX }
