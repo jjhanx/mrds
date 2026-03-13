@@ -275,8 +275,13 @@ function cacheGet(key, loader) {
 
 function getStaffHighlightColor(el) {
 	if (typeof window === 'undefined') return null
-	if (window._selectedStaffIndex === undefined || el.staveIndex === undefined) return null
-	return el.staveIndex === window._selectedStaffIndex ? '#1976d2' : null
+	if (el.staveIndex === undefined) return null
+	const idx = window._selectedStaffIndices
+	if (idx === undefined) return null // 전체 선택 = 하이라이트 없음
+	if (Array.isArray(idx) && idx.indexOf(el.staveIndex) >= 0) return '#1976d2'
+	// 하위 호환: 단일 _selectedStaffIndex
+	if (window._selectedStaffIndex !== undefined && el.staveIndex === window._selectedStaffIndex) return '#1976d2'
+	return null
 }
 
 // todo clear the cache when font sizes invalides

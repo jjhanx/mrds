@@ -439,23 +439,59 @@ playback.onEnd(() => {
 	if (scoreEl && window.quickDraw) window.quickDraw(null, -scoreEl.scrollLeft, -scoreEl.scrollTop)
 })
 
-document.getElementById('voice_select')?.addEventListener('change', () => {
-	window._selectedStaffIndex = (() => {
-		const sel = document.getElementById('voice_select')
-		if (!sel || sel.value === 'all') return undefined
-		const v = parseInt(sel.value, 10)
-		return isNaN(v) || v < 0 ? undefined : v
-	})()
+// Voice select: multi-staff checkbox panel
+function syncVoiceSelectUI() {
+	const btn = document.getElementById('voice_select_btn')
+	if (!btn) return
+	const idx = window._selectedStaffIndices
+	if (!idx || idx.length === 0) {
+		btn.textContent = '전체'
+	} else {
+		const staves = (scoreManager.getData()?.score?.staves || [])
+		const names = idx.map(i => staves[i]?.staff_label || staves[i]?.staff_name || `파트 ${i + 1}`)
+		btn.textContent = names.length > 2 ? `${names.length}개 파트` : names.join(', ')
+	}
+}
+function updateVoiceSelectFromPanel() {
+	const panel = document.getElementById('voice_select_panel')
+	if (!panel) return
+	const allCb = panel.querySelector('[data-voice="all"]')
+	const staffCbs = panel.querySelectorAll('[data-voice]:not([data-voice="all"])')
+	if (allCb?.checked) {
+		window._selectedStaffIndices = undefined
+		staffCbs.forEach(cb => { cb.checked = false })
+	} else {
+		const idx = []
+		staffCbs.forEach(cb => {
+			if (cb.checked) idx.push(parseInt(cb.value, 10))
+		})
+		window._selectedStaffIndices = idx.length > 0 ? idx : undefined
+		if (idx.length > 0) {
+			allCb.checked = false
+		} else {
+			allCb.checked = true
+		}
+	}
+	syncVoiceSelectUI()
 	const se = document.getElementById('score')
 	if (window.quickDraw && se) window.quickDraw(null, -se.scrollLeft, -se.scrollTop)
+}
+document.getElementById('voice_select_btn')?.addEventListener('click', (e) => {
+	e.stopPropagation()
+	const panel = document.getElementById('voice_select_panel')
+	if (!panel) return
+	panel.style.display = panel.style.display === 'none' ? 'block' : 'none'
 })
+document.addEventListener('click', () => {
+	const panel = document.getElementById('voice_select_panel')
+	if (panel) panel.style.display = 'none'
+})
+document.getElementById('voice_select_panel')?.addEventListener('click', (e) => e.stopPropagation())
 
 function getPlaybackStaffFilter() {
-	const sel = document.getElementById('voice_select')
-	if (!sel || sel.value === 'all') return undefined
-	const v = parseInt(sel.value, 10)
-	if (isNaN(v) || v < 0) return undefined
-	return [v]
+	const idx = window._selectedStaffIndices
+	if (!idx || idx.length === 0) return undefined
+	return idx
 }
 
 async function togglePlayPause() {
@@ -530,17 +566,29 @@ const rerender = () => {
 window.exportLilypond = exportLilypond
 
 function updateVoiceSelect(data) {
-	const sel = document.getElementById('voice_select')
-	if (!sel) return
-	sel.innerHTML = ''
+	const wrap = document.getElementById('voice_select_wrap')
+	const btn = document.getElementById('voice_select_btn')
+	const panel = document.getElementById('voice_select_panel')
+	if (!wrap || !panel) return
 	const staves = data?.score?.staves || []
-	sel.appendChild(new Option('전체', 'all'))
+	wrap.style.display = staves.length > 1 ? '' : 'none'
+	panel.innerHTML = ''
+	const allId = 'voice_all'
+	panel.appendChild((() => {
+		const lab = document.createElement('label')
+		lab.innerHTML = '<input type="checkbox" data-voice="all" id="' + allId + '" checked> 전체'
+		lab.querySelector('input').onchange = () => updateVoiceSelectFromPanel()
+		return lab
+	})())
 	for (let i = 0; i < staves.length; i++) {
 		const name = staves[i].staff_label || staves[i].staff_name || '파트 ' + (i + 1)
-		sel.appendChild(new Option(name, String(i)))
+		const lab = document.createElement('label')
+		lab.innerHTML = '<input type="checkbox" data-voice="' + i + '" value="' + i + '"> ' + name
+		lab.querySelector('input').onchange = () => updateVoiceSelectFromPanel()
+		panel.appendChild(lab)
 	}
-	sel.style.display = staves.length > 1 ? '' : 'none'
-	window._selectedStaffIndex = sel.value === 'all' ? undefined : parseInt(sel.value, 10)
+	window._selectedStaffIndices = undefined
+	syncVoiceSelectUI()
 }
 
 function setDataAndRender(_data) {

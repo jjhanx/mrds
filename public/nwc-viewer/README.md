@@ -15,6 +15,7 @@ And if you like this project, you can also chat me up [@blurspline on twitter](h
 - **NWC 2.75 lyrics**: NWCTXT 포맷에서 `|Lyrics|` / `|Lyric1|`~`|Lyric8|` 파싱 지원
 - **UTF-8**: V275 NWCTXT 디코딩 시 UTF-8 우선 (한글 등 유니코드 정상 표시)
 - **디버그**: `?trace=1` 또는 `?trace=lyrics` 쿼리로 가사 흐름 로그 활성화
+- **Multi-staff playback**: 체크박스로 둘 이상 파트 선택 시 해당 파트들만 함께 재생
 
 ### v2.2 - March 2026
 - **Wrap layout** with DP-optimal line breaking and anchor-point justification
@@ -112,7 +113,7 @@ When used via `?file=` parameter (embedded mode):
 
 - **Korean title/lyrics**: EUC-KR-first decode for high bytes; Malgun Gothic / Noto Sans KR font stack
 - **Zoom 25%~100%**: Default 25% for more measures per line; slider limited to this range
-- **Voice selector**: Choose staff/part to play; selected staff highlighted in blue
+- **Voice selector**: Checkbox dropdown to select one or more staffs; only selected staffs play; selected staffs highlighted in blue
 - **Playback sync**: Red line fixed at 60px; at end, line follows playback; measure widths aligned to longest staff
 
 ---
