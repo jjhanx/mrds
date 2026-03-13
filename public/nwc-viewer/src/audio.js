@@ -60,6 +60,8 @@ export function buildNoteEvents(data, opts) {
 			const durValue = tok.durValue
 			if (durValue == null) continue
 
+			const tickNum = typeof tickStart === 'number' ? tickStart : (tickStart?.value?.() ?? 0)
+
 			// Accumulate duration through tied notes
 			let totalDur = typeof durValue === 'number' ? durValue : durValue.value()
 			let next = findNextTied(tokens, ti)
@@ -71,8 +73,8 @@ export function buildNoteEvents(data, opts) {
 				next = findNextTied(tokens, next)
 			}
 
-			const startSec = ticksToSeconds(tickStart, tempoMap)
-			const endSec = ticksToSeconds(tickStart + totalDur, tempoMap)
+			const startSec = ticksToSeconds(tickNum, tempoMap)
+			const endSec = ticksToSeconds(tickNum + totalDur, tempoMap)
 			const durationSec = endSec - startSec
 
 			if (tok.type === 'Note') {
@@ -161,7 +163,8 @@ export function buildTempoMap(staves) {
 				const value = tok.duration || 120
 				const base = (tok.note ?? 2) & 3
 				const bpm = value * (baseToQuarter[base] ?? 1)
-				const tick = tok.tickValue ?? 0
+				const tv = tok.tickValue ?? 0
+				const tick = typeof tv === 'number' ? tv : (tv?.value?.() ?? 0)
 				entries.push({ tick, bpm })
 			}
 		}

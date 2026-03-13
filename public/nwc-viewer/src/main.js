@@ -375,48 +375,72 @@ const progressBar = document.getElementById('progress_bar')
 const timeLabel = document.getElementById('playback_time')
 
 let _seeking = false
+let _lastSyncT = 0
+let _lastSyncTime = 0
+let _syncRafId = null
+const SYNC_OFFSET = -0.02 // 보정: worklet 노트 20ms 조기 발화 → 재생선을 소리와 맞춤
 
-playback.onTime((t, dur) => {
-	if (!_seeking) {
-		progressBar.value = dur > 0 ? t / dur : 0
-		// Scroll score to follow playback
-		const map = window._tickToXMap
-		const tempo = window._tempoMap
-		let playbackX = null
-		if (map?.length && tempo?.length) {
-			const tick = secondsToTicks(t, tempo)
-			let x = map[0].x
-			if (tick <= map[0].tick) x = map[0].x
-			else if (tick >= map[map.length - 1].tick) x = map[map.length - 1].x
-			else {
-				for (let i = 1; i < map.length; i++) {
-					if (map[i].tick >= tick) {
-						const a = map[i - 1], b = map[i]
-						const r = (tick - a.tick) / (b.tick - a.tick)
-						x = a.x + r * (b.x - a.x)
-						break
-					}
+function updatePlaybackPosition(t) {
+	const map = window._tickToXMap
+	const tempo = window._tempoMap
+	let playbackX = null
+	if (map?.length && tempo?.length) {
+		const tick = secondsToTicks(t, tempo)
+		let x = map[0].x
+		if (tick <= map[0].tick) x = map[0].x
+		else if (tick >= map[map.length - 1].tick) x = map[map.length - 1].x
+		else {
+			for (let i = 1; i < map.length; i++) {
+				if (map[i].tick >= tick) {
+					const a = map[i - 1], b = map[i]
+					const r = (tick - a.tick) / (b.tick - a.tick)
+					x = a.x + r * (b.x - a.x)
+					break
 				}
 			}
-			playbackX = x
-			const scoreEl = document.getElementById('score')
-			if (scoreEl) {
-				const zoom = getZoomLevel()
-				const PLAYHEAD_PX = 60
-				const targetLeft = Math.max(0, x * zoom - PLAYHEAD_PX)
-				scoreEl.scrollLeft = targetLeft
-				const maxLeft = scoreEl.scrollWidth - scoreEl.clientWidth
-				window._playbackAtEnd = maxLeft > 10 && scoreEl.scrollLeft >= maxLeft - 2
-			} else {
-				window._playbackAtEnd = false
-			}
+		}
+		playbackX = x
+		const scoreEl = document.getElementById('score')
+		if (scoreEl) {
+			const zoom = getZoomLevel()
+			const PLAYHEAD_PX = 60
+			const targetLeft = Math.max(0, x * zoom - PLAYHEAD_PX)
+			scoreEl.scrollLeft = targetLeft
+			const maxLeft = scoreEl.scrollWidth - scoreEl.clientWidth
+			window._playbackAtEnd = maxLeft > 10 && scoreEl.scrollLeft >= maxLeft - 2
 		} else {
 			window._playbackAtEnd = false
 		}
-		window._playbackX = playbackX
-		if (playbackX != null && window.quickDraw) {
-			const se = document.getElementById('score')
-			if (se) window.quickDraw(null, -se.scrollLeft, -se.scrollTop)
+	} else {
+		window._playbackAtEnd = false
+	}
+	window._playbackX = playbackX
+	if (playbackX != null && window.quickDraw) {
+		const se = document.getElementById('score')
+		if (se) window.quickDraw(null, -se.scrollLeft, -se.scrollTop)
+	}
+}
+
+function syncPlaybackVisuals() {
+	if (_seeking || !playback.playing) return
+	const dur = playback.duration
+	const estT = Math.min(_lastSyncT + (Date.now() / 1000 - _lastSyncTime), dur)
+	const t = Math.max(0, Math.min(estT + SYNC_OFFSET, dur))
+	progressBar.value = dur > 0 ? t / dur : 0
+	updatePlaybackPosition(t)
+	timeLabel.textContent = formatTime(t) + ' / ' + formatTime(dur)
+	_syncRafId = requestAnimationFrame(syncPlaybackVisuals)
+}
+
+playback.onTime((t, dur) => {
+	_lastSyncT = t
+	_lastSyncTime = Date.now() / 1000
+	if (!_seeking) {
+		progressBar.value = dur > 0 ? t / dur : 0
+		const tAdjusted = Math.max(0, Math.min(t + SYNC_OFFSET, dur))
+		updatePlaybackPosition(tAdjusted)
+		if (playback.playing && !_syncRafId) {
+			_syncRafId = requestAnimationFrame(syncPlaybackVisuals)
 		}
 	} else {
 		window._playbackX = null
@@ -427,10 +451,18 @@ playback.onTime((t, dur) => {
 
 playback.onStateChange((playing) => {
 	playBtn.textContent = playing ? 'Pause' : 'Play'
+	if (!playing && _syncRafId) {
+		cancelAnimationFrame(_syncRafId)
+		_syncRafId = null
+	}
 })
 
 playback.onEnd(() => {
 	playBtn.textContent = 'Play'
+	if (_syncRafId) {
+		cancelAnimationFrame(_syncRafId)
+		_syncRafId = null
+	}
 	progressBar.value = 0
 	window._playbackX = null
 	window._playbackAtEnd = false

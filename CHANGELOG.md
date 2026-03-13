@@ -20,6 +20,7 @@
 - **nwc-viewer**: 파트 선택 다중 선택 — 체크박스 드롭다운으로 둘 이상 Staff 선택 시 해당 파트들만 함께 재생, 선택된 파트 파란색 하이라이트
 - **nwc-viewer**: Staff 선택 버튼 방식 — [전체] [파트1] [파트2] ... 인라인 버튼으로 클릭 토글, 선택 시 파란색 강조
 - **nwc-viewer**: Staff 선택 시 해당 파트만 재생 — getPlaybackStaffFilter가 { staffIndices } 객체로 전달되도록 수정
+- **nwc-viewer**: 악보·소리 싱크 개선 — tickValue Fraction→number 변환, rAF 보간, sync offset(-20ms) 적용
 
 - **PDF 뷰어**: 에러 메시지 에러 시에만 표시
   - 로딩 메시지 제거(스피너만 표시), Document/Page `error={null}`로 react-pdf 플래시 방지
