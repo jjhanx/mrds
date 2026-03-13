@@ -31,10 +31,12 @@ function toMidi(name, octave, accidentalValue) {
  * MidiScheduler.load().
  *
  * @param {object} data - The interpreted score data (data.score.staves[].tokens)
+ * @param {{ staffIndices?: number[] }} opts - Optional. staffIndices: only include these staves (0-based). Omit = all.
  * @returns {{ notes: NoteEvent[], duration: number }}
  */
-export function buildNoteEvents(data) {
+export function buildNoteEvents(data, opts) {
 	const staves = data.score.staves
+	const staffFilter = opts?.staffIndices
 	const notes = []
 
 	// Resolve tempo: default 120 BPM quarter note. Walk stave 0 for the first
@@ -42,6 +44,7 @@ export function buildNoteEvents(data) {
 	const tempoMap = buildTempoMap(staves)
 
 	for (let si = 0; si < staves.length; si++) {
+		if (staffFilter && staffFilter.indexOf(si) < 0) continue
 		const tokens = staves[si].tokens
 		const channel = Math.min(si, 15) // cap at 16 MIDI channels
 
@@ -291,16 +294,15 @@ export class PlaybackController {
 	/**
 	 * Load score data and prepare for playback.
 	 * @param {object} data - Score data (will be interpreted if not already)
+	 * @param {{ staffIndices?: number[] }} opts - staffIndices: only play these staves. Omit = all.
 	 */
-	async load(data) {
+	async load(data, opts) {
 		await this._ensureInit()
-		// Wait for soundfont if it hasn't loaded yet
 		if (!this._soundfontLoaded) {
 			await this._loadSoundfont()
 		}
-		// Ensure tokens have been interpreted (name, octave, tickValue, etc.)
 		interpret(data)
-		const { notes } = buildNoteEvents(data)
+		const { notes } = buildNoteEvents(data, opts)
 		this._scheduler.load({ notes })
 	}
 

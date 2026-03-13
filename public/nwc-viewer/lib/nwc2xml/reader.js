@@ -51,12 +51,14 @@ export class BinaryReader {
 }
 
 function decodeString(bytes) {
-  // NWC files are Windows applications and store strings in Windows-1252.
-  // Try UTF-8 with fatal:true first (valid UTF-8 is a strict subset), then
-  // fall back to Windows-1252 which maps every byte 0x00-0xFF without loss.
+  // NWC files: Windows app. Try UTF-8 first, then CP949/EUC-KR (Korean), then Windows-1252.
   try {
     return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
   } catch {
-    return new TextDecoder('windows-1252').decode(bytes);
+    try {
+      return new TextDecoder('euc-kr').decode(bytes);
+    } catch {
+      return new TextDecoder('windows-1252').decode(bytes);
+    }
   }
 }

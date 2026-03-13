@@ -802,7 +802,7 @@ function scoreWrapLayout(drawing, data, staves, stavePointers, ctx, canvas) {
 	// Determine the available page width (in score-space, before zoom).
 	// Use the viewport width minus small margins.
 	var zoom = getZoomLevel()
-	var pageWidth = (scoreElm?.clientWidth || 800) / zoom - fs * 1.5
+	var pageWidth = Math.max(1000, (scoreElm?.clientWidth || 800) / zoom - fs * 1.5)
 
 	// Calculate system height: distance from top of first stave to bottom
 	// of last stave, plus some padding.

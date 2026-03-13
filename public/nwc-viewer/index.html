@@ -16,6 +16,9 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	</head>
 	<body>
+		<script>
+			if (new URLSearchParams(location.search).get('file')) document.body.classList.add('embedded');
+		</script>
 		<style>
 			body {
 				background: #1a1a1a;
@@ -84,16 +87,17 @@
 				font-size: 16px;
 				font-weight: bold;
 			}
+			body.embedded .embed-hide { display: none !important; }
 		</style>
 		<div id="container">
 			<div id="top">
 				<div>
-					<span id="logo">Notably</span>
-					<button id="open">Open nwc</button>
-
+					<span id="logo" class="embed-hide">Notably</span>
+					<button id="open" class="embed-hide">Open nwc</button>
 					<input type="file" id="opener" hidden />
+					<select id="samples" class="embed-hide"></select>
 
-					<select id="samples"></select>
+				<select id="voice_select" title="재생할 파트 선택" style="margin-right: 8px; min-width: 120px;"></select>
 
 				<button id="play" title="Play / Pause">Play</button>
 				<button id="stop" title="Stop">Stop</button>
@@ -103,14 +107,14 @@
 					style="width: 140px; vertical-align: middle; cursor: pointer;"
 				/>
 
-				<a href="nwc2xml_converter.html" style="margin-left: 20px;">
+				<a href="nwc2xml_converter.html" class="embed-hide" style="margin-left: 20px;">
 					<button>NWC to MusicXML</button>
 				</a>
 
-				<span style="width: 50px;"></span>
-				Size:
-				<button onclick="setFontSize(getFontSize() - 4); rerender()">-</button>
-				<button onclick="setFontSize(getFontSize() + 4); rerender()">+</button>
+				<span class="embed-hide" style="width: 50px;"></span>
+				<span class="embed-hide">Size:</span>
+				<button class="embed-hide" onclick="setFontSize(getFontSize() - 4); rerender()">-</button>
+				<button class="embed-hide" onclick="setFontSize(getFontSize() + 4); rerender()">+</button>
 
 				<span style="width: 20px;"></span>
 				Zoom:
@@ -121,13 +125,13 @@
 				/>
 				<span id="zoom_label" style="min-width: 40px; display: inline-block; text-align: center;">100%</span>
 
-				<span style="width: 20px;"></span>
-				Parser:
-				<button id="parser_toggle" onclick="toggleParser()">New</button>
+				<span class="embed-hide" style="width: 20px;"></span>
+				<span class="embed-hide">Parser:</span>
+				<button class="embed-hide" id="parser_toggle" onclick="toggleParser()">New</button>
 
-				<span style="width: 20px;"></span>
-				Layout:
-				<button id="layout_toggle" onclick="toggleLayout()">Scroll</button>
+				<span class="embed-hide" style="width: 20px;"></span>
+				<span class="embed-hide">Layout:</span>
+				<button class="embed-hide" id="layout_toggle" onclick="toggleLayout()">Scroll</button>
 
 					<div id="debug_tools" style="display: none;">
 						<button
@@ -158,7 +162,7 @@
 				<div id="invisible_canvas"></div>
 			</div>
 
-			<div id="footer">
+			<div id="footer" class="embed-hide">
 				Footer&nbsp;
 			</div>
 		</div>

@@ -386,13 +386,21 @@ playback.onEnd(() => {
 	timeLabel.textContent = formatTime(0) + ' / ' + formatTime(playback.duration)
 })
 
+function getPlaybackStaffFilter() {
+	const sel = document.getElementById('voice_select')
+	if (!sel || sel.value === 'all') return undefined
+	const v = parseInt(sel.value, 10)
+	if (isNaN(v) || v < 0) return undefined
+	return [v]
+}
+
 async function togglePlayPause() {
 	if (playback.playing) {
 		playback.pause()
 	} else {
-		// Load current score data before playing
 		const data = scoreManager.getData()
-		await playback.load(data)
+		const opts = getPlaybackStaffFilter()
+		await playback.load(data, opts)
 		await playback.play()
 	}
 }
@@ -445,8 +453,22 @@ const rerender = () => {
 
 window.exportLilypond = exportLilypond
 
+function updateVoiceSelect(data) {
+	const sel = document.getElementById('voice_select')
+	if (!sel) return
+	sel.innerHTML = ''
+	const staves = data?.score?.staves || []
+	sel.appendChild(new Option('전체', 'all'))
+	for (let i = 0; i < staves.length; i++) {
+		const name = staves[i].staff_label || staves[i].staff_name || '파트 ' + (i + 1)
+		sel.appendChild(new Option(name, String(i)))
+	}
+	sel.style.display = staves.length > 1 ? '' : 'none'
+}
+
 function setDataAndRender(_data) {
 	scoreManager.setData(_data)
+	updateVoiceSelect(_data)
 	// data = _data;
 	// window.data = data;
 	rerender()

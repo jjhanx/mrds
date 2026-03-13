@@ -79,6 +79,13 @@ function decodeNwcArrayBuffer(arrayBuffer) {
 }
 
 function shortArrayToString(array) {
+	// NWC lyrics: Korean uses CP949. Try euc-kr when high bytes present, else Latin-1.
+	if (array.some && array.some(function (b) { return b > 127 })) {
+		try {
+			var s = new TextDecoder('euc-kr').decode(array)
+			if (s && s.indexOf('\uFFFD') < 0) return s
+		} catch (e) {}
+	}
 	return String.fromCharCode.apply(null, array)
 }
 
@@ -1027,8 +1034,6 @@ function Lyrics(reader) {
 	var lyricBlock = blocks ? 1024 * blocks : lyricsLen + 2
 	var chunk = reader.readBytes(lyricBlock) // rest of the block
 
-	var cs = shortArrayToString(chunk)
-	console.log('cs', cs, cs.toString(16))
 	var lyrics = chunk.subarray(0, lyricsLen)
 	return shortArrayToString(lyrics)
 }
