@@ -7,5 +7,5 @@
   - `loading={null}` 제거, Document/Page에 정상 loading prop 복원
   - 오버레이 제거 후 PDF가 정상 렌더링되도록 복구
 
-### 개선
-- **PDF 뷰어**: 짧은 로딩 구간에서 "불러오는 중" 메시지 제거
+### 수정
+- **PDF 뷰어**: `min-h` 로딩 placeholder가 PDF 렌더 실패 유발 → Document/Page에 정상 loading UI 복원

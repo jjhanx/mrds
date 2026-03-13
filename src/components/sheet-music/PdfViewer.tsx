@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, Component, ReactNode } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
 
 // Next.js (App Router) 호환 워커 설정
 pdfjs.GlobalWorkerOptions.workerSrc = '/pdfjs/pdf.worker.min.mjs';
@@ -111,7 +111,12 @@ export function PdfViewer({ url }: PdfViewerProps) {
                         console.error('Document Load Error:', err);
                         setDocError(err);
                     }}
-                    loading={<div className="min-h-[300px]" />}
+                    loading={
+                        <div className="flex flex-col items-center justify-center py-20 text-stone-500">
+                            <Loader2 className="w-8 h-8 animate-spin mb-3" />
+                            <p className="text-sm">불러오는 중...</p>
+                        </div>
+                    }
                     error={
                         <div className="py-16 text-stone-600 text-center px-4">
                             <p className="font-medium mb-1">표시할 수 없습니다.</p>
@@ -139,7 +144,11 @@ export function PdfViewer({ url }: PdfViewerProps) {
                                 <p className="text-xs">다운로드 버튼으로 파일을 열어보세요.</p>
                             </div>
                         }
-                        loading={<div className="min-h-[300px]" />}
+                        loading={
+                            <div className="flex justify-center py-16">
+                                <Loader2 className="w-6 h-6 animate-spin text-stone-400" />
+                            </div>
+                        }
                     />
                 </Document>
             </PdfErrorBoundary>
