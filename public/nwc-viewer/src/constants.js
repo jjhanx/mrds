@@ -43,6 +43,9 @@ function getZoomLevel() {
 	return zoomLevel
 }
 
+// Lyric/text font stack with Korean support (Malgun Gothic = Win, Apple SD Gothic = Mac)
+const LYRIC_FONT_STACK = "'Malgun Gothic', 'Apple SD Gothic Neo', 'Nanum Gothic', 'Noto Sans KR', 'Dotum', 'AppleGothic', sans-serif"
+
 function isNode() {
 	return typeof module !== 'undefined'
 }
@@ -55,6 +58,7 @@ Object.assign(!isBrowser() ? global : window, {
 	isNode,
 	isBrowser,
 	FONT_SIZE,
+	LYRIC_FONT_STACK,
 	setFontSize,
 	getFontSize,
 	setZoomLevel,
@@ -68,6 +72,7 @@ Object.assign(!isBrowser() ? global : window, {
 export {
 	isNode, isBrowser,
 	FONT_SIZE, setFontSize, getFontSize,
+	LYRIC_FONT_STACK,
 	setZoomLevel, getZoomLevel, ZOOM_MIN, ZOOM_MAX,
 	setLayoutMode, getLayoutMode,
 }

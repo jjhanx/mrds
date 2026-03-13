@@ -1,5 +1,5 @@
 import './constants.js'
-import { getLayoutMode } from './constants.js'
+import { getLayoutMode, setZoomLevel } from './constants.js'
 import { ajax } from './loaders.js'
 import { decodeNwcArrayBuffer, getUseNewParser, setUseNewParser } from './nwc.js'
 import { interpret } from './interpreter.js'
@@ -8,7 +8,8 @@ import { exportLilypond } from './exporter.js'
 import { score } from './layout/typeset.js'
 import { blank } from './editing.js'
 import { MusicContext } from './context.js'
-import { PlaybackController } from './audio.js'
+import { PlaybackController, buildTempoMap, secondsToTicks } from './audio.js'
+import { getZoomLevel } from './constants.js'
 
 /**********************
  *
@@ -87,6 +88,12 @@ sample_dom.onchange = function () {
 const fileParam = new URLSearchParams(location.search).get('file')
 if (fileParam) {
 	const url = fileParam.startsWith('/') ? location.origin + fileParam : fileParam
+	// Embedded mode: default zoom 1/4 for more measures per line (4+ per line)
+	setZoomLevel(0.25)
+	const slider = document.getElementById('zoom_slider')
+	const label = document.getElementById('zoom_label')
+	if (slider) slider.value = 0.25
+	if (label) label.textContent = '25%'
 	ajax(url, (buf) => processData(buf, fileParam.split('/').pop() || 'file.nwc'))
 } else {
 	ajax('samples/WhatChildIsThis.nwc', (buf) => processData(buf, 'WhatChildIsThis.nwc'))
@@ -372,6 +379,32 @@ let _seeking = false
 playback.onTime((t, dur) => {
 	if (!_seeking) {
 		progressBar.value = dur > 0 ? t / dur : 0
+		// Scroll score to follow playback
+		const map = window._tickToXMap
+		const tempo = window._tempoMap
+		if (map?.length && tempo?.length) {
+			const tick = secondsToTicks(t, tempo)
+			// Find x by interpolation
+			let x = map[0].x
+			if (tick <= map[0].tick) x = map[0].x
+			else if (tick >= map[map.length - 1].tick) x = map[map.length - 1].x
+			else {
+				for (let i = 1; i < map.length; i++) {
+					if (map[i].tick >= tick) {
+						const a = map[i - 1], b = map[i]
+						const r = (tick - a.tick) / (b.tick - a.tick)
+						x = a.x + r * (b.x - a.x)
+						break
+					}
+				}
+			}
+			const scoreEl = document.getElementById('score')
+			if (scoreEl) {
+				const zoom = getZoomLevel()
+				const targetLeft = Math.max(0, x * zoom - scoreEl.clientWidth / 4)
+				scoreEl.scrollLeft = targetLeft
+			}
+		}
 	}
 	timeLabel.textContent = formatTime(t) + ' / ' + formatTime(dur)
 })
@@ -433,6 +466,18 @@ const rerender = () => {
 				const musicContext = new MusicContext(data, window.canvas)
 				interpret(musicContext)
 				score(musicContext)
+				// Build tick→x map for playback scroll sync (from first staff)
+				const staves = data?.score?.staves || []
+				const tickToX = []
+				for (const tok of staves[0]?.tokens || []) {
+					const tv = tok.tickValue
+					const tick = typeof tv === 'number' ? tv : (tv && tv.value ? tv.value() : null)
+					const x = tok.drawingNoteHead?.x
+					if (tick != null && x != null) tickToX.push({ tick, x })
+				}
+				tickToX.sort((a, b) => a.tick - b.tick)
+				window._tickToXMap = tickToX
+				window._tempoMap = staves.length ? buildTempoMap(staves) : [{ tick: 0, bpm: 120 }]
 				window.__renderComplete = { ts: Date.now(), file: window.__currentFile }
 			},
 			null,

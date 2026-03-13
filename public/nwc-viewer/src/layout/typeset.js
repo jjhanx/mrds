@@ -1,4 +1,4 @@
-import { getFontSize, getZoomLevel, getLayoutMode } from '../constants.js'
+import { getFontSize, getZoomLevel, getLayoutMode, LYRIC_FONT_STACK } from '../constants.js'
 import { layoutBeaming } from './beams.js'
 import { layoutTies } from './ties.js'
 import { resizeToFit } from '../drawing.js'
@@ -606,7 +606,7 @@ function layoutLyricDashes(drawing, staves) {
 			var midX = (startX + endX) / 2
 
 			var dash = new Text('-', 0, {
-				font: lyricFontSize + "px Arial, 'Segoe UI', sans-serif",
+				font: lyricFontSize + 'px ' + LYRIC_FONT_STACK,
 				textAlign: 'center',
 			})
 			dash.moveTo(midX, thisStaveY)
@@ -1145,7 +1145,7 @@ function drawStaffLabels(drawing, staves, yOffset, leftMarginOverride) {
 		var labelY = getStaffY(li) + yOffset - fs * 0.5 // vertically centered on staff
 		var labelX = leftMarginOverride !== undefined ? leftMarginOverride * 0.05 : fs * 0.05
 		var labelDraw = new Claire.Text(label, 0, {
-			font: Math.round(fs * 0.6) + "px Arial, 'Segoe UI', sans-serif",
+			font: Math.round(fs * 0.6) + 'px ' + LYRIC_FONT_STACK,
 			textAlign: 'left',
 		})
 		labelDraw.moveTo(labelX, labelY)
@@ -1162,7 +1162,7 @@ function drawTitleAndAuthor(drawing, data, canvasWidth) {
 	var middle = canvasWidth / 2
 	if (title) {
 		const titleDrawing = new Claire.Text(title, 0, {
-			font: "bold 20px Arial, 'Segoe UI', sans-serif",
+			font: 'bold 20px ' + LYRIC_FONT_STACK,
 			textAlign: 'center',
 		})
 		titleDrawing.moveTo(middle, 40)
@@ -1171,7 +1171,7 @@ function drawTitleAndAuthor(drawing, data, canvasWidth) {
 
 	if (author) {
 		const authorDrawing = new Claire.Text(author, 0, {
-			font: "italic 14px Arial, 'Segoe UI', sans-serif",
+			font: 'italic 14px ' + LYRIC_FONT_STACK,
 			textAlign: 'center',
 		})
 		authorDrawing.moveTo(middle, 60)
@@ -1444,7 +1444,7 @@ function handleToken(token, tokenIndex, staveIndex, cursor) {
 		case 'PerformanceStyle':
 			var pos = token.position !== undefined ? token.position : 9
 			var text = new Text(token.text, -(pos + 4), {
-				font: "italic 11px Arial, 'Segoe UI', sans-serif",
+				font: 'italic 11px ' + LYRIC_FONT_STACK,
 			})
 			cursor.posGlyph(text)
 			drawing.add(text)
@@ -1454,7 +1454,7 @@ function handleToken(token, tokenIndex, staveIndex, cursor) {
 			var text = new Text(
 				`(${token.duration})`,
 				-(pos + 4),
-				{ font: "11px Arial, 'Segoe UI', sans-serif" }
+				{ font: '11px ' + LYRIC_FONT_STACK }
 			)
 			cursor.posGlyph(text)
 			drawing.add(text)
@@ -1462,7 +1462,7 @@ function handleToken(token, tokenIndex, staveIndex, cursor) {
 		case 'Dynamic':
 			var pos = token.position !== undefined ? token.position : -13
 			var text = new Text(token.dynamic, -(pos + 4), {
-				font: "italic bold 12px Arial, 'Segoe UI', sans-serif",
+				font: 'italic bold 12px ' + LYRIC_FONT_STACK,
 			})
 			cursor.posGlyph(text)
 			drawing.add(text)
@@ -1547,7 +1547,7 @@ function drawForNote(token, cursor, durToken) {
 			}
 
 			var text = new Text(displayText, 0, {
-				font: lyricFontSize + "px Arial, 'Segoe UI', sans-serif",
+				font: lyricFontSize + 'px ' + LYRIC_FONT_STACK,
 				textAlign: 'left',
 			})
 			cursor.posGlyph(text)

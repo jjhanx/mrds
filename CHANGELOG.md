@@ -7,10 +7,14 @@
   - 메인 파일이 NWC일 때 iframe으로 악보·재생 표시
   - 합창곡·애창곡의 NWC 첨부 시 "NWC 웹에서 악보 보기" 버튼
   - `?file=` 파라미터로 우리 서버의 NWC URL 로드
-  - **nwc-viewer 개선**: 한글(EUC-KR) 가사 인코딩, 넓은 악보 레이아웃, 임베드 시 불필요 메뉴 숨김, 파트별 재생 선택
+  - **nwc-viewer 개선**: 한글(EUC-KR) 가사 인코딩, 한글 폰트 스택(Malgun Gothic·Noto Sans KR 등), 넓은 악보 레이아웃, 임베드 시 불필요 메뉴 숨김, 파트별 재생 선택, 재생 시 악보 스크롤 동기화
 - **악보 자료실**: 제목·내용·작곡가 검색 기능 추가 (게시판과 동일한 방식)
 
 ### 수정
+- **nwc-viewer**: 한글 가사 미표시 수정 — lyric/텍스트에 Malgun Gothic, Apple SD Gothic Neo, Nanum Gothic, Noto Sans KR 등 한글 지원 폰트 스택 적용
+- **nwc-viewer**: 임베드 모드(`?file=`) 기본 줌 25%로 축소 — 한 줄에 4마디 이상 표시
+- **nwc-viewer**: 재생·악보 동기화 수정 — Tempo base(whole/half/quarter/eighth)에 따른 quarter-note BPM 변환, 재생 시 악보 자동 스크롤
+
 - **PDF 뷰어**: 에러 메시지 에러 시에만 표시
   - 로딩 메시지 제거(스피너만 표시), Document/Page `error={null}`로 react-pdf 플래시 방지
   - `onLoadError`로 실제 에러 감지 후 400ms 지연 표시(일시적 플래시 제외)
@@ -20,6 +24,4 @@
 - **PDF 뷰어**: 로딩 시 PDF 미표시 문제 수정
   - `loading={null}` 제거, Document/Page에 정상 loading prop 복원
   - 오버레이 제거 후 PDF가 정상 렌더링되도록 복구
-
-### 수정
 - **PDF 뷰어**: 마지막 동작 버전(e95927f)으로 완전 복원, 미들웨어에서 `/pdfjs/` 제외 (worker·cmaps·폰트 로드 보장)

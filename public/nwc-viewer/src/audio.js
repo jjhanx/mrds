@@ -118,8 +118,9 @@ export function buildNoteEvents(data, opts) {
 	notes.sort((a, b) => a.time - b.time || a.midi - b.midi)
 
 	const duration = notes.reduce((mx, n) => Math.max(mx, n.time + n.duration), 0)
-	return { notes, duration }
+	return { notes, duration, tempoMap }
 }
+
 
 // ── Tie merging helper ─────────────────────────────────────────────────────
 
@@ -146,17 +147,20 @@ function findNextTied(tokens, idx) {
 /**
  * Build a tempo map: array of { tick, bpm } sorted by tick.
  * Tick values are in whole-note units (matching tickValue from interpreter).
+ * NWC tempo base: 0=whole, 1=half, 2=quarter, 3=eighth. Convert to quarter-note BPM.
  */
-function buildTempoMap(staves) {
+export function buildTempoMap(staves) {
 	const entries = []
+	// Quarter-note multipliers: base 0→4, 1→2, 2→1, 3→0.5
+	const baseToQuarter = [4, 2, 1, 0.5]
 
 	// Scan all staves for Tempo tokens (they usually appear on stave 0)
 	for (const stave of staves) {
 		for (const tok of stave.tokens) {
 			if (tok.type === 'Tempo') {
-				// tok.duration = BPM value, tok.note = beat unit
-				// NWC stores tempo as quarter-note BPM regardless of tok.note
-				const bpm = tok.duration || 120
+				const value = tok.duration || 120
+				const base = (tok.note ?? 2) & 3
+				const bpm = value * (baseToQuarter[base] ?? 1)
 				const tick = tok.tickValue ?? 0
 				entries.push({ tick, bpm })
 			}
@@ -204,6 +208,34 @@ function ticksToSeconds(tick, tempoMap) {
 	seconds += (tick - prevTick) * (240 / bpm)
 	return seconds
 }
+
+/**
+ * Convert seconds to tick (whole-note units) using the tempo map.
+ * Inverse of ticksToSeconds for scroll sync.
+ */
+function secondsToTicks(seconds, tempoMap) {
+	if (!tempoMap.length || seconds <= 0) return 0
+	let tick = 0
+	let prevTick = 0
+	let elapsed = 0
+	let bpm = tempoMap[0].bpm
+
+	for (let i = 1; i < tempoMap.length; i++) {
+		const dt = tempoMap[i].tick - prevTick
+		const span = dt * (240 / bpm)
+		if (elapsed + span >= seconds) {
+			tick = prevTick + (seconds - elapsed) * bpm / 240
+			return tick
+		}
+		elapsed += span
+		prevTick = tempoMap[i].tick
+		bpm = tempoMap[i].bpm
+	}
+	tick = prevTick + (seconds - elapsed) * bpm / 240
+	return tick
+}
+
+export { secondsToTicks }
 
 // ── PlaybackController ─────────────────────────────────────────────────────
 

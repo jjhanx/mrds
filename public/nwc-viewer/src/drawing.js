@@ -1,6 +1,6 @@
 import './constants.js'
 import { ajax } from './loaders.js'
-import { getFontSize, getZoomLevel } from './constants.js'
+import { getFontSize, getZoomLevel, LYRIC_FONT_STACK } from './constants.js'
 
 const fontMap = {
 	// barlines
@@ -649,7 +649,7 @@ class Text extends Draw {
 	}
 
 	draw(ctx) {
-		ctx.font = this.font || "italic bold 12px Arial, 'Segoe UI', sans-serif"
+		ctx.font = this.font || 'italic bold 12px ' + LYRIC_FONT_STACK
 		if (this.textAlign) ctx.textAlign = this.textAlign
 		ctx.fillText(this.text, 0, 0)
 	}
@@ -711,7 +711,7 @@ class Drawing {
 	constructor(ctx) {
 		this.set = new Set()
 
-		ctx.font = `${getFontSize()}px Arial, 'Segoe UI', sans-serif`
+		ctx.font = `${getFontSize()}px ` + LYRIC_FONT_STACK
 		ctx.textBaseline = 'alphabetic' // alphabetic  bottom top
 		ctx.fillStyle = '#000'
 	}
@@ -748,7 +748,7 @@ class Drawing {
 			el.draw(ctx)
 
 			if (el._text) {
-				ctx.font = "8px Arial, 'Segoe UI', sans-serif"
+				ctx.font = '8px ' + LYRIC_FONT_STACK
 				ctx.fillText(el._text, 0, 50)
 			}
 
@@ -773,7 +773,7 @@ class Drawing {
 
 		// Restore default font/baseline — canvas resets wipe context state
 		// (e.g. after resizeToFit()), so re-apply on every draw pass.
-		ctx.font = `${getFontSize()}px Arial, 'Segoe UI', sans-serif`
+		ctx.font = `${getFontSize()}px ` + LYRIC_FONT_STACK
 		ctx.textBaseline = 'alphabetic'
 		ctx.fillStyle = '#000'
 
