@@ -1,0 +1,134 @@
+<html>
+	<head>
+			<meta charset="UTF-8">
+	</head>
+
+<body>
+	<h3>Font Test</h3>
+
+	<style>
+	@font-face {
+		font-family: "Bravura";
+
+ 		src:
+			url("../vendor/bravura-1.211/otf/Bravura.otf") format("opentype"),
+			url("../vendor/bravura-1.211/woff/Bravura.woff2") format("woff2"),
+			url("../vendor/bravura-1.211/woff/Bravura.woff") format("woff");
+	}
+
+	body {
+		font-family: "Bravura";
+		font-size: 4em;
+		float: left;
+	}
+
+	span {
+		display: inline-block;
+		border: 1px solid #999;
+		padding: 0.5em;
+	}
+
+	canvas {
+		position: absolute;
+		top: 0px;
+	}
+	</style>
+
+
+<div>012345667</div>
+
+<div>
+	space - &#x0020;
+	x2669 - &#x2669;
+	x266A - &#x266A;
+	x266B - &#x266B;
+	x266C - &#x266C;
+	flat x266D - &#x266D;
+	neutral x266E - &#x266E;
+	sharp x266F - &#x266F;
+
+</div>
+
+<!-- 
+	This tests the smufl font rendering by embeding otf font natively in css with @font-face
+ -->
+<script>
+	function ajax(url, callback) {
+		var oReq = new XMLHttpRequest();
+		oReq.open('GET', url, true);
+		oReq.responseType = 'json';
+
+		oReq.onload = function(oEvent) {
+			console.log('ajax done for ', url);
+			var arrayBuffer = oReq.response;
+			callback(arrayBuffer);
+		};
+
+		oReq.send();
+	}
+
+	ajax('../vendor/bravura-1.211/bravura_metadata.json', function(res) {
+		metadata = res;
+		console.log(res);
+	});
+
+	canvas = document.createElement('canvas');
+	canvas.width = 800
+	canvas.height = 400
+	document.body.appendChild(canvas)
+	ctx = canvas.getContext('2d')
+
+	var start = 0x2669
+
+	coddes = {
+		e014: 'ledger', // e01a e020
+		e050: 'treble',
+		e05c: 'alto',
+		e062: 'base',
+	}
+
+	for (var i = 0; i < 5; i++) {
+		var code = 0x266B + i;
+		var char = String.fromCharCode(code)
+
+		div = document.createElement('div')
+		div.innerText = `${char} ${code.toString(16)}`
+		document.body.appendChild(div);
+	}
+
+	for (var i = 0; i < 1000; i++) {
+		var code = 0xe000 + i;
+		var char = String.fromCharCode(code)
+
+		div = document.createElement('span')
+		div.innerText = `${char} ${code.toString(16)}`
+		document.body.appendChild(div);
+	}
+
+
+	render = () => {
+		ctx.font = '40px Bravura'
+		x = '\ue050 \ue014\ue014\ue014\ue014\ue014\ue014\ue014\ue014\ue014\ue014'
+		// y = String.fromCharCode(0xe050)
+		// console.log(x == y)
+
+		ctx.textBaseline = 'top' // alphabetic  bottom top
+		ctx.fillText(x, 0, 50)
+
+		ctx.rect(20, 10, 20, 40)
+		ctx.stroke();
+	}
+
+	// Trick from https://stackoverflow.com/questions/2635814/
+	var image = new Image;
+	image.src = '../vendor/bravura-1.211/otf/Bravura.otf';
+	image.onerror = function() {
+		setTimeout(render, 100)
+	};
+
+
+
+
+</script>
+
+</body>

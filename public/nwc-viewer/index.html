@@ -1,0 +1,260 @@
+<html>
+	<head>
+		<title>
+			Notably Music Editor
+		</title>
+		<meta charset="UTF-8" />
+		<meta
+			name="description"
+			content="Notably, a simple, lightweight music viewer for nwc (noteworthy composer) files"
+		/>
+		<meta
+			name="keywords"
+			content="Music,Notation,Composer,Scorewriter,Editor,NWC,Noteworthy"
+		/>
+		<meta name="author" content="Joshua Koo" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	</head>
+	<body>
+		<style>
+			body {
+				background: #1a1a1a;
+				color: #fefefe;
+				overflow: hidden;
+				/* Use System Fonts */
+				font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto',
+					'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans',
+					'Helvetica Neue', sans-serif !important;
+				margin: 0;
+				padding: 0;
+			}
+
+			#top {
+				padding: 10px 4px 10px 4px;
+			}
+
+			#footer {
+				padding: 10px 4px 10px 4px;
+				font-size: 10px;
+			}
+
+			a {
+				color: #9a9a9a;
+			}
+
+			button,
+			select {
+				background: #3f3f3f;
+				color: #fefefe;
+				border: 1px #2e2e2e;
+				outline: #9a9a9a;
+				padding: 4px;
+				margin: 2px;
+			}
+
+			canvas {
+				background: #fff;
+				position: fixed;
+			}
+
+			#score {
+				overflow: auto;
+				flex: 1 0;
+				padding: 0px;
+			}
+
+			#container {
+				display: flex;
+				flex-direction: column;
+				width: 100%;
+				height: 100%;
+			}
+
+			#invisible_canvas {
+				display: block;
+				/* background: linear-gradient(to right, white, yellow); */
+				opacity: 0.9;
+			}
+
+			h4 {
+				display: inline-block;
+			}
+
+			#logo {
+				font-size: 16px;
+				font-weight: bold;
+			}
+		</style>
+		<div id="container">
+			<div id="top">
+				<div>
+					<span id="logo">Notably</span>
+					<button id="open">Open nwc</button>
+
+					<input type="file" id="opener" hidden />
+
+					<select id="samples"></select>
+
+				<button id="play" title="Play / Pause">Play</button>
+				<button id="stop" title="Stop">Stop</button>
+				<span id="playback_time" style="font-size: 12px; min-width: 90px; display: inline-block; text-align: center; vertical-align: middle;">0:00 / 0:00</span>
+				<input type="range" id="progress_bar"
+					min="0" max="1" step="0.001" value="0"
+					style="width: 140px; vertical-align: middle; cursor: pointer;"
+				/>
+
+				<a href="nwc2xml_converter.html" style="margin-left: 20px;">
+					<button>NWC to MusicXML</button>
+				</a>
+
+				<span style="width: 50px;"></span>
+				Size:
+				<button onclick="setFontSize(getFontSize() - 4); rerender()">-</button>
+				<button onclick="setFontSize(getFontSize() + 4); rerender()">+</button>
+
+				<span style="width: 20px;"></span>
+				Zoom:
+				<input type="range" id="zoom_slider"
+					min="0.25" max="4.0" step="0.01" value="1.0"
+					oninput="applyZoom(parseFloat(this.value))"
+					style="width: 100px; vertical-align: middle;"
+				/>
+				<span id="zoom_label" style="min-width: 40px; display: inline-block; text-align: center;">100%</span>
+
+				<span style="width: 20px;"></span>
+				Parser:
+				<button id="parser_toggle" onclick="toggleParser()">New</button>
+
+				<span style="width: 20px;"></span>
+				Layout:
+				<button id="layout_toggle" onclick="toggleLayout()">Scroll</button>
+
+					<div id="debug_tools" style="display: none;">
+						<button
+							onclick="window._debug_glyph = !window._debug_glyph; rerender()"
+						>
+							Debug glyph
+						</button>
+
+						<button id="blank_button">blank score</button>
+						<button id="new_staff">add staff</button>
+
+						<button onclick="activateEdit()">Toggle Editing</button>
+						<button>Save</button>
+						<button>Load</button>
+						<!-- export selection to lilypond -->
+
+						<i style="font-size: 12px; float: right;">
+							Code:
+							<a href="https://github.com/zz85/nwc-viewer"
+								>github.com/zz85/nwc-viewer</a
+							>
+						</i>
+					</div>
+				</div>
+			</div>
+
+			<div id="score">
+				<div id="invisible_canvas"></div>
+			</div>
+
+			<div id="footer">
+				Footer&nbsp;
+			</div>
+		</div>
+
+		<!-- vendor dependencies -->
+		<script src="vendor/inflate.min.js"></script>
+		<script src="vendor/opentype.min.js"></script>
+
+		<!-- rollup build -->
+		<!-- <script nomodule="true" src="bin/notably.js"></script> -->
+
+		<!-- module script -->
+		<script type="module" src="src/main.js"></script>
+		<script>
+			var nextRender
+
+			var scoreElm = document.getElementById('score')
+
+			function updateScroll() {
+				// console.log('scroll', scoreElm.scrollLeft, scoreElm.scrollTop);
+				quickDraw(data, -scoreElm.scrollLeft, -scoreElm.scrollTop)
+
+				nextRender = null
+			}
+
+			scoreElm.addEventListener('scroll', (e) => {
+				// for browsers firing off > 60fps, we limit the rerendering
+				if (!nextRender) nextRender = requestAnimationFrame(updateScroll)
+			})
+
+			scoreElm.style.cursor = 'pointer'
+
+			var downx, downy, scrollLeft, scrollTop
+			scoreElm.addEventListener('mousedown', (e) => {
+				// console.log('mousedown', 	e);
+				downx = e.x
+				downy = e.y
+				scrollLeft = scoreElm.scrollLeft
+				scrollTop = scoreElm.scrollTop
+				window.addEventListener('mousemove', mousedrag)
+				scoreElm.style.cursor = 'grab' // move
+
+				e.preventDefault()
+
+				window.addEventListener('mouseup', (e) => {
+					window.removeEventListener('mousemove', mousedrag)
+					scoreElm.style.cursor = 'pointer'
+				})
+			})
+
+			function mousedrag(e) {
+				// scoreElm.scrollLeft = scrollLeft + downx - e.x;
+				// scoreElm.scrollTop = scrollTop + downy - e.y;
+
+				scoreElm.scrollLeft += downx - e.x
+				scoreElm.scrollTop += downy - e.y
+
+				// console.log('drag', e)
+			}
+
+			// ---- Zoom handler (transform-based, no re-layout) ----
+
+			function applyZoom(newLevel) {
+				var oldZoom = getZoomLevel()
+
+				setZoomLevel(newLevel)
+				var zoom = getZoomLevel() // read back clamped value
+
+				// Update slider and label to match the (clamped) value
+				var slider = document.getElementById('zoom_slider')
+				var label  = document.getElementById('zoom_label')
+				if (slider) slider.value = zoom
+				if (label)  label.textContent = Math.round(zoom * 100) + '%'
+
+				// Center-preserving scroll: keep the same score-space point at
+				// the viewport center before and after zoom.
+				// centerScore = (scrollLeft + clientWidth/2) / oldZoom
+				// newScrollLeft = centerScore * newZoom - clientWidth/2
+				var cx = (scoreElm.scrollLeft + scoreElm.clientWidth  / 2) / oldZoom
+				var cy = (scoreElm.scrollTop  + scoreElm.clientHeight / 2) / oldZoom
+
+				// Resize the invisible_canvas spacer so scroll bounds are correct
+				// before we set the new scroll position.
+				var ic = document.getElementById('invisible_canvas')
+				if (ic && typeof maxCanvasWidth !== 'undefined') {
+					ic.style.width  = (maxCanvasWidth  * zoom) + 'px'
+					ic.style.height = Math.max(maxCanvasHeight * zoom, scoreElm.clientHeight) + 'px'
+				}
+
+				scoreElm.scrollLeft = cx * zoom - scoreElm.clientWidth  / 2
+				scoreElm.scrollTop  = cy * zoom - scoreElm.clientHeight / 2
+
+				quickDraw(null, -scoreElm.scrollLeft, -scoreElm.scrollTop)
+			}
+
+			window.applyZoom = applyZoom
+		</script>
+	</body>
+</html>

@@ -23,6 +23,7 @@ interface SheetMusicViewProps {
 export function SheetMusicView({ sheetMusic, currentUserId }: SheetMusicViewProps) {
   const pathOnly = sheetMusic.filepath.split("?")[0];
   const isPdf = /\.pdf$/i.test(pathOnly);
+  const isNwc = /\.nwc$/i.test(pathOnly);
   const isScoreFolder = ["choir", "art-song"].includes((sheetMusic.folder?.slug ?? "").toLowerCase());
   const isImage = /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(sheetMusic.filepath);
   const isVideo = /\.(mp4|webm|mov|avi|mkv|m4v|ogv|wmv)(\?|$)/i.test(sheetMusic.filepath);
@@ -122,16 +123,25 @@ export function SheetMusicView({ sheetMusic, currentUserId }: SheetMusicViewProp
           <div className="flex flex-wrap gap-2 mb-6">
             {hasNwc &&
               sheetMusic.nwcFiles!.map((nwc) => (
-                <a
-                  key={nwc.id}
-                  href={nwc.filepath.startsWith("http") ? nwc.filepath : nwc.filepath}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-stone-100 text-stone-800 rounded-lg hover:bg-stone-200 font-medium"
-                >
-                  <FileDown className="w-4 h-4" />
-                  NWC 다운로드
-                </a>
+                <span key={nwc.id} className="inline-flex gap-2">
+                  <a
+                    href={`/nwc-viewer/index.html?file=${encodeURIComponent(nwc.filepath)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-amber-100 text-amber-800 rounded-lg hover:bg-amber-200 font-medium"
+                  >
+                    악보 보기 (웹)
+                  </a>
+                  <a
+                    href={nwc.filepath.startsWith("http") ? nwc.filepath : nwc.filepath}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-stone-100 text-stone-800 rounded-lg hover:bg-stone-200 font-medium"
+                  >
+                    <FileDown className="w-4 h-4" />
+                    NWC 다운로드
+                  </a>
+                </span>
               ))}
             {hasVideo &&
               sheetMusic.videos.map((v) => (
@@ -167,8 +177,34 @@ export function SheetMusicView({ sheetMusic, currentUserId }: SheetMusicViewProp
               >
                 악보 열기 (새 탭)
               </a>
+            ) : isNwc ? (
+              <div className="w-full min-h-[600px] rounded-lg overflow-hidden border border-stone-200">
+                <iframe
+                  src={`/nwc-viewer/index.html?file=${encodeURIComponent(sheetMusic.filepath)}`}
+                  title="NWC 악보 보기"
+                  className="w-full border-0"
+                  style={{ minHeight: "600px" }}
+                />
+              </div>
             ) : (isPdf || (isScoreFolder && !isImage && !isExternal)) ? (
-              <PdfViewer url={sheetMusic.filepath} />
+              <>
+                <PdfViewer url={sheetMusic.filepath} />
+                {hasNwc && (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {sheetMusic.nwcFiles!.map((nwc) => (
+                      <a
+                        key={nwc.id}
+                        href={`/nwc-viewer/index.html?file=${encodeURIComponent(nwc.filepath)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-3 py-2 text-sm bg-amber-100 text-amber-800 rounded-lg hover:bg-amber-200 font-medium"
+                      >
+                        NWC 웹에서 악보 보기
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </>
             ) : isImage ? (
               <img
                 src={sheetMusic.filepath}
