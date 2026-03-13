@@ -71,18 +71,6 @@ sudo apt install -y ffmpeg
 ffmpeg -version   # 확인
 ```
 
-### 2-5. (선택) PDF 정합성 도구 설치
-
-웹뷰어에서 백지만 나오는 PDF 문제를 완화하기 위해 서버 업로드 처리 시 `pdf-lib`로 문서를 재저장합니다. `pdf-lib`는 JavaScript 의존성이므로 `npm install`로 이미 설치되었습니다. 그러나 추가로 고급 복구가 필요할 경우 `qpdf`나 `ghostscript`를 설치하면 좋습니다.
-
-```bash
-sudo apt install -y qpdf      # linearize 등 기능
-# 또는
-sudo apt install -y ghostscript
-```
-
-이 도구가 있으면 백지 PDF가 올라왔을 때 `qpdf --linearize input.pdf output.pdf` 식으로 수동 복구할 수 있습니다.
-
 > ffmpeg가 없으면 원본 파일 그대로 저장됩니다. iPhone 녹화(MOV/HEVC)는 PC에서 재생이 안 될 수 있습니다.
 
 ---
@@ -103,15 +91,9 @@ cd mrds
 ### 3-2. 의존성 설치 및 빌드
 
 ```bash
-npm install          # 새로 추가된 패키지도 함께 설치됨(pdf-lib, pdf-parse 등)
-
-# 새로운 Prisma 스키마 변경(텍스트 검색용 필드 추가)이 있을 수 있으므로
-npx prisma migrate deploy   # 또는 개발 환경에서는 npx prisma migrate dev
-
-npm run build        # 빌드
+npm install
+npm run build
 ```
-
-*주의*: GitHub에서 코드를 다시 내려받거나 새 커밋을 풀 받은 후에는 `npm install`을 반드시 재실행해야 합니다. 새로운 라이브러리가 추가됐을 수 있습니다.
 
 ### 3-3. 환경 변수 설정
 
@@ -266,16 +248,6 @@ server {
 
     # 이미지/파일 업로드 용량 (없으면 413 에러 발생)
     client_max_body_size 50M;
-
-```nginx
-    # 업로드된 정적 파일(악보, 이미지 등)은 Next.js 서버를 거치지 않고 Nginx가 다이렉트로 서빙 (404 방지)
-    location /uploads/ {
-        # 주의: 아래 경로는 실제 서버의 프로젝트 경로(예: /home/사용자명/mrds/public/uploads/)로 맞춰야 합니다.
-        alias /home/ubuntu/mrds/public/uploads/;
-        autoindex off;
-        access_log off;
-        expires max;
-    }
 
     location / {
         proxy_pass http://127.0.0.1:3001;   # mrds는 3001 포트

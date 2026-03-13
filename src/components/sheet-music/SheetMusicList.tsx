@@ -19,7 +19,6 @@ import {
   Download,
   Share2,
   X,
-  Search,
 } from "lucide-react";
 
 function getFileIcon(filepath: string) {
@@ -68,8 +67,6 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
   const [folders, setFolders] = useState<SheetMusicFolder[]>([]);
   const [items, setItems] = useState<SheetMusicItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [globalQuery, setGlobalQuery] = useState("");        // sidebar global search
-  const [folderQuery, setFolderQuery] = useState("");        // within-folder search
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -104,16 +101,11 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
       .catch(() => {});
   }, []);
 
-  const loadItems = useCallback((query: string = "") => {
+  const loadItems = useCallback(() => {
     setLoading(true);
-    // always respect folder when querying
-    let url = folderIdParam
+    const url = folderIdParam
       ? `/api/sheet-music?folderId=${encodeURIComponent(folderIdParam)}`
       : "/api/sheet-music";
-    if (query.trim()) {
-      const sep = url.includes("?") ? "&" : "?";
-      url += `${sep}q=${encodeURIComponent(query.trim())}`;
-    }
     fetch(url, { credentials: "include" })
       .then((res) => res.json())
       .then((data) => {
@@ -129,27 +121,8 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
   }, [loadFolders]);
 
   useEffect(() => {
-    // folder change resets folder search and reloads
-    setFolderQuery("");
     loadItems();
-  }, [folderIdParam, loadItems]);
-
-  const handleFolderSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const data = new FormData(e.currentTarget);
-    const q = (data.get("q") as string) || "";
-    setFolderQuery(q);
-    loadItems(q);
-  };
-
-  const handleGlobalSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const data = new FormData(e.currentTarget);
-    const q = (data.get("q") as string) || "";
-    setGlobalQuery(q);
-    // navigate to root with query
-    window.location.href = `/sheet-music${q ? `?q=${encodeURIComponent(q)}` : ""}`;
-  };
+  }, [loadItems]);
 
   const currentFolder = useMemo(
     () => folders.find((f) => f.id === folderIdParam),
@@ -366,18 +339,6 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
     <div className="flex flex-col md:flex-row gap-6">
       {/* 폴더 사이드바 */}
       <aside className="w-full md:w-64 flex-shrink-0">
-        {/* global 검색창 */}
-        <form onSubmit={handleGlobalSearchSubmit} className="relative px-4 py-2">
-          <input
-            name="q"
-            type="text"
-            value={globalQuery}
-            onChange={(e) => setGlobalQuery(e.target.value)}
-            placeholder="전체 악보 검색..."
-            className="w-full pl-10 pr-3 py-2 rounded-full border border-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm bg-white shadow-sm"
-          />
-          <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-500" />
-        </form>
         <div className="bg-white rounded-xl border border-amber-100 overflow-hidden">
           <div className="px-4 py-3 border-b border-amber-100 flex items-center gap-2 font-medium text-stone-700">
             <Folder className="w-4 h-4" />
@@ -502,20 +463,6 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
             <p className="text-sm text-stone-400 mt-1">{uploadHint} 여러 개 업로드 가능</p>
           </div>
         )}
-        {/* folder-specific search */}
-        {folderIdParam && (
-          <form onSubmit={handleFolderSearchSubmit} className="relative mb-4">
-            <input
-              name="q"
-              type="text"
-              value={folderQuery}
-              onChange={(e) => setFolderQuery(e.target.value)}
-              placeholder="이 폴더 내 검색..."
-              className="w-full pl-10 pr-3 py-2 rounded-full border border-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm bg-white shadow-sm"
-            />
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-500" />
-          </form>
-        )}
 
         {selected.size > 0 && (
           <div className="mb-4 p-3 bg-amber-50 rounded-xl border border-amber-100 flex flex-wrap items-center gap-2">
@@ -566,9 +513,7 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
           <div className="text-center py-16 bg-white rounded-xl border border-amber-100">
             <FileMusic className="w-12 h-12 text-amber-300 mx-auto mb-4" />
             <p className="text-stone-600 mb-2">
-              {folderQuery
-                ? "검색 결과가 없습니다."
-                : folderIdParam
+              {folderIdParam
                 ? "이 폴더에 악보가 없습니다. 위에 파일을 끌어다 놓으세요."
                 : "폴더를 선택하거나 악보를 업로드하세요."}
             </p>

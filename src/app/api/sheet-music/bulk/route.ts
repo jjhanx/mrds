@@ -5,8 +5,6 @@ import { transcodeToH264 } from "@/lib/transcode-video";
 import { NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
-// pdf-lib을 사용해 PDF를 재저장(무료손실 재생성)하여 pdf.js가 못 읽는 문서들을 보정
-import { PDFDocument } from "pdf-lib";
 
 export async function POST(request: Request) {
   try {
@@ -71,7 +69,6 @@ export async function POST(request: Request) {
     for (const file of validFiles) {
       let bytes = await file.arrayBuffer();
       let buffer = Buffer.from(bytes);
-      let textContent: string | undefined;
       let outExt = (file.name.match(/\.([^.]+)$/)?.[1] || "").toLowerCase();
       if (!outExt && file.type === "application/pdf") outExt = "pdf";
       if (!outExt && file.type?.startsWith("image/")) outExt = file.type.split("/")[1] || "png";
@@ -85,44 +82,10 @@ export async function POST(request: Request) {
           outExt = "mp4";
         }
       }
-      // PDF 특수 파일에 대한 보정: pdf-lib으로 로드/저장하여 간혹 pdf.js가 빈 페이지를 출력하는 문제를 완화
-      if (outExt === "pdf") {
-        try {
-          const pdfDoc = await PDFDocument.load(buffer);
-          buffer = Buffer.from(await pdfDoc.save());
-        } catch (normErr) {
-          console.warn("PDF normalization failed", normErr);
-        }
-        // 텍스트 추출
-        try {
-          const pdfParse = (await import("pdf-parse")).default;
-          const parsed = await pdfParse(buffer);
-          textContent = parsed.text;
-        } catch (err) {
-          console.warn("Bulk PDF text extraction failed", err);
-        }
-      }
-      // Use purely random ASCII filenames to prevent Nginx/Linux 404 NFD/NFC encoding mismatches
-      const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${outExt}`;
+      const baseName = file.name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9.-]/g, "_");
+      const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${baseName}.${outExt}`;
       const fullPath = path.join(uploadDir, filename);
       await writeFile(fullPath, buffer);
-      // qpdf linearize on disk if available
-      if (outExt === "pdf") {
-        try {
-          const { execFile } = await import("child_process");
-          const tmp = `${fullPath}.qpdf.tmp`;
-          await new Promise<void>((resolve, reject) => {
-            execFile("qpdf", ["--linearize", fullPath, tmp], (err) => {
-              if (err) return reject(err);
-              resolve();
-            });
-          });
-          const { rename } = await import("fs/promises");
-          await rename(tmp, fullPath);
-        } catch {
-          // ignore
-        }
-      }
       const filepath = `/uploads/sheet-music/${filename}`;
 
       const title = file.name.replace(/\.[^.]+$/, "") || file.name;
@@ -132,7 +95,6 @@ export async function POST(request: Request) {
           folderId,
           title,
           filepath,
-          textContent: textContent || null,
         },
       });
       results.push({
