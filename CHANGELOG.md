@@ -19,6 +19,7 @@
 - **nwc-viewer**: NWC 2.75(NWCTXT) 가사 표시 — UTF-8 디코딩 + Lyrics/Lyric1~8 파싱 추가 (`남촌 D프렛.nwc` 등 한글 가사 정상 표시)
 - **nwc-viewer**: 파트 선택 다중 선택 — 체크박스 드롭다운으로 둘 이상 Staff 선택 시 해당 파트들만 함께 재생, 선택된 파트 파란색 하이라이트
 - **nwc-viewer**: Staff 선택 버튼 방식 — [전체] [파트1] [파트2] ... 인라인 버튼으로 클릭 토글, 선택 시 파란색 강조
+- **nwc-viewer**: Staff 선택 시 해당 파트만 재생 — getPlaybackStaffFilter가 { staffIndices } 객체로 전달되도록 수정
 
 - **PDF 뷰어**: 에러 메시지 에러 시에만 표시
   - 로딩 메시지 제거(스피너만 표시), Document/Page `error={null}`로 react-pdf 플래시 방지

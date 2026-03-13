@@ -457,7 +457,7 @@ function updateStaffButtonsSelection() {
 function getPlaybackStaffFilter() {
 	const idx = window._selectedStaffIndices
 	if (!idx || idx.length === 0) return undefined
-	return idx
+	return { staffIndices: idx }
 }
 
 async function togglePlayPause() {
