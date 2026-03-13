@@ -4,20 +4,25 @@
  * DB가 초기화되어 레코드만 사라진 경우, public/uploads/sheet-music/ 에
  * 파일이 아직 남아 있다면 이 스크립트로 DB 레코드를 다시 생성할 수 있습니다.
  *
- * 사용법: node scripts/recover-sheet-music.js [--folder=choir]
+ * 사용법: node scripts/recover-sheet-music.js [--folder=choir] [--path=/custom/uploads]
  *
  * 옵션:
  *   --folder=slug   복구한 자료를 넣을 폴더 (choir, art-song, nwc, utility, video, education)
- *                    생략 시 파일 확장자로 추정 (pdf/이미지→합창곡, 동영상→동영상, nwc→NWC)
+ *   --path=...     업로드 경로 (기본: 프로젝트/public/uploads/sheet-music)
  */
 
 const { PrismaClient } = require("@prisma/client");
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 
 const prisma = new PrismaClient();
 
-const UPLOAD_BASE = path.join(process.cwd(), "public", "uploads", "sheet-music");
+function genId() {
+  return "c" + Date.now().toString(36) + crypto.randomBytes(5).toString("hex");
+}
+
+let UPLOAD_BASE = path.join(process.cwd(), "public", "uploads", "sheet-music");
 const EXT_TO_FOLDER = {
   pdf: "choir",
   jpg: "choir",
@@ -65,11 +70,18 @@ async function getFolderIdBySlug(slug) {
 async function recoverMainFiles(forceFolderSlug) {
   if (!fs.existsSync(UPLOAD_BASE)) {
     console.log("업로드 디렉터리가 없습니다:", UPLOAD_BASE);
-    return { main: 0, nwc: 0 };
+    console.log("  → 파일이 삭제되었다면 이 스크립트로 복구할 수 없습니다.");
+    return { main: 0, files: [] };
   }
 
   const entries = fs.readdirSync(UPLOAD_BASE, { withFileTypes: true });
   const mainFiles = entries.filter((e) => e.isFile());
+  console.log("  발견된 파일(최상위):", mainFiles.length, "개");
+  if (mainFiles.length === 0) {
+    console.log("  → public/uploads/sheet-music/ 안에 파일이 없습니다.");
+    console.log("  → DB 초기화 시 업로드 폴더도 같이 삭제되었다면 복구 불가합니다.");
+    return { main: 0, files: [] };
+  }
   const created = [];
 
   for (const entry of mainFiles) {
@@ -90,15 +102,19 @@ async function recoverMainFiles(forceFolderSlug) {
     const title = entry.name
       .replace(/^\d+-[a-z0-9]+-/, "") // timestamp-random- 제거
       .replace(/\.[^.]+$/, ""); // 확장자 제거
-    const finalTitle = title || entry.name;
+    const finalTitle = (title || entry.name).slice(0, 255);
 
-    await prisma.sheetMusic.create({
-      data: {
-        folderId,
-        title: finalTitle,
-        filepath,
-      },
-    });
+    const id = genId();
+    const now = new Date().toISOString();
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO SheetMusic (id, folderId, title, filepath, "createdAt", "updatedAt") VALUES (?, ?, ?, ?, ?, ?)`,
+      id,
+      folderId,
+      finalTitle,
+      filepath,
+      now,
+      now
+    );
     created.push(entry.name);
   }
 
@@ -129,15 +145,19 @@ async function recoverNwcFiles(forceFolderSlug) {
     const title = entry.name
       .replace(/^\d+-[a-z0-9]+-/, "")
       .replace(/\.nwc$/i, "");
-    const finalTitle = title || entry.name;
+    const finalTitle = (title || entry.name).slice(0, 255);
 
-    await prisma.sheetMusic.create({
-      data: {
-        folderId,
-        title: finalTitle,
-        filepath,
-      },
-    });
+    const id = genId();
+    const now = new Date().toISOString();
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO SheetMusic (id, folderId, title, filepath, "createdAt", "updatedAt") VALUES (?, ?, ?, ?, ?, ?)`,
+      id,
+      folderId,
+      finalTitle,
+      filepath,
+      now,
+      now
+    );
     created.push(entry.name);
   }
 
@@ -150,11 +170,14 @@ async function main() {
   for (const a of args) {
     if (a.startsWith("--folder=")) {
       forceFolder = a.split("=")[1]?.trim() || null;
-      break;
+    } else if (a.startsWith("--path=")) {
+      const p = a.split("=")[1]?.trim();
+      if (p) UPLOAD_BASE = path.isAbsolute(p) ? p : path.join(process.cwd(), p);
     }
   }
 
   console.log("악보 자료실 복구를 시작합니다...");
+  console.log("현재 작업 경로:", process.cwd());
   console.log("업로드 경로:", UPLOAD_BASE);
 
   await ensureFolders();
