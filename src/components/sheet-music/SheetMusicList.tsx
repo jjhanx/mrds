@@ -12,6 +12,7 @@ import {
   Archive,
   Folder,
   Plus,
+  Search,
   Pencil,
   Trash2,
   Upload,
@@ -75,6 +76,8 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
   const [editFolderName, setEditFolderName] = useState("");
   const [attachModal, setAttachModal] = useState<{ id: string; title: string } | null>(null);
   const [renameModal, setRenameModal] = useState<{ id: string; title: string } | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState("");
   const SORT_KEY = "sheet-music-sort";
   const validSort = (v: string): v is "name-asc" | "name-desc" | "date-asc" | "date-desc" =>
     ["name-asc", "name-desc", "date-asc", "date-desc"].includes(v);
@@ -103,9 +106,11 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
 
   const loadItems = useCallback(() => {
     setLoading(true);
-    const url = folderIdParam
-      ? `/api/sheet-music?folderId=${encodeURIComponent(folderIdParam)}`
-      : "/api/sheet-music";
+    const params = new URLSearchParams();
+    if (folderIdParam) params.set("folderId", folderIdParam);
+    if (appliedSearch.trim()) params.set("q", appliedSearch.trim());
+    const query = params.toString();
+    const url = `/api/sheet-music${query ? `?${query}` : ""}`;
     fetch(url, { credentials: "include" })
       .then((res) => res.json())
       .then((data) => {
@@ -114,7 +119,7 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [folderIdParam]);
+  }, [folderIdParam, appliedSearch]);
 
   useEffect(() => {
     loadFolders();
@@ -123,6 +128,11 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
   useEffect(() => {
     loadItems();
   }, [loadItems]);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setAppliedSearch(searchQuery);
+  };
 
   const currentFolder = useMemo(
     () => folders.find((f) => f.id === folderIdParam),
@@ -438,6 +448,17 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
 
       {/* 목록 + 드롭존 */}
       <div className="flex-1 min-w-0">
+        <form onSubmit={handleSearchSubmit} className="relative max-w-xl mb-4">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="제목, 내용, 작곡가 검색..."
+            className="w-full pl-11 pr-4 py-2.5 rounded-full border border-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm bg-white shadow-sm"
+          />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-amber-500" />
+        </form>
+
         {folderIdParam && (
           <div
             onDragOver={(e) => {
@@ -513,9 +534,11 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
           <div className="text-center py-16 bg-white rounded-xl border border-amber-100">
             <FileMusic className="w-12 h-12 text-amber-300 mx-auto mb-4" />
             <p className="text-stone-600 mb-2">
-              {folderIdParam
-                ? "이 폴더에 악보가 없습니다. 위에 파일을 끌어다 놓으세요."
-                : "폴더를 선택하거나 악보를 업로드하세요."}
+              {appliedSearch
+                ? "검색 결과가 없습니다."
+                : folderIdParam
+                  ? "이 폴더에 악보가 없습니다. 위에 파일을 끌어다 놓으세요."
+                  : "폴더를 선택하거나 악보를 업로드하세요."}
             </p>
           </div>
         ) : (

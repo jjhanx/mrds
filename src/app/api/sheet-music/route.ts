@@ -11,8 +11,20 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const folderId = searchParams.get("folderId") ?? undefined;
+    const q = searchParams.get("q")?.trim() || "";
 
-    const where = folderId ? { folderId } : {};
+    const andParts: object[] = [];
+    if (folderId) andParts.push({ folderId });
+    if (q) {
+      andParts.push({
+        OR: [
+          { title: { contains: q } },
+          { description: { contains: q } },
+          { composer: { contains: q } },
+        ],
+      });
+    }
+    const where = andParts.length > 0 ? { AND: andParts } : {};
 
     const sheetMusic = await prisma.sheetMusic.findMany({
       where,
