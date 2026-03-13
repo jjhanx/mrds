@@ -8,7 +8,7 @@ import { exportLilypond } from './exporter.js'
 import { score } from './layout/typeset.js'
 import { blank } from './editing.js'
 import { MusicContext } from './context.js'
-import { PlaybackController, buildTempoMap, secondsToTicks } from './audio.js'
+import { PlaybackController, buildTempoMap, secondsToTicks, ticksToSeconds } from './audio.js'
 import { getZoomLevel } from './constants.js'
 
 /**********************
@@ -379,6 +379,65 @@ let _lastSyncT = 0
 let _lastSyncTime = 0
 let _syncRafId = null
 const SYNC_OFFSET = -0.02 // 보정: worklet 노트 20ms 조기 발화 → 재생선을 소리와 맞춤
+const PLAYHEAD_PX = 60
+
+/**
+ * 현재 스크롤 위치(빨간 선 위치)를 재생 시간(초)으로 변환.
+ * 스크롤바/드래그로 악보를 옮긴 뒤 그 위치에서 재생 시작할 때 사용.
+ */
+function scrollPositionToSeconds() {
+	const map = window._tickToXMap
+	const tempo = window._tempoMap
+	if (!map?.length || !tempo?.length) return null
+	const scoreEl = document.getElementById('score')
+	if (!scoreEl) return null
+	const zoom = getZoomLevel()
+	const x = (scoreEl.scrollLeft + PLAYHEAD_PX) / zoom
+	if (x <= map[0].x) return Math.max(0, ticksToSeconds(map[0].tick, tempo))
+	if (x >= map[map.length - 1].x) return ticksToSeconds(map[map.length - 1].tick, tempo)
+	for (let i = 1; i < map.length; i++) {
+		if (map[i].x >= x) {
+			const a = map[i - 1], b = map[i]
+			const r = (b.x - a.x) > 0 ? (x - a.x) / (b.x - a.x) : 0
+			const tick = a.tick + r * (b.tick - a.tick)
+			return ticksToSeconds(tick, tempo)
+		}
+	}
+	return ticksToSeconds(map[map.length - 1].tick, tempo)
+}
+
+/**
+ * 재생 중이 아닐 때 스크롤 위치를 재생선/seek 위치로 반영.
+ * 스크롤바를 움직여 빨간 선 위치를 정한 뒤 재생하면 그 위치에서 시작.
+ */
+function updatePlaybackFromScroll() {
+	if (playback.playing) return
+	const t = scrollPositionToSeconds()
+	if (t == null) return
+	const map = window._tickToXMap
+	const tempo = window._tempoMap
+	const scoreEl = document.getElementById('score')
+	const dur = playback.duration
+	const clampedT = dur > 0 ? Math.max(0, Math.min(t, dur)) : t
+
+	// 빨간 선 x: 스크롤 위치에서 직접 계산 (dur 미로드 시에도 정확한 위치 표시)
+	const zoom = getZoomLevel()
+	const xAtPlayhead = (scoreEl?.scrollLeft || 0) + PLAYHEAD_PX
+	const xScore = xAtPlayhead / zoom
+	const xClamped = Math.max(map[0].x, Math.min(xScore, map[map.length - 1].x))
+	window._playbackX = xClamped
+
+	if (scoreEl) {
+		const maxLeft = scoreEl.scrollWidth - scoreEl.clientWidth
+		window._playbackAtEnd = maxLeft > 10 && scoreEl.scrollLeft >= maxLeft - 2
+	} else {
+		window._playbackAtEnd = false
+	}
+	if (playback.duration > 0) playback.seek(clampedT)
+	progressBar.value = dur > 0 ? clampedT / dur : 0
+	timeLabel.textContent = formatTime(clampedT) + ' / ' + formatTime(dur > 0 ? dur : 0)
+	if (window.quickDraw && scoreEl) window.quickDraw(null, -scoreEl.scrollLeft, -scoreEl.scrollTop)
+}
 
 function updatePlaybackPosition(t) {
 	const map = window._tickToXMap
@@ -403,7 +462,6 @@ function updatePlaybackPosition(t) {
 		const scoreEl = document.getElementById('score')
 		if (scoreEl) {
 			const zoom = getZoomLevel()
-			const PLAYHEAD_PX = 60
 			const targetLeft = Math.max(0, x * zoom - PLAYHEAD_PX)
 			scoreEl.scrollLeft = targetLeft
 			const maxLeft = scoreEl.scrollWidth - scoreEl.clientWidth
@@ -499,6 +557,11 @@ async function togglePlayPause() {
 		const data = scoreManager.getData()
 		const opts = getPlaybackStaffFilter()
 		await playback.load(data, opts)
+		const t = scrollPositionToSeconds()
+		if (t != null && playback.duration > 0) {
+			const clamped = Math.max(0, Math.min(t, playback.duration))
+			playback.seek(clamped)
+		}
 		await playback.play()
 	}
 }
@@ -509,6 +572,10 @@ stopBtn.onclick = () => {
 	playback.stop()
 	progressBar.value = 0
 	timeLabel.textContent = formatTime(0) + ' / ' + formatTime(playback.duration)
+	window._playbackX = null
+	window._playbackAtEnd = false
+	const scoreEl = document.getElementById('score')
+	if (scoreEl && window.quickDraw) window.quickDraw(null, -scoreEl.scrollLeft, -scoreEl.scrollTop)
 }
 
 progressBar.addEventListener('pointerdown', () => { _seeking = true })
@@ -521,6 +588,19 @@ progressBar.addEventListener('input', () => {
 	const t = parseFloat(progressBar.value) * playback.duration
 	timeLabel.textContent = formatTime(t) + ' / ' + formatTime(playback.duration)
 })
+
+// 스크롤바/드래그로 악보를 옮기면 빨간 선 위치가 그곳으로 설정되고, 재생 시 그 위치에서 시작
+let _scrollSeekRaf = null
+const scoreEl = document.getElementById('score')
+if (scoreEl) {
+	scoreEl.addEventListener('scroll', () => {
+		if (_scrollSeekRaf) return
+		_scrollSeekRaf = requestAnimationFrame(() => {
+			updatePlaybackFromScroll()
+			_scrollSeekRaf = null
+		})
+	})
+}
 
 const rerender = () => {
 	try {

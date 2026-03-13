@@ -238,7 +238,7 @@ function secondsToTicks(seconds, tempoMap) {
 	return tick
 }
 
-export { secondsToTicks }
+export { secondsToTicks, ticksToSeconds }
 
 // ── PlaybackController ─────────────────────────────────────────────────────
 
