@@ -61,7 +61,7 @@ export function CommentItem({ comment, currentUserId, isAdmin, onUpdate }: Comme
     }
 
     return (
-        <div className="p-4 bg-white text-stone-900 border border-stone-100 rounded-lg shadow-sm mb-4">
+        <div className="p-4 bg-white text-black border border-stone-100 rounded-lg shadow-sm mb-4">
             <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                     {comment.author?.image ? (
@@ -72,22 +72,22 @@ export function CommentItem({ comment, currentUserId, isAdmin, onUpdate }: Comme
                         </div>
                     )}
                     <div>
-                        <span className="font-semibold text-stone-800 text-sm">{comment.author?.name || "익명"}</span>
-                        <span className="text-stone-400 text-xs ml-2">{getRelativeTime(comment.createdAt)}</span>
+                        <span className="font-semibold text-black text-sm">{comment.author?.name || "익명"}</span>
+                        <span className="text-black text-xs ml-2">{getRelativeTime(comment.createdAt)}</span>
                     </div>
                 </div>
                 {canModify && (
                     <div className="flex gap-2">
                         <button
                             onClick={() => setIsEditing(true)}
-                            className="text-xs text-stone-500 hover:text-amber-600"
+                            className="text-xs text-black hover:text-amber-600"
                         >
                             수정
                         </button>
                         <button
                             onClick={handleDelete}
                             disabled={isDeleting}
-                            className="text-xs text-stone-500 hover:text-red-600"
+                            className="text-xs text-black hover:text-red-600"
                         >
                             삭제
                         </button>
@@ -95,7 +95,7 @@ export function CommentItem({ comment, currentUserId, isAdmin, onUpdate }: Comme
                 )}
             </div>
             <div
-                className="prose prose-sm prose-stone max-w-none mt-2 prose-img:rounded-lg prose-img:border prose-img:border-stone-200 prose-img:max-h-96 prose-img:object-contain prose-p:my-1 prose-video:rounded-lg prose-video:max-h-96"
+                className="prose prose-sm text-black [&_*]:text-black max-w-none mt-2 prose-img:rounded-lg prose-img:border prose-img:border-stone-200 prose-img:max-h-96 prose-img:object-contain prose-p:my-1 prose-video:rounded-lg prose-video:max-h-96"
                 dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(comment.content, { ADD_TAGS: ['iframe', 'video', 'source'] }) }}
             />
         </div>

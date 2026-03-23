@@ -159,19 +159,19 @@ export function PostView({ post, currentUserId }: PostViewProps) {
   };
 
   return (
-    <article className="bg-white text-stone-900 rounded-2xl border border-amber-100 shadow-sm overflow-hidden">
+    <article className="bg-white text-black rounded-2xl border border-amber-100 shadow-sm overflow-hidden">
       <div className="p-6 md:p-8">
         <Link
           href="/board"
-          className="inline-flex items-center gap-2 text-stone-500 hover:text-amber-700 mb-6 text-sm"
+          className="inline-flex items-center gap-2 text-black hover:text-amber-700 mb-6 text-sm"
         >
           <ArrowLeft className="w-4 h-4" />
           목록으로
         </Link>
 
-        <h1 className="text-2xl font-bold text-stone-800 mb-4">{post.title}</h1>
+        <h1 className="text-2xl font-bold text-black mb-4">{post.title}</h1>
 
-        <div className="flex items-center gap-3 text-sm text-stone-500 mb-6 pb-6 border-b border-stone-100">
+        <div className="flex items-center gap-3 text-sm text-black mb-6 pb-6 border-b border-stone-100">
           {post.author.image && (
             <Image
               src={post.author.image}
@@ -204,7 +204,7 @@ export function PostView({ post, currentUserId }: PostViewProps) {
           )}
         </div>
 
-        <div className="prose prose-stone max-w-none">
+        <div className="prose text-black [&_*]:text-black max-w-none">
           {isHtmlContent(post.content) ? (
             <PostContentWithVideos
               html={(() => {
@@ -240,7 +240,7 @@ export function PostView({ post, currentUserId }: PostViewProps) {
 
         {post.attachments?.length > 0 && (!isHtmlContent(post.content) || !contentHasMedia(post.content)) && (
           <div className="mt-8 pt-6 border-t border-stone-100">
-            <h3 className="flex items-center gap-2 font-medium text-stone-700 mb-3">
+            <h3 className="flex items-center gap-2 font-medium text-black mb-3">
               <Paperclip className="w-4 h-4" />
               첨부파일
             </h3>

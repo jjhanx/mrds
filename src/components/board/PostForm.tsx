@@ -92,7 +92,7 @@ export function PostForm({ post, existingAttachments = [], isEdit }: PostFormPro
       )}
 
       <div>
-        <label className="block text-sm font-medium text-stone-700 mb-2">
+        <label className="block text-sm font-medium text-black mb-2">
           제목
         </label>
         <input
@@ -106,7 +106,7 @@ export function PostForm({ post, existingAttachments = [], isEdit }: PostFormPro
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-stone-700 mb-2">
+        <label className="block text-sm font-medium text-black mb-2">
           내용 (이미지·동영상을 커서 위치에 넣을 수 있습니다)
         </label>
         <RichTextEditor
@@ -116,7 +116,7 @@ export function PostForm({ post, existingAttachments = [], isEdit }: PostFormPro
           placeholder="내용을 입력하세요. Ctrl+V로 이미지·동영상 붙여넣기, 또는 아래에서 파일 선택. YouTube/Vimeo URL도 붙여넣기 가능."
           onChange={setContentHtml}
         />
-        <p className="mt-2 text-xs text-stone-500">
+        <p className="mt-2 text-xs text-black">
           이미지·동영상: Ctrl+V 클립보드 붙여넣기, 드래그 앤 드롭, 또는 아래에서 파일 선택
         </p>
         <input
@@ -124,24 +124,24 @@ export function PostForm({ post, existingAttachments = [], isEdit }: PostFormPro
           accept="image/*,video/mp4,video/webm,video/quicktime"
           multiple
           onChange={handleFileSelect}
-          className="mt-2 w-full text-sm text-stone-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-amber-50 file:text-amber-700 file:font-medium hover:file:bg-amber-100"
+          className="mt-2 w-full text-sm text-black file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-amber-50 file:text-amber-700 file:font-medium hover:file:bg-amber-100"
         />
       </div>
 
       {existingAttachments.length > 0 && isEdit && (
         <div className="p-3 bg-stone-50 rounded-lg">
-          <p className="text-sm text-stone-600 mb-2">기존 첨부 ({existingAttachments.length}개) - 수정 시 유지됩니다</p>
+          <p className="text-sm text-black mb-2">기존 첨부 ({existingAttachments.length}개) - 수정 시 유지됩니다</p>
           <div className="flex flex-wrap gap-3">
             {existingAttachments.map((att) => (
               <div key={att.id} className="flex flex-col items-center gap-1">
                 {att.fileType.startsWith("image/") ? (
                   <img src={att.filepath} alt={att.filename} className="h-20 w-20 object-cover rounded-lg border border-stone-200" />
                 ) : (
-                  <div className="h-20 w-20 rounded-lg border border-stone-200 bg-stone-100 flex items-center justify-center text-xs text-stone-500">
+                  <div className="h-20 w-20 rounded-lg border border-stone-200 bg-stone-100 flex items-center justify-center text-xs text-black">
                     파일
                   </div>
                 )}
-                <span className="max-w-[80px] truncate text-xs text-stone-500">{att.filename}</span>
+                <span className="max-w-[80px] truncate text-xs text-black">{att.filename}</span>
               </div>
             ))}
           </div>

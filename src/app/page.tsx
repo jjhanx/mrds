@@ -99,7 +99,7 @@ export default async function HomePage() {
                       >
                         <div className="flex flex-col gap-1 p-3 sm:p-5 pb-1 sm:pb-4 border-b border-stone-100 bg-stone-50/50">
                           <div className="flex items-start justify-between gap-3">
-                            <h3 className="font-bold text-base text-stone-800 line-clamp-1 leading-snug pr-6">{post.title}</h3>
+                            <h3 className="font-bold text-base text-black line-clamp-1 leading-snug pr-6">{post.title}</h3>
                             <span className="shrink-0 flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-600 outline outline-1 outline-blue-200 rounded-md text-xs font-bold tracking-wide">
                               <Pin className="w-3 h-3" /> 고정
                             </span>
@@ -107,11 +107,11 @@ export default async function HomePage() {
                         </div>
                         <div className="p-3 pt-1 sm:p-4 sm:pt-4 overflow-hidden flex-1 relative group">
                           <div
-                            className="prose prose-sm prose-stone max-w-none [&>*:first-child]:mt-0
+                            className="prose prose-sm text-black [&_*]:text-black max-w-none [&>*:first-child]:mt-0
                                        [&_img]:hidden [&_iframe]:hidden [&_video]:hidden"
                           >
                             <div
-                              className="line-clamp-3 text-stone-600"
+                              className="line-clamp-3 text-black"
                               dangerouslySetInnerHTML={{ __html: cleanHtml }}
                             />
                           </div>
@@ -141,7 +141,7 @@ export default async function HomePage() {
                   >
                     <div className="flex flex-col gap-1 p-3 pb-1.5 sm:p-5 sm:pb-5 border-b border-stone-100 bg-stone-50/50">
                       <div className="flex items-start justify-between gap-3">
-                        <h3 className="font-bold text-lg text-stone-800 line-clamp-2 leading-snug pr-8">{post.title}</h3>
+                        <h3 className="font-bold text-lg text-black line-clamp-2 leading-snug pr-8">{post.title}</h3>
                         {post.isNotice ? (
                           <span className="shrink-0 px-2.5 py-1 bg-amber-100 text-amber-700 outline outline-1 outline-amber-200 rounded-md text-xs font-bold tracking-wide">공지</span>
                         ) : (
@@ -151,7 +151,7 @@ export default async function HomePage() {
                     </div>
                     <div className="p-3 pt-1.5 sm:p-5 sm:pt-5 overflow-y-auto flex-1 custom-scrollbar pb-16">
                       <div
-                        className="prose prose-sm prose-stone max-w-none [&>*:first-child]:mt-0
+                        className="prose prose-sm text-black [&_*]:text-black max-w-none [&>*:first-child]:mt-0
                                    [&_img]:max-w-full [&_img]:rounded-lg [&_img]:border [&_img]:border-stone-200 [&_img]:max-h-64 [&_img]:mx-auto [&_img]:object-contain 
                                    [&_iframe]:rounded-lg [&_iframe]:w-full [&_iframe]:aspect-video 
                                    [&_video]:max-w-full [&_video]:rounded-lg [&_video]:border [&_video]:bg-stone-900"

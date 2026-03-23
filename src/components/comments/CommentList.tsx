@@ -52,12 +52,12 @@ export function CommentList({ postId, sheetMusicId, currentUserId, isAdmin }: Co
 
     return (
         <div className="mt-8 pt-6 border-t border-stone-200">
-            <h3 className="text-lg font-bold text-stone-800 mb-4">
+            <h3 className="text-lg font-bold text-black mb-4">
                 댓글 <span className="text-amber-600">{comments.length}</span>
             </h3>
 
             {loading ? (
-                <div className="py-8 text-center text-sm text-stone-500 bg-stone-50 rounded-lg">댓글을 불러오는 중...</div>
+                <div className="py-8 text-center text-sm text-black bg-stone-50 rounded-lg">댓글을 불러오는 중...</div>
             ) : (
                 <div className="space-y-4">
                     {comments.map((comment) => (
@@ -70,7 +70,7 @@ export function CommentList({ postId, sheetMusicId, currentUserId, isAdmin }: Co
                         />
                     ))}
                     {comments.length === 0 && (
-                        <div className="py-10 text-center text-sm text-stone-500 bg-stone-50 rounded-lg border border-stone-100">
+                        <div className="py-10 text-center text-sm text-black bg-stone-50 rounded-lg border border-stone-100">
                             가장 먼저 댓글을 남겨보세요.
                         </div>
                     )}
@@ -100,7 +100,7 @@ export function CommentList({ postId, sheetMusicId, currentUserId, isAdmin }: Co
                     </div>
                 )
             ) : (
-                <div className="mt-4 p-4 text-center text-sm text-stone-500 bg-stone-50 rounded-lg border border-stone-200">
+                <div className="mt-4 p-4 text-center text-sm text-black bg-stone-50 rounded-lg border border-stone-200">
                     댓글을 작성하려면 로그인이 필요합니다.
                 </div>
             )}

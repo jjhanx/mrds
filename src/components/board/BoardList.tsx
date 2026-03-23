@@ -115,11 +115,11 @@ export function BoardList({ userRole, currentUserId }: BoardListProps) {
       </form>
 
       {loading ? (
-        <div className="text-center py-12 text-stone-500">불러오는 중...</div>
+        <div className="text-center py-12 text-black">불러오는 중...</div>
       ) : posts.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-xl border border-amber-100 shadow-sm">
           <FileText className="w-12 h-12 text-amber-300 mx-auto mb-4" />
-          <p className="text-stone-600 mb-2">아직 게시글이 없습니다. (또는 검색 결과가 없습니다)</p>
+          <p className="text-black mb-2">아직 게시글이 없습니다. (또는 검색 결과가 없습니다)</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -147,19 +147,19 @@ export function BoardList({ userRole, currentUserId }: BoardListProps) {
                             고정
                           </span>
                         )}
-                        <h2 className="font-bold text-base sm:text-lg text-stone-800 line-clamp-2 sm:line-clamp-1">
+                        <h2 className="font-bold text-base sm:text-lg text-black line-clamp-2 sm:line-clamp-1">
                           {post.title}
                         </h2>
                       </div>
 
-                      <div className="prose prose-sm prose-stone max-w-none [&>*:first-child]:mt-0
+                      <div className="prose prose-sm text-black [&_*]:text-black max-w-none [&>*:first-child]:mt-0
                                     [&_img]:max-w-full [&_img]:rounded-lg [&_img]:border [&_img]:border-stone-200 [&_img]:max-h-56 sm:[&_img]:max-h-64 [&_img]:object-contain 
                                     [&_iframe]:rounded-lg [&_iframe]:w-full [&_iframe]:max-w-xl [&_iframe]:aspect-video 
                                     [&_video]:max-w-full [&_video]:rounded-lg [&_video]:border [&_video]:bg-stone-900 line-clamp-[6] sm:line-clamp-[10]"
                         dangerouslySetInnerHTML={{ __html: getCleanHtml(post.content, post.attachments) }}
                       />
 
-                      <div className="flex items-center flex-wrap gap-x-3 gap-y-1 sm:gap-y-0 mt-4 text-[13px] sm:text-sm text-stone-500 pt-3 border-t border-stone-50">
+                      <div className="flex items-center flex-wrap gap-x-3 gap-y-1 sm:gap-y-0 mt-4 text-[13px] sm:text-sm text-black pt-3 border-t border-stone-50">
                         <span>{post.author.name || "익명"}</span>
                         <span className="hidden sm:inline">·</span>
                         <span>
@@ -182,7 +182,7 @@ export function BoardList({ userRole, currentUserId }: BoardListProps) {
                           onClick={(e) => handleToggleNotice(e, post.id)}
                           className={`flex-1 sm:flex-none text-xs px-2 py-1.5 rounded border transition-colors ${post.isNotice
                             ? "bg-red-50 border-red-200 text-red-600 hover:bg-red-100"
-                            : "bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100"
+                            : "bg-stone-50 border-stone-200 text-black hover:bg-stone-100"
                             }`}
                         >
                           {post.isNotice ? "공지 해제" : "공지 등록"}
@@ -191,7 +191,7 @@ export function BoardList({ userRole, currentUserId }: BoardListProps) {
                           onClick={(e) => handleToggleFixed(e, post.id)}
                           className={`text-xs px-2 py-1.5 rounded border transition-colors ${post.isFixed
                             ? "bg-blue-50 border-blue-200 text-blue-600 hover:bg-blue-100"
-                            : "bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100"
+                            : "bg-stone-50 border-stone-200 text-black hover:bg-stone-100"
                             }`}
                         >
                           {post.isFixed ? "고정 해제" : "고정 등록"}

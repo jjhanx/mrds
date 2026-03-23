@@ -93,7 +93,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
     immediatelyRender: false,
     editorProps: {
       attributes: {
-        class: "prose prose-stone max-w-none min-h-[200px] px-4 py-3 focus:outline-none",
+        class: "prose text-black [&_*]:text-black max-w-none min-h-[200px] px-4 py-3 focus:outline-none",
       },
     },
     onUpdate: ({ editor }) => {
@@ -135,7 +135,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorPro
 
   if (!editor) {
     return (
-      <div className="w-full min-h-[200px] rounded-lg border border-stone-200 bg-stone-50 flex items-center justify-center text-stone-500 text-sm">
+      <div className="w-full min-h-[200px] rounded-lg border border-stone-200 bg-stone-50 flex items-center justify-center text-black text-sm">
         에디터 로딩 중...
       </div>
     );

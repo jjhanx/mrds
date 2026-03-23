@@ -85,7 +85,7 @@ export function CommentForm({
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4 border border-stone-200 rounded-lg p-4 bg-white shadow-sm mt-4">
-            {!isEdit && <h3 className="text-lg font-medium text-stone-800">댓글 쓰기</h3>}
+            {!isEdit && <h3 className="text-lg font-medium text-black">댓글 쓰기</h3>}
             {error && (
                 <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">
                     {error}
@@ -105,14 +105,14 @@ export function CommentForm({
                         accept="image/*,video/mp4,video/webm,video/quicktime"
                         multiple
                         onChange={handleFileSelect}
-                        className="text-sm text-stone-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-amber-50 file:text-amber-700 file:font-medium hover:file:bg-amber-100 max-w-[200px]"
+                        className="text-sm text-black file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-amber-50 file:text-amber-700 file:font-medium hover:file:bg-amber-100 max-w-[200px]"
                     />
                     <div className="flex gap-2">
                         {isEdit && (
                             <button
                                 type="button"
                                 onClick={onCancel}
-                                className="px-4 py-2 border border-stone-200 rounded-lg text-stone-600 hover:bg-stone-50 font-medium text-sm"
+                                className="px-4 py-2 border border-stone-200 rounded-lg text-black hover:bg-stone-50 font-medium text-sm"
                             >
                                 취소
                             </button>
