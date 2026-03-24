@@ -139,13 +139,6 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
     loadItems();
   }, [loadItems]);
 
-  // PDF 워커·cmaps 사전 로드 (첫 열기 시 ? 표시 방지)
-  useEffect(() => {
-    fetch(`${typeof window !== "undefined" ? window.location.origin : ""}/pdfjs/pdf.worker.min.mjs`).catch(
-      () => {}
-    );
-  }, []);
-
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setAppliedSearch(searchQuery);
