@@ -6,8 +6,12 @@ import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { Loader2, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
 
-// Next.js (App Router) ?? ?? ??
-pdfjs.GlobalWorkerOptions.workerSrc = '/pdfjs/pdf.worker.min.mjs';
+// Next.js App Router: worker 경로 (절대 URL로 cold start 안정화)
+if (typeof window !== "undefined") {
+  pdfjs.GlobalWorkerOptions.workerSrc = `${window.location.origin}/pdfjs/pdf.worker.min.mjs`;
+} else {
+  pdfjs.GlobalWorkerOptions.workerSrc = "/pdfjs/pdf.worker.min.mjs";
+}
 
 interface PdfViewerProps {
     url: string;
@@ -28,8 +32,8 @@ class PdfErrorBoundary extends Component<{children: ReactNode}, {hasError: boole
         if (this.state.hasError) {
             return (
                 <div className="py-20 text-center text-stone-500">
-                    <p className="font-medium">??? ? ????.</p>
-                    <p className="text-sm mt-1">???? ???? ??? ?????.</p>
+                    <p className="font-medium">PDF를 불러올 수 없습니다.</p>
+                    <p className="text-sm mt-1">파일 경로를 확인해 주세요.</p>
                 </div>
             );
         }
@@ -37,10 +41,19 @@ class PdfErrorBoundary extends Component<{children: ReactNode}, {hasError: boole
     }
 }
 
-const ErrorMessage = () => (
+const ErrorMessage = ({ onRetry }: { onRetry?: () => void }) => (
     <div className="py-20 text-stone-500 text-center px-4">
-        <p className="font-medium">??? ? ????.</p>
-        <p className="text-sm mt-1">???? ???? ??? ?????.</p>
+        <p className="font-medium">PDF를 불러올 수 없습니다.</p>
+        <p className="text-sm mt-1">파일 경로를 확인하거나 잠시 후 다시 시도해 주세요.</p>
+        {onRetry && (
+            <button
+                type="button"
+                onClick={onRetry}
+                className="mt-4 px-4 py-2 bg-amber-100 text-amber-800 rounded-lg hover:bg-amber-200 font-medium"
+            >
+                다시 시도
+            </button>
+        )}
     </div>
 );
 
@@ -50,8 +63,14 @@ export function PdfViewer({ url }: PdfViewerProps) {
     const [scale, setScale] = useState<number>(1.0);
     const [containerWidth, setContainerWidth] = useState<number>();
     const [showError, setShowError] = useState(false);
+    const [retryKey, setRetryKey] = useState(0);
     const containerRef = useRef<HTMLDivElement>(null);
     const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const handleRetry = () => {
+        setShowError(false);
+        setRetryKey((k) => k + 1);
+    };
 
     useEffect(() => {
         setShowError(false);
@@ -62,7 +81,7 @@ export function PdfViewer({ url }: PdfViewerProps) {
         return () => {
             if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
         };
-    }, [url]);
+    }, [url, retryKey]);
 
     useEffect(() => {
         setShowError(false);
@@ -144,14 +163,15 @@ export function PdfViewer({ url }: PdfViewerProps) {
             <div className="w-full flex justify-center overflow-x-auto overflow-y-hidden custom-scrollbar bg-white shadow-sm border border-stone-100">
                 <PdfErrorBoundary>
                 {showError ? (
-                    <ErrorMessage />
+                    <ErrorMessage onRetry={handleRetry} />
                 ) : (
                 <Document
+                    key={`${url}-${retryKey}`}
                     file={url}
                     options={{
-                        cMapUrl: '/pdfjs/cmaps/',
+                        cMapUrl: `${typeof window !== "undefined" ? window.location.origin : ""}/pdfjs/cmaps/`,
                         cMapPacked: true,
-                        standardFontDataUrl: '/pdfjs/standard_fonts/',
+                        standardFontDataUrl: `${typeof window !== "undefined" ? window.location.origin : ""}/pdfjs/standard_fonts/`,
                     }}
                     onLoadSuccess={onDocumentLoadSuccess}
                     onLoadError={onDocumentLoadError}

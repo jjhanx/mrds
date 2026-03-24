@@ -188,7 +188,7 @@ export function SheetMusicView({ sheetMusic, currentUserId }: SheetMusicViewProp
               </div>
             ) : (isPdf || (isScoreFolder && !isImage && !isExternal)) ? (
               <>
-                <PdfViewer url={sheetMusic.filepath} />
+                <PdfViewer key={sheetMusic.id} url={sheetMusic.filepath} />
                 {hasNwc && (
                   <div className="mt-4 flex flex-wrap gap-2">
                     {sheetMusic.nwcFiles!.map((nwc) => (
