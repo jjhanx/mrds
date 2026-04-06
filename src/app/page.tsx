@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { Pin, MoreHorizontal, FileMusic, ChevronRight } from "lucide-react";
 import { HeroImage } from "@/components/HeroImage";
+import { PdfViewer } from "@/components/sheet-music/PdfViewer";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import DOMPurify from "isomorphic-dompurify";
@@ -100,6 +101,9 @@ export default async function HomePage() {
   const sheetHref = latestSheet?.folderId
     ? `/sheet-music?folderId=${latestSheet.folderId}`
     : "/sheet-music";
+
+  const sheetPathOnly = latestSheet?.filepath.split("?")[0] ?? "";
+  const isHomeSheetPdf = !!latestSheet && /\.pdf$/i.test(sheetPathOnly);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50 to-orange-50">
@@ -205,11 +209,8 @@ export default async function HomePage() {
 
               {/* Right column: 악보 자료실 (게시판 최신보다 더 최신일 때) */}
               {showSheetMusicColumn && latestSheet && (
-                <Link
-                  href={sheetHref}
-                  className="flex flex-col bg-white rounded-2xl shadow-md border border-amber-200/60 hover:shadow-lg hover:border-amber-400 transition-all overflow-hidden h-[400px] relative group text-left"
-                >
-                  <div className="flex flex-col gap-1 p-3 pb-1.5 sm:p-5 sm:pb-5 border-b border-stone-100 bg-amber-50/60">
+                <div className="flex flex-col bg-white rounded-2xl shadow-md border border-amber-200/60 hover:shadow-lg hover:border-amber-400 transition-all overflow-hidden h-[400px] relative group text-left">
+                  <div className="flex flex-col gap-1 p-3 pb-1.5 sm:p-5 sm:pb-3 border-b border-stone-100 bg-amber-50/60 shrink-0">
                     <div className="flex items-start justify-between gap-3">
                       <h3 className="font-bold text-lg text-black line-clamp-2 leading-snug pr-8">
                         {latestSheet.title}
@@ -222,33 +223,42 @@ export default async function HomePage() {
                       <p className="text-sm text-stone-600">{latestSheet.folder.name}</p>
                     )}
                   </div>
-                  <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between overflow-hidden">
-                    <div className="flex items-start gap-3">
-                      <div className="shrink-0 p-3 rounded-xl bg-amber-100 text-amber-700">
-                        <FileMusic className="w-10 h-10" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm text-stone-600 line-clamp-4">
-                          {latestSheet.description?.trim()
-                            ? latestSheet.description
-                            : "새로 등록된 악보입니다. 악보 자료실에서 확인하세요."}
-                        </p>
-                        {latestSheet.composer && (
-                          <p className="text-sm text-stone-500 mt-2">작곡: {latestSheet.composer}</p>
-                        )}
+                  {isHomeSheetPdf ? (
+                    <div className="flex-1 min-h-0 px-2 pt-2 pb-1 flex flex-col">
+                      <PdfViewer url={latestSheet.filepath} compact />
+                    </div>
+                  ) : (
+                    <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between overflow-hidden min-h-0">
+                      <div className="flex items-start gap-3">
+                        <div className="shrink-0 p-3 rounded-xl bg-amber-100 text-amber-700">
+                          <FileMusic className="w-10 h-10" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm text-stone-600 line-clamp-4">
+                            {latestSheet.description?.trim()
+                              ? latestSheet.description
+                              : "새로 등록된 악보입니다. 악보 자료실에서 확인하세요."}
+                          </p>
+                          {latestSheet.composer && (
+                            <p className="text-sm text-stone-500 mt-2">작곡: {latestSheet.composer}</p>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between pt-4 mt-auto border-t border-stone-100">
-                      <time className="text-xs text-stone-500" dateTime={latestSheet.createdAt.toISOString()}>
-                        {format(latestSheet.createdAt, "PPp", { locale: ko })}
-                      </time>
-                      <span className="inline-flex items-center gap-1 text-sm font-medium text-amber-700 group-hover:gap-2 transition-all">
-                        악보 자료실로 이동
-                        <ChevronRight className="w-4 h-4" />
-                      </span>
-                    </div>
+                  )}
+                  <div className="flex items-center justify-between px-4 py-3 border-t border-stone-100 bg-white shrink-0 mt-auto">
+                    <time className="text-xs text-stone-500" dateTime={latestSheet.createdAt.toISOString()}>
+                      {format(latestSheet.createdAt, "PPp", { locale: ko })}
+                    </time>
+                    <Link
+                      href={sheetHref}
+                      className="inline-flex items-center gap-1 text-sm font-medium text-amber-700 hover:gap-2 transition-all"
+                    >
+                      악보 자료실로 이동
+                      <ChevronRight className="w-4 h-4" />
+                    </Link>
                   </div>
-                </Link>
+                </div>
               )}
             </div>
           </div>
