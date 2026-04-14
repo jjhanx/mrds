@@ -81,3 +81,34 @@ export function isFileAllowed(file: { name: string; type?: string }, slug: strin
   const ext = (file.name.split(".").pop() || "").toLowerCase();
   return exts.some((e) => e.toLowerCase() === ext);
 }
+
+const SPOTLIGHT_SUFFIX = "악보 자료실에서 확인하세요.";
+
+/** 홈 등 설명이 비었을 때 filepath 확장자별 기본 안내 문구 */
+export function getDefaultSheetMusicSpotlightDescription(filepath: string): string {
+  const pathOnly = filepath.split("?")[0];
+  const ext = (pathOnly.match(/\.([^.]+)$/)?.[1] || "").toLowerCase();
+
+  if (["mp3", "wav", "m4a", "aac", "ogg", "flac", "opus", "wma", "aiff", "alac", "oga"].includes(ext)) {
+    return `새로 등록된 오디오 파일입니다. ${SPOTLIGHT_SUFFIX}`;
+  }
+  if (["mp4", "webm", "mov", "avi", "mkv", "m4v", "ogv", "wmv"].includes(ext)) {
+    return `새로 등록된 동영상 파일입니다. ${SPOTLIGHT_SUFFIX}`;
+  }
+  if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) {
+    return `새로 등록된 이미지 파일입니다. ${SPOTLIGHT_SUFFIX}`;
+  }
+  if (ext === "pdf") {
+    return `새로 등록된 PDF 악보입니다. ${SPOTLIGHT_SUFFIX}`;
+  }
+  if (ext === "nwc") {
+    return `새로 등록된 NWC 악보입니다. ${SPOTLIGHT_SUFFIX}`;
+  }
+  if (["zip", "rar", "7z", "tar", "gz", "bz2", "xz"].includes(ext)) {
+    return `새로 등록된 압축 파일입니다. ${SPOTLIGHT_SUFFIX}`;
+  }
+  if (["doc", "docx", "txt", "xls", "xlsx", "ppt", "pptx", "hwp"].includes(ext)) {
+    return `새로 등록된 문서 파일입니다. ${SPOTLIGHT_SUFFIX}`;
+  }
+  return `새로 등록된 악보입니다. ${SPOTLIGHT_SUFFIX}`;
+}

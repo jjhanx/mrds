@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { Pin, MoreHorizontal, FileMusic, ChevronRight } from "lucide-react";
 import { HeroImage } from "@/components/HeroImage";
 import { PdfViewer } from "@/components/sheet-music/PdfViewer";
+import { getDefaultSheetMusicSpotlightDescription } from "@/constants/sheet-music";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import DOMPurify from "isomorphic-dompurify";
@@ -237,7 +238,7 @@ export default async function HomePage() {
                           <p className="text-sm text-stone-600 line-clamp-4">
                             {latestSheet.description?.trim()
                               ? latestSheet.description
-                              : "새로 등록된 악보입니다. 악보 자료실에서 확인하세요."}
+                              : getDefaultSheetMusicSpotlightDescription(latestSheet.filepath)}
                           </p>
                           {latestSheet.composer && (
                             <p className="text-sm text-stone-500 mt-2">작곡: {latestSheet.composer}</p>
