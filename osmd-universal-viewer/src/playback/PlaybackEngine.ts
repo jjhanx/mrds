@@ -44,6 +44,8 @@ export default class PlaybackEngine {
   public availableInstruments: PlaybackInstrument[];
   public scoreInstruments: Instrument[] = [];
   public ready: boolean = false;
+  /** 설정 시 해당 Staff(전역 인덱스)만 재생. undefined 또는 빈 배열이면 전체. */
+  public selectedStaffIndices: number[] | undefined = undefined;
 
   constructor(context: IAudioContext = new AudioContext(), instrumentPlayer: InstrumentPlayer = new SoundfontPlayer()) {
     this.ac = context;
@@ -76,6 +78,14 @@ export default class PlaybackEngine {
 
   get wholeNoteLength(): number {
     return Math.round((60 / this.playbackSettings.bpm) * 4000);
+  }
+
+  get totalSteps() {
+    return this.iterationSteps;
+  }
+
+  setStaffFilter(indices: number[] | undefined) {
+    this.selectedStaffIndices = indices?.length ? [...indices] : undefined;
   }
 
   public getPlaybackInstrument(voiceId: number): PlaybackInstrument {
@@ -217,6 +227,10 @@ export default class PlaybackEngine {
 
     for (let note of notes) {
       if (note.isRest()) {
+        continue;
+      }
+      const staffIdx = MusicSheet.getIndexFromStaff(note.ParentStaff);
+      if (this.selectedStaffIndices && this.selectedStaffIndices.indexOf(staffIdx) < 0) {
         continue;
       }
       const noteDuration = getNoteDuration(note, this.wholeNoteLength);

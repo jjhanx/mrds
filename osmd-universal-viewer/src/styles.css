@@ -109,3 +109,32 @@ body {
   color: #777;
   margin-top: 0.75rem;
 }
+
+.staff-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+  margin: 0.75rem 0 0.5rem;
+}
+
+.staff-bar .staff-btn {
+  font: inherit;
+  font-size: 0.82rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  border: 1px solid #555;
+  background: #252525;
+  color: #ddd;
+  cursor: pointer;
+}
+
+.staff-bar .staff-btn:hover {
+  background: #333;
+}
+
+.staff-bar .staff-btn.selected {
+  border-color: #4a7bc8;
+  background: #1c2d4a;
+  color: #cfe0ff;
+}
