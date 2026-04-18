@@ -96,11 +96,21 @@ function flushPlaybackHighlight() {
       } catch {
         /* ignore */
       }
-      osmd?.cursor?.cursorElement?.scrollIntoView({
-        behavior: "auto",
-        block: "nearest",
-        inline: "center",
-      });
+      const cur = osmd?.cursor?.cursorElement as HTMLElement | SVGElement | undefined;
+      if (cur && scoreOuter) {
+        const cRect = cur.getBoundingClientRect();
+        const oRect = scoreOuter.getBoundingClientRect();
+        const centerInContent =
+          cRect.left + cRect.width / 2 - oRect.left + scoreOuter.scrollLeft;
+        const target = Math.max(
+          0,
+          Math.min(
+            centerInContent - scoreOuter.clientWidth / 2,
+            Math.max(0, scoreOuter.scrollWidth - scoreOuter.clientWidth)
+          )
+        );
+        scoreOuter.scrollLeft = target;
+      }
     });
   }
 }

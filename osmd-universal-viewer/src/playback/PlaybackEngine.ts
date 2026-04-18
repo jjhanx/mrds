@@ -1,10 +1,9 @@
-// @ts-nocheck — vendored from jimutt/osmd-audio-player (OSMD 1.9 호환용)
-import PlaybackScheduler from "./PlaybackScheduler";
+// @ts-nocheck — OSMD 1.9 + soundfont; 타임라인은 OSMD 위키/iterator 기준 (jimutt tick 큐 대체)
 import { Cursor, OpenSheetMusicDisplay, MusicSheet, Note, Instrument, Voice } from "opensheetmusicdisplay";
 import { SoundfontPlayer } from "./players/SoundfontPlayer";
 import { InstrumentPlayer, PlaybackInstrument } from "./players/InstrumentPlayer";
 import { NotePlaybackInstruction } from "./players/NotePlaybackOptions";
-import { getNoteDuration, getNoteVolume, getNoteArticulationStyle } from "./internals/noteHelpers";
+import { getNoteVolume, getNoteArticulationStyle, getNoteDurationSeconds } from "./internals/noteHelpers";
 import { EventEmitter } from "./internals/EventEmitter";
 import { AudioContext, IAudioContext } from "standardized-audio-context";
 
@@ -20,9 +19,17 @@ export enum PlaybackEvent {
   ITERATION = "iteration",
 }
 
-interface PlaybackSettings {
+interface PlaybackSettingsBag {
   bpm: number;
   masterVolume: number;
+}
+
+/** iterator 한 스텝(세로 슬라이스) — OSMD 위키: time = enrolled.RealValue * 4 * 60 / BPM (초) */
+interface TimelineStep {
+  startSec: number;
+  notes: Note[];
+  /** 빌드 시점 iterator.currentPlaybackSettings()로 계산한 초(참조 공유 방지) */
+  durationByNote: Map<Note, number>;
 }
 
 export default class PlaybackEngine {
@@ -30,7 +37,6 @@ export default class PlaybackEngine {
   private defaultBpm: number = 100;
   private cursor: Cursor;
   private sheet: MusicSheet;
-  private scheduler: PlaybackScheduler;
   private instrumentPlayer: InstrumentPlayer;
   private events: EventEmitter<PlaybackEvent>;
 
@@ -38,8 +44,18 @@ export default class PlaybackEngine {
   private currentIterationStep: number;
 
   private timeoutHandles: number[];
+  private playbackRafHandle: number | null = null;
+  private playbackTailHandle: ReturnType<typeof setTimeout> | null = null;
 
-  public playbackSettings: PlaybackSettings;
+  /** loadScore 시 빌드; 재생은 Web Audio 절대 시각 + rAF 하이라이트 */
+  private timeline: TimelineStep[] = [];
+
+  /** 재생 루프: scoreAt = scoreOffsetSec + (ac.currentTime - playbackT0) */
+  private playbackT0 = 0;
+  private scoreOffsetSec = 0;
+  private highlightLoopIndex = 0;
+
+  public playbackSettings: PlaybackSettingsBag;
   public state: PlaybackState;
   public availableInstruments: PlaybackInstrument[];
   public scoreInstruments: Instrument[] = [];
@@ -60,8 +76,6 @@ export default class PlaybackEngine {
 
     this.cursor = null;
     this.sheet = null;
-
-    this.scheduler = null;
 
     this.iterationSteps = 0;
     this.currentIterationStep = 0;
@@ -113,10 +127,8 @@ export default class PlaybackEngine {
 
   async loadScore(osmd: OpenSheetMusicDisplay): Promise<void> {
     this.ready = false;
-    if (this.scheduler) {
-      this.scheduler.reset();
-      this.scheduler = null;
-    }
+    this.clearPlaybackAnim();
+    this.timeline = [];
     this.sheet = osmd.Sheet;
     this.scoreInstruments = this.sheet.Instruments;
     this.cursor = osmd.cursor;
@@ -127,13 +139,39 @@ export default class PlaybackEngine {
     await this.loadInstruments();
     this.initInstruments();
 
-    this.scheduler = new PlaybackScheduler(this.wholeNoteLength, this.ac, (delay, notes) =>
-      this.notePlaybackCallback(delay, notes)
-    );
-
-    this.countAndSetIterationSteps();
+    this.buildTimeline();
     this.ready = true;
     this.setState(PlaybackState.STOPPED);
+  }
+
+  /** iterator를 한 번 훑어 OSMD 타임스탬프(초) + 음표 목록 저장 */
+  private buildTimeline() {
+    this.cursor.reset();
+    const it = this.cursor.Iterator;
+    const timeline: TimelineStep[] = [];
+    let guard = 0;
+    const MAX = 8_000_000;
+    while (!it.EndReached) {
+      if (++guard > MAX) throw new Error("Timeline build: too many iterator steps");
+      const bpm = it.CurrentBpm || it.CurrentMeasure?.TempoInBPM || this.playbackSettings.bpm || 120;
+      const enrolled = it.CurrentEnrolledTimestamp;
+      const startSec = enrolled.RealValue * 4 * (60 / bpm);
+      const ps = it.currentPlaybackSettings();
+      const notes: Note[] = [];
+      const durationByNote = new Map<Note, number>();
+      for (const ve of it.CurrentVoiceEntries) {
+        if (ve.IsGrace) continue;
+        for (const n of ve.Notes) {
+          notes.push(n);
+          durationByNote.set(n, getNoteDurationSeconds(n, ps));
+        }
+      }
+      timeline.push({ startSec, notes, durationByNote });
+      this.cursor.next();
+    }
+    this.timeline = timeline;
+    this.iterationSteps = timeline.length;
+    this.cursor.reset();
   }
 
   private initInstruments() {
@@ -173,15 +211,17 @@ export default class PlaybackEngine {
       this.cursor.show();
     }
 
+    this.clearTimeoutsOnly();
+    this.clearPlaybackAnim();
     this.setState(PlaybackState.PLAYING);
-    this.scheduler.start();
+    this.schedulePlaybackRun();
   }
 
   async stop() {
     this.setState(PlaybackState.STOPPED);
     this.stopPlayers();
-    this.clearTimeouts();
-    this.scheduler.reset();
+    this.clearTimeoutsOnly();
+    this.clearPlaybackAnim();
     this.cursor.reset();
     this.currentIterationStep = 0;
     this.cursor.hide();
@@ -191,9 +231,8 @@ export default class PlaybackEngine {
     this.setState(PlaybackState.PAUSED);
     this.ac.suspend();
     this.stopPlayers();
-    this.scheduler.setIterationStep(this.currentIterationStep);
-    this.scheduler.pause();
-    this.clearTimeouts();
+    this.clearTimeoutsOnly();
+    this.clearPlaybackAnim();
   }
 
   jumpToStep(step: number) {
@@ -206,54 +245,85 @@ export default class PlaybackEngine {
       this.cursor.next();
       ++this.currentIterationStep;
     }
-    let schedulerStep = this.currentIterationStep;
-    if (this.currentIterationStep > 0 && this.currentIterationStep < this.iterationSteps) ++schedulerStep;
-    this.scheduler.setIterationStep(schedulerStep);
   }
 
   setBpm(bpm: number) {
     this.playbackSettings.bpm = bpm;
-    if (this.scheduler) this.scheduler.wholeNoteLength = this.wholeNoteLength;
+    /** 악보 로드 후 타임라인은 시트 BPM 기준; UI BPM은 향후 배속용 예약 */
   }
 
   public on(event: PlaybackEvent, cb: (...args: any[]) => void) {
     this.events.on(event, cb);
   }
 
-  private countAndSetIterationSteps() {
-    this.cursor.reset();
-    let steps = 0;
-    while (!this.cursor.Iterator.EndReached) {
-      if (this.cursor.Iterator.CurrentVoiceEntries) {
-        this.scheduler.loadNotes(this.cursor.Iterator.CurrentVoiceEntries);
-      }
-      this.cursor.next();
-      ++steps;
+  /** 남은 구간 오디오 스케줄 + rAF로 하이라이트/커서 */
+  private schedulePlaybackRun() {
+    const startIdx = this.currentIterationStep;
+    if (startIdx >= this.iterationSteps || this.iterationSteps === 0) {
+      this.endPlaybackNaturally();
+      return;
     }
-    this.iterationSteps = steps;
-    this.cursor.reset();
+
+    const scoreOffset = this.timeline[startIdx].startSec;
+    const audioT0 = this.ac.currentTime;
+
+    for (let i = startIdx; i < this.iterationSteps; i++) {
+      const when = audioT0 + (this.timeline[i].startSec - scoreOffset);
+      this.scheduleStepAudio(i, when);
+    }
+
+    this.playbackT0 = audioT0;
+    this.scoreOffsetSec = scoreOffset;
+    this.highlightLoopIndex = startIdx;
+
+    const EPS = 0.002;
+    const tick = () => {
+      if (this.state !== PlaybackState.PLAYING) return;
+      const elapsed = this.ac.currentTime - this.playbackT0;
+      const scoreAt = this.scoreOffsetSec + elapsed;
+      while (this.highlightLoopIndex < this.iterationSteps && this.timeline[this.highlightLoopIndex].startSec <= scoreAt + EPS) {
+        this.emitHighlightAndCursor(this.highlightLoopIndex++);
+      }
+      if (this.highlightLoopIndex >= this.iterationSteps) {
+        const tailMs = this.getTailAfterLastEventSeconds() * 1000;
+        this.playbackTailHandle = window.setTimeout(() => this.endPlaybackNaturally(), Math.max(0, tailMs));
+        return;
+      }
+      this.playbackRafHandle = requestAnimationFrame(tick);
+    };
+    this.playbackRafHandle = requestAnimationFrame(tick);
   }
 
-  private notePlaybackCallback(audioDelay: number, notes: Note[]) {
-    if (this.state !== PlaybackState.PLAYING) return;
-    const scheduledNotes: Map<number, NotePlaybackInstruction[]> = new Map();
-    /** 실제로 재생·하이라이트할 음표(스태프 필터·길이 0 제외) */
-    const audibleNotes: Note[] = [];
-
-    for (let note of notes) {
-      if (note.isRest()) {
-        continue;
+  private getTailAfterLastEventSeconds(): number {
+    for (let i = this.iterationSteps - 1; i >= 0; i--) {
+      const step = this.timeline[i];
+      let max = 0;
+      for (const n of step.notes) {
+        if (n.isRest()) continue;
+        const staffIdx = MusicSheet.getIndexFromStaff(n.ParentStaff);
+        if (this.selectedStaffIndices && this.selectedStaffIndices.indexOf(staffIdx) < 0) continue;
+        max = Math.max(max, step.durationByNote.get(n) ?? 0);
       }
+      if (max > 0) return max;
+    }
+    return 0;
+  }
+
+  private scheduleStepAudio(stepIndex: number, when: number) {
+    const step = this.timeline[stepIndex];
+    const scheduledNotes: Map<number, NotePlaybackInstruction[]> = new Map();
+
+    for (const note of step.notes) {
+      if (note.isRest()) continue;
       const staffIdx = MusicSheet.getIndexFromStaff(note.ParentStaff);
       if (this.selectedStaffIndices && this.selectedStaffIndices.indexOf(staffIdx) < 0) {
         continue;
       }
-      const noteDuration = getNoteDuration(note, this.wholeNoteLength);
-      if (noteDuration === 0) continue;
-      audibleNotes.push(note);
+      const durSec = step.durationByNote.get(note) ?? 0;
+      if (durSec === 0) continue;
+
       const noteVolume = getNoteVolume(note);
       const noteArticulation = getNoteArticulationStyle(note);
-
       const midiPlaybackInstrument = (note as any).ParentVoiceEntry.ParentVoice.midiInstrumentId;
       const sub = note.ParentVoiceEntry.ParentVoice.Parent?.SubInstruments?.[0];
       const fixedKey = sub?.fixedKey ?? 0;
@@ -264,7 +334,7 @@ export default class PlaybackEngine {
 
       scheduledNotes.get(midiPlaybackInstrument).push({
         note: note.halfTone - fixedKey * 12,
-        duration: noteDuration / 1000,
+        duration: durSec,
         gain: noteVolume,
         articulation: noteArticulation,
       });
@@ -272,16 +342,42 @@ export default class PlaybackEngine {
 
     for (const [midiId, instructions] of scheduledNotes) {
       try {
-        this.instrumentPlayer.schedule(midiId, this.ac.currentTime + audioDelay, instructions);
+        this.instrumentPlayer.schedule(midiId, when, instructions);
       } catch (e) {
         console.warn("[PlaybackEngine] schedule failed:", midiId, e);
       }
     }
+  }
 
-    this.timeoutHandles.push(
-      window.setTimeout(() => this.iterationCallback(), Math.max(0, audioDelay * 1000 - 35)), // Subtracting 35 milliseconds to compensate for update delay
-      window.setTimeout(() => this.events.emit(PlaybackEvent.ITERATION, audibleNotes), audioDelay * 1000)
-    );
+  private emitHighlightAndCursor(stepIndex: number) {
+    const step = this.timeline[stepIndex];
+    const audibleNotes: Note[] = [];
+    for (const note of step.notes) {
+      if (note.isRest()) continue;
+      const staffIdx = MusicSheet.getIndexFromStaff(note.ParentStaff);
+      if (this.selectedStaffIndices && this.selectedStaffIndices.indexOf(staffIdx) < 0) continue;
+      if ((step.durationByNote.get(note) ?? 0) === 0) continue;
+      audibleNotes.push(note);
+    }
+    this.events.emit(PlaybackEvent.ITERATION, audibleNotes);
+    this.currentIterationStep = stepIndex + 1;
+    try {
+      this.cursor.next();
+    } catch {
+      /* ignore */
+    }
+  }
+
+  private endPlaybackNaturally() {
+    this.clearPlaybackAnim();
+    this.setState(PlaybackState.STOPPED);
+    this.stopPlayers();
+    this.currentIterationStep = this.iterationSteps;
+    try {
+      this.cursor?.hide();
+    } catch {
+      /* ignore */
+    }
   }
 
   private setState(state: PlaybackState) {
@@ -302,17 +398,27 @@ export default class PlaybackEngine {
     }
   }
 
-  // Used to avoid duplicate cursor movements after a rapid pause/resume action
-  private clearTimeouts() {
+  private clearTimeoutsOnly() {
     for (let h of this.timeoutHandles) {
       clearTimeout(h);
     }
     this.timeoutHandles = [];
   }
 
-  private iterationCallback() {
-    if (this.state !== PlaybackState.PLAYING) return;
-    if (this.currentIterationStep > 0) this.cursor.next();
-    ++this.currentIterationStep;
+  private clearPlaybackAnim() {
+    if (this.playbackRafHandle != null) {
+      cancelAnimationFrame(this.playbackRafHandle);
+      this.playbackRafHandle = null;
+    }
+    if (this.playbackTailHandle != null) {
+      clearTimeout(this.playbackTailHandle);
+      this.playbackTailHandle = null;
+    }
+  }
+
+  // Used to avoid duplicate cursor movements after a rapid pause/resume action
+  private clearTimeouts() {
+    this.clearTimeoutsOnly();
+    this.clearPlaybackAnim();
   }
 }

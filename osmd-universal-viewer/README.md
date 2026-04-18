@@ -1,6 +1,6 @@
 # OSMD Universal Viewer
 
-별도 프로젝트로, **MusicXML / MXL** 과 **NWC**(내부적으로 MusicXML로 변환)를 [OpenSheetMusicDisplay](https://github.com/opensheetmusicdisplay/opensheetmusicdisplay)로 표시하고, 재생은 [jimutt/osmd-audio-player](https://github.com/jimutt/osmd-audio-player) 패턴(`soundfont-player` + OSMD 커서)을 사용합니다.
+별도 프로젝트로, **MusicXML / MXL** 과 **NWC**(내부적으로 MusicXML로 변환)를 [OpenSheetMusicDisplay](https://github.com/opensheetmusicdisplay/opensheetmusicdisplay)로 표시하고, 재생은 `soundfont-player` + OSMD 커서이며 **타이밍은 OSMD `MusicPartManagerIterator` + `CurrentEnrolledTimestamp` / `currentPlaybackSettings().getDurationInMilliseconds`** 로 스케줄합니다(구 jimutt tick 큐 대신 악보와 동기).
 
 ## 요구 사항
 
@@ -40,8 +40,7 @@ npm run preview
 - 화음은 `VoiceEntry` 줄기 색을 공유하므로 **강조는 음표 머리만** 빨간색 처리한다.
 - 스케줄러가 한 틱에 여러 스텝을 내보낼 때 `render()`가 과도하게 호출되지 않도록 **같은 프레임의 ITERATION은 rAF로 합친다.**
 - 동일 GM 채널에 `stop()`이 중복 호출되면 잡음이 날 수 있어 **pause/stop 시 채널당 한 번만** 중지한다.
-- `StepQueue.getFirstEmptyTick()` 이 빈 스텝이 없을 때 예외가 나지 않도록 보완했다.
-- OSMD **`render()`는 스크롤을 맨 위로 되돌리므로**, 하이라이트·줌 등에서는 **`renderAndScrollBack()`** 을 사용한다. 재생 중에는 커서를 `.score-wrap` 안으로 `scrollIntoView` 한다. `autoResize`는 스크롤 튐 방지를 위해 끄고, `resize` 시에만 `renderAndScrollBack` 한다.
+- OSMD **`render()`는 스크롤을 맨 위로 되돌리므로**, 하이라이트·줌 등에서는 **`renderAndScrollBack()`** 을 사용한다. 재생 중에는 커서의 `getBoundingClientRect`로 **가로 스크롤 컨테이너 `scrollLeft`** 를 맞춘다. `autoResize`는 스크롤 튐 방지를 위해 끄고, `resize` 시에만 `renderAndScrollBack` 한다.
 
 로컬 검증 시 `별(이수인).nwc` 등을 `npm run dev` 후 파일 열기로 재생해 보면 된다.
 
