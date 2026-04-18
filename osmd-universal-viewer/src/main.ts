@@ -65,6 +65,38 @@ let engine: PlaybackEngine | null = null;
 let selectedStaffIndices: number[] | undefined = undefined;
 let scrollSeekTimer: ReturnType<typeof setTimeout> | null = null;
 
+/** 한 프레임에 여러 ITERATION이 몰릴 때 render·색 복원 경쟁을 줄이기 위해 rAF로 합침 */
+let highlightRafId: number | null = null;
+const highlightNotesBuf: Note[] = [];
+
+function flushPlaybackHighlight() {
+  highlightRafId = null;
+  if (!osmd) {
+    highlightNotesBuf.length = 0;
+    return;
+  }
+  const uniq: Note[] = [];
+  const seen = new Set<Note>();
+  for (const n of highlightNotesBuf) {
+    if (n.isRest()) continue;
+    if (seen.has(n)) continue;
+    seen.add(n);
+    uniq.push(n);
+  }
+  highlightNotesBuf.length = 0;
+  if (uniq.length === 0) {
+    clearPlaybackNoteHighlight(osmd);
+  } else {
+    setPlaybackNoteHighlight(osmd, uniq);
+  }
+}
+
+function queuePlaybackHighlight(notes: Note[]) {
+  highlightNotesBuf.push(...notes);
+  if (highlightRafId != null) return;
+  highlightRafId = requestAnimationFrame(flushPlaybackHighlight);
+}
+
 function setStatus(msg: string) {
   statusEl.textContent = msg;
 }
@@ -90,6 +122,11 @@ function syncPlayPauseButtons(state: PlaybackState) {
 }
 
 function disposeEngine() {
+  if (highlightRafId != null) {
+    cancelAnimationFrame(highlightRafId);
+    highlightRafId = null;
+    highlightNotesBuf.length = 0;
+  }
   clearPlaybackNoteHighlight(osmd);
   if (engine) {
     void engine.stop().catch(() => {});
@@ -287,6 +324,11 @@ async function loadIntoOsmd(content: string | Blob, title: string) {
   engine.on(PlaybackEvent.STATE_CHANGE, (s: PlaybackState) => {
     syncPlayPauseButtons(s);
     if (s === PlaybackState.STOPPED) {
+      if (highlightRafId != null) {
+        cancelAnimationFrame(highlightRafId);
+        highlightRafId = null;
+        highlightNotesBuf.length = 0;
+      }
       clearPlaybackNoteHighlight(osmd);
     }
     setGmControlsEnabled(!!engine?.ready && s !== PlaybackState.PLAYING);
@@ -294,7 +336,7 @@ async function loadIntoOsmd(content: string | Blob, title: string) {
 
   engine.on(PlaybackEvent.ITERATION, (notes: Note[]) => {
     if (!osmd) return;
-    setPlaybackNoteHighlight(osmd, notes);
+    queuePlaybackHighlight(notes);
   });
 
   try {

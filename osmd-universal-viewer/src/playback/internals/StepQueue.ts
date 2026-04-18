@@ -8,6 +8,8 @@ type ScheduledNotes = {
 
 export default class StepQueue {
   steps: ScheduledNotes[] = [];
+  /** 빈 스텝이 없을 때 다음 틱 추정용 */
+  private tickPad = 1024;
 
   constructor() {}
 
@@ -41,6 +43,10 @@ export default class StepQueue {
   }
 
   getFirstEmptyTick(): number {
-    return this.sort().steps.filter(s => !s.notes.length)[0].tick;
+    const sorted = this.sort().steps;
+    const empty = sorted.find((s) => !s.notes.length);
+    if (empty) return empty.tick;
+    const last = sorted[sorted.length - 1];
+    return last ? last.tick + this.tickPad : 0;
   }
 }

@@ -138,8 +138,9 @@ export default class PlaybackEngine {
 
   private initInstruments() {
     for (const i of this.sheet.Instruments) {
+      const pid = Number(i.MidiInstrumentId);
       for (const v of i.Voices) {
-        (v as any).midiInstrumentId = i.MidiInstrumentId;
+        (v as any).midiInstrumentId = Number.isFinite(pid) ? pid : 0;
       }
     }
   }
@@ -270,7 +271,11 @@ export default class PlaybackEngine {
     }
 
     for (const [midiId, instructions] of scheduledNotes) {
-      this.instrumentPlayer.schedule(midiId, this.ac.currentTime + audioDelay, instructions);
+      try {
+        this.instrumentPlayer.schedule(midiId, this.ac.currentTime + audioDelay, instructions);
+      } catch (e) {
+        console.warn("[PlaybackEngine] schedule failed:", midiId, e);
+      }
     }
 
     this.timeoutHandles.push(
@@ -285,10 +290,15 @@ export default class PlaybackEngine {
   }
 
   private stopPlayers() {
+    const ids = new Set();
     for (const i of this.sheet.Instruments) {
       for (const v of i.Voices) {
-        this.instrumentPlayer.stop((v as any).midiInstrumentId);
+        const id = (v as any).midiInstrumentId;
+        if (id != null && id !== undefined) ids.add(Number(id));
       }
+    }
+    for (const id of ids) {
+      this.instrumentPlayer.stop(id);
     }
   }
 

@@ -62,7 +62,8 @@ export default class PlaybackScheduler {
   }
 
   setIterationStep(step: number) {
-    step = Math.min(this.stepQueue.steps.length - 1, step);
+    if (!this.stepQueue.steps.length) return;
+    step = Math.min(this.stepQueue.steps.length - 1, Math.max(0, step));
     this.stepQueueIndex = step;
     this.currentTick = this.stepQueue.steps[this.stepQueueIndex].tick;
   }

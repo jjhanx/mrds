@@ -35,6 +35,15 @@ npm run preview
 
 `src/nwc2xml-lib/` 는 mrds `public/nwc-viewer/lib/nwc2xml` 복사본이며, **브라우저 번들**을 위해 `parser.js`의 Node 전용 `zlib` / top-level `await` 를 제거하고 [pako](https://github.com/nodeca/pako)로 NWZ 압축 해제를 합니다.
 
+## 재생·표시 알려진 이슈 (완화함)
+
+- 화음은 `VoiceEntry` 줄기 색을 공유하므로 **강조는 음표 머리만** 빨간색 처리한다.
+- 스케줄러가 한 틱에 여러 스텝을 내보낼 때 `render()`가 과도하게 호출되지 않도록 **같은 프레임의 ITERATION은 rAF로 합친다.**
+- 동일 GM 채널에 `stop()`이 중복 호출되면 잡음이 날 수 있어 **pause/stop 시 채널당 한 번만** 중지한다.
+- `StepQueue.getFirstEmptyTick()` 이 빈 스텝이 없을 때 예외가 나지 않도록 보완했다.
+
+로컬 검증 시 `별(이수인).nwc` 등을 `npm run dev` 후 파일 열기로 재생해 보면 된다.
+
 ## 라이선스
 
 - OSMD: BSD-3-Clause  
