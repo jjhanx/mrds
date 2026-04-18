@@ -69,6 +69,49 @@ let scrollSeekTimer: ReturnType<typeof setTimeout> | null = null;
 let highlightRafId: number | null = null;
 const highlightNotesBuf: Note[] = [];
 
+/** 재생 중 커서를 `.score-wrap` 가로 안으로 유지(ITERATION 유무와 무관하게 rAF로만 추적) */
+let scrollFollowRafId: number | null = null;
+
+function stopScrollFollow() {
+  if (scrollFollowRafId != null) {
+    cancelAnimationFrame(scrollFollowRafId);
+    scrollFollowRafId = null;
+  }
+}
+
+function scrollCursorIntoScoreH() {
+  if (!osmd?.cursor || engine?.state !== PlaybackState.PLAYING) return;
+  try {
+    osmd.cursor.update();
+  } catch {
+    /* ignore */
+  }
+  const cur = osmd.cursor.cursorElement as HTMLElement | SVGElement | undefined;
+  if (!cur || !scoreOuter) return;
+
+  const cRect = cur.getBoundingClientRect();
+  const oRect = scoreOuter.getBoundingClientRect();
+  const halfW = Math.max(cRect.width, 8) / 2;
+  const centerInContent = cRect.left + halfW - oRect.left + scoreOuter.scrollLeft;
+  const maxScroll = Math.max(0, scoreOuter.scrollWidth - scoreOuter.clientWidth);
+  const target = Math.max(0, Math.min(centerInContent - scoreOuter.clientWidth / 2, maxScroll));
+  if (Math.abs(scoreOuter.scrollLeft - target) > 0.5) {
+    scoreOuter.scrollLeft = target;
+  }
+}
+
+function tickScrollFollow() {
+  scrollFollowRafId = null;
+  if (!engine || engine.state !== PlaybackState.PLAYING) return;
+  scrollCursorIntoScoreH();
+  scrollFollowRafId = requestAnimationFrame(tickScrollFollow);
+}
+
+function startScrollFollow() {
+  stopScrollFollow();
+  scrollFollowRafId = requestAnimationFrame(tickScrollFollow);
+}
+
 function flushPlaybackHighlight() {
   highlightRafId = null;
   if (!osmd) {
@@ -88,30 +131,6 @@ function flushPlaybackHighlight() {
     clearPlaybackNoteHighlight(osmd);
   } else {
     setPlaybackNoteHighlight(osmd, uniq);
-  }
-  if (engine?.state === PlaybackState.PLAYING) {
-    requestAnimationFrame(() => {
-      try {
-        osmd?.cursor?.update();
-      } catch {
-        /* ignore */
-      }
-      const cur = osmd?.cursor?.cursorElement as HTMLElement | SVGElement | undefined;
-      if (cur && scoreOuter) {
-        try {
-          cur.scrollIntoView({ behavior: "auto", block: "nearest", inline: "center" });
-        } catch {
-          /* ignore */
-        }
-        const cRect = cur.getBoundingClientRect();
-        const oRect = scoreOuter.getBoundingClientRect();
-        const halfW = Math.max(cRect.width, 24) / 2;
-        const centerInContent = cRect.left + halfW - oRect.left + scoreOuter.scrollLeft;
-        const maxScroll = Math.max(0, scoreOuter.scrollWidth - scoreOuter.clientWidth);
-        const target = Math.max(0, Math.min(centerInContent - scoreOuter.clientWidth / 2, maxScroll));
-        scoreOuter.scrollLeft = target;
-      }
-    });
   }
 }
 
@@ -146,6 +165,7 @@ function syncPlayPauseButtons(state: PlaybackState) {
 }
 
 function disposeEngine() {
+  stopScrollFollow();
   if (highlightRafId != null) {
     cancelAnimationFrame(highlightRafId);
     highlightRafId = null;
@@ -349,6 +369,11 @@ async function loadIntoOsmd(content: string | Blob, title: string) {
   engine = new PlaybackEngine();
   engine.on(PlaybackEvent.STATE_CHANGE, (s: PlaybackState) => {
     syncPlayPauseButtons(s);
+    if (s === PlaybackState.PLAYING) {
+      startScrollFollow();
+    } else {
+      stopScrollFollow();
+    }
     if (s === PlaybackState.STOPPED) {
       if (highlightRafId != null) {
         cancelAnimationFrame(highlightRafId);

@@ -163,16 +163,24 @@ export default class PlaybackEngine {
     const timeline: TimelineStep[] = [];
     let guard = 0;
     const MAX = 8_000_000;
-    /** OSMD 위키: iterator.currentTimeStamp 기준(마디 단위 enrolled와 다를 수 있음) */
-    let lastStartSec = 0;
+    /**
+     * 절대 currentTimeStamp 환산은 악보·마디마다 기준점이 달라 초반 무음·느린 진행이 난다.
+     * 연속 iterator 스텝 사이의 타임스탬프 차이만 BPM으로 초 단위 누적한다(위키: d(ts)*4*60/BPM).
+     */
+    let cumulativeSec = 0;
+    let prevTsReal: number | null = null;
     while (!it.EndReached) {
       if (++guard > MAX) throw new Error("Timeline build: too many iterator steps");
       const bpm = it.CurrentBpm || it.CurrentMeasure?.TempoInBPM || this.playbackSettings.bpm || 120;
-      const ts = it.currentTimeStamp;
-      let startSec = ts.RealValue * 4 * (60 / bpm);
-      if (!Number.isFinite(startSec)) startSec = lastStartSec;
-      if (startSec < lastStartSec) startSec = lastStartSec;
-      lastStartSec = startSec;
+      const tsReal = it.currentTimeStamp.RealValue;
+      if (prevTsReal !== null && Number.isFinite(tsReal) && Number.isFinite(prevTsReal)) {
+        const delta = (tsReal - prevTsReal) * 4 * (60 / bpm);
+        cumulativeSec += Math.max(0, delta);
+      }
+      if (Number.isFinite(tsReal)) {
+        prevTsReal = tsReal;
+      }
+      const startSec = cumulativeSec;
       const ps = it.currentPlaybackSettings();
       const notes: Note[] = [];
       const durationByNote = new Map<Note, number>();
@@ -298,7 +306,7 @@ export default class PlaybackEngine {
     this.scoreOffsetSec = scoreOffset;
     this.highlightLoopIndex = startIdx;
 
-    const EPS = 0.002;
+    const EPS = 0.02;
     const tick = () => {
       if (this.state !== PlaybackState.PLAYING) return;
       const elapsed = this.ac.currentTime - this.playbackT0;
