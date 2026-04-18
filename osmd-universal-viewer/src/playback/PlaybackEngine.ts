@@ -32,6 +32,18 @@ interface TimelineStep {
   durationByNote: Map<Note, number>;
 }
 
+function midiProgramForNote(note: Note): number {
+  const pv = note.ParentVoiceEntry?.ParentVoice as any;
+  if (!pv) return 0;
+  const fromVoice = Number(pv.midiInstrumentId);
+  if (Number.isFinite(fromVoice)) return fromVoice;
+  const inst = pv.Parent;
+  if (inst != null && Number.isFinite(Number(inst.MidiInstrumentId))) {
+    return Number(inst.MidiInstrumentId);
+  }
+  return 0;
+}
+
 export default class PlaybackEngine {
   private ac: IAudioContext;
   private defaultBpm: number = 100;
@@ -151,11 +163,16 @@ export default class PlaybackEngine {
     const timeline: TimelineStep[] = [];
     let guard = 0;
     const MAX = 8_000_000;
+    /** OSMD 위키: iterator.currentTimeStamp 기준(마디 단위 enrolled와 다를 수 있음) */
+    let lastStartSec = 0;
     while (!it.EndReached) {
       if (++guard > MAX) throw new Error("Timeline build: too many iterator steps");
       const bpm = it.CurrentBpm || it.CurrentMeasure?.TempoInBPM || this.playbackSettings.bpm || 120;
-      const enrolled = it.CurrentEnrolledTimestamp;
-      const startSec = enrolled.RealValue * 4 * (60 / bpm);
+      const ts = it.currentTimeStamp;
+      let startSec = ts.RealValue * 4 * (60 / bpm);
+      if (!Number.isFinite(startSec)) startSec = lastStartSec;
+      if (startSec < lastStartSec) startSec = lastStartSec;
+      lastStartSec = startSec;
       const ps = it.currentPlaybackSettings();
       const notes: Note[] = [];
       const durationByNote = new Map<Note, number>();
@@ -163,7 +180,7 @@ export default class PlaybackEngine {
         if (ve.IsGrace) continue;
         for (const n of ve.Notes) {
           notes.push(n);
-          durationByNote.set(n, getNoteDurationSeconds(n, ps));
+          durationByNote.set(n, getNoteDurationSeconds(n, ps, bpm));
         }
       }
       timeline.push({ startSec, notes, durationByNote });
@@ -172,6 +189,9 @@ export default class PlaybackEngine {
     this.timeline = timeline;
     this.iterationSteps = timeline.length;
     this.cursor.reset();
+    if (this.iterationSteps === 0 && this.sheet?.SourceMeasures?.length > 0) {
+      console.error("[PlaybackEngine] 타임라인 스텝이 0인데 악보에 마디가 있습니다. 커서/iterator 상태를 확인하세요.");
+    }
   }
 
   private initInstruments() {
@@ -236,7 +256,9 @@ export default class PlaybackEngine {
   }
 
   jumpToStep(step: number) {
-    this.pause();
+    if (this.state === PlaybackState.PLAYING) {
+      this.pause();
+    }
     if (this.currentIterationStep > step) {
       this.cursor.reset();
       this.currentIterationStep = 0;
@@ -268,7 +290,7 @@ export default class PlaybackEngine {
     const audioT0 = this.ac.currentTime;
 
     for (let i = startIdx; i < this.iterationSteps; i++) {
-      const when = audioT0 + (this.timeline[i].startSec - scoreOffset);
+      const when = Math.max(audioT0, audioT0 + (this.timeline[i].startSec - scoreOffset));
       this.scheduleStepAudio(i, when);
     }
 
@@ -324,16 +346,17 @@ export default class PlaybackEngine {
 
       const noteVolume = getNoteVolume(note);
       const noteArticulation = getNoteArticulationStyle(note);
-      const midiPlaybackInstrument = (note as any).ParentVoiceEntry.ParentVoice.midiInstrumentId;
+      const midiPlaybackInstrument = midiProgramForNote(note);
       const sub = note.ParentVoiceEntry.ParentVoice.Parent?.SubInstruments?.[0];
       const fixedKey = sub?.fixedKey ?? 0;
+      const midiPitch = Math.max(0, Math.min(127, Math.round(note.halfTone - fixedKey * 12)));
 
       if (!scheduledNotes.has(midiPlaybackInstrument)) {
         scheduledNotes.set(midiPlaybackInstrument, []);
       }
 
       scheduledNotes.get(midiPlaybackInstrument).push({
-        note: note.halfTone - fixedKey * 12,
+        note: midiPitch,
         duration: durSec,
         gain: noteVolume,
         articulation: noteArticulation,

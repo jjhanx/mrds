@@ -98,17 +98,17 @@ function flushPlaybackHighlight() {
       }
       const cur = osmd?.cursor?.cursorElement as HTMLElement | SVGElement | undefined;
       if (cur && scoreOuter) {
+        try {
+          cur.scrollIntoView({ behavior: "auto", block: "nearest", inline: "center" });
+        } catch {
+          /* ignore */
+        }
         const cRect = cur.getBoundingClientRect();
         const oRect = scoreOuter.getBoundingClientRect();
-        const centerInContent =
-          cRect.left + cRect.width / 2 - oRect.left + scoreOuter.scrollLeft;
-        const target = Math.max(
-          0,
-          Math.min(
-            centerInContent - scoreOuter.clientWidth / 2,
-            Math.max(0, scoreOuter.scrollWidth - scoreOuter.clientWidth)
-          )
-        );
+        const halfW = Math.max(cRect.width, 24) / 2;
+        const centerInContent = cRect.left + halfW - oRect.left + scoreOuter.scrollLeft;
+        const maxScroll = Math.max(0, scoreOuter.scrollWidth - scoreOuter.clientWidth);
+        const target = Math.max(0, Math.min(centerInContent - scoreOuter.clientWidth / 2, maxScroll));
         scoreOuter.scrollLeft = target;
       }
     });

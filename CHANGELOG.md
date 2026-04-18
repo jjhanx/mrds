@@ -15,7 +15,7 @@
 - **악보 자료실**: 제목·내용·작곡가 검색 기능 추가 (게시판과 동일한 방식)
 
 ### 수정
-- **osmd-universal-viewer**: 재생 타이밍을 jimutt `PlaybackScheduler`/tick 큐 대신 OSMD iterator 타임라인(`CurrentEnrolledTimestamp`·`getDurationInMilliseconds`) + Web Audio 절대 시각 스케줄로 바꿔 악보와 소리가 맞도록 함. 재생 중 가로 추적은 `scrollIntoView` 대신 `.score-wrap`의 `scrollLeft`로 커서 중앙 정렬
+- **osmd-universal-viewer**: 재생 타이밍을 jimutt `PlaybackScheduler`/tick 큐 대신 OSMD iterator 타임라인 + Web Audio 절대 시각 스케줄. 시작 시각은 `currentTimeStamp`(위키)·단조 보정, 길이는 `getDurationInMilliseconds` 실패 시 BPM 기반 분수 길이로 대체, GM 번호는 Voice·Instrument에서 해석. `jumpToStep`은 재생 중일 때만 `pause`. 재생 중 스크롤은 `scrollIntoView` + `.score-wrap` `scrollLeft` 보정
 - **악보 자료실**: PDF 뷰어 — react-pdf(worker·cmaps) 제거, 브라우저 기본 iframe 뷰어로 교체. "파일 있는데 불러오지 못함" 현상 해결
 - **악보 자료실**: 대용량 파일 업로드 504 해결 — TROUBLESHOOTING.md에 nginx `client_max_body_size 2G`, 프록시 타임아웃 600초 가이드 추가, DEPLOYMENT.md nginx 예시 수정
 - **악보 자료실**: 업로드 진행률 막대 — 전송(0~90%) + 서버 처리(90% 유지) 전체 진행률, "서버 처리 중..." 문구로 ffmpeg·저장 대기 구간 명확화
