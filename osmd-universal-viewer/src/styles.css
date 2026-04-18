@@ -94,10 +94,12 @@ body {
 
 .score-wrap {
   overflow: auto;
-  max-height: calc(100vh - 220px);
+  max-height: calc(100vh - 180px);
   background: #fafafa;
   border-radius: 8px;
   padding: 8px;
+  /* Chrome 등에서 리플로우 시 스크롤 앵커가 튀는 현상 완화 */
+  overflow-anchor: none;
 }
 
 .score-wrap .osmd-container {

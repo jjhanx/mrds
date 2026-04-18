@@ -89,6 +89,20 @@ function flushPlaybackHighlight() {
   } else {
     setPlaybackNoteHighlight(osmd, uniq);
   }
+  if (engine?.state === PlaybackState.PLAYING) {
+    requestAnimationFrame(() => {
+      try {
+        osmd?.cursor?.update();
+      } catch {
+        /* ignore */
+      }
+      osmd?.cursor?.cursorElement?.scrollIntoView({
+        behavior: "auto",
+        block: "nearest",
+        inline: "center",
+      });
+    });
+  }
 }
 
 function queuePlaybackHighlight(notes: Note[]) {
@@ -286,22 +300,24 @@ async function loadIntoOsmd(content: string | Blob, title: string) {
 
   if (!osmd) {
     osmd = new OpenSheetMusicDisplay(scoreContainer, {
-      autoResize: true,
+      /** true면 창 크기 변화 시 내부 render()로 스크롤이 튈 수 있음 */
+      autoResize: false,
       backend: "svg",
       drawingParameters: "compact",
       renderSingleHorizontalStaffline: true,
-      followCursor: true,
+      /** OSMD 기본 follow는 window 스크롤과 겹칠 수 있어, 재생 시 scoreOuter로 scrollIntoView 처리 */
+      followCursor: false,
     });
   } else {
     osmd.clear();
   }
 
   osmd.setOptions({
-    autoResize: true,
+    autoResize: false,
     backend: "svg",
     drawingParameters: "compact",
     renderSingleHorizontalStaffline: true,
-    followCursor: true,
+    followCursor: false,
   });
 
   setStatus("악보를 불러오는 중…");
@@ -309,7 +325,7 @@ async function loadIntoOsmd(content: string | Blob, title: string) {
 
   osmd.zoom = Number(zoomRange.value);
   osmd.setCustomPageFormat(4000, 1600);
-  osmd.render();
+  osmd.renderAndScrollBack();
   osmd.enableOrDisableCursors(true);
   osmd.cursor?.reset();
   osmd.cursor?.hide();
@@ -437,11 +453,22 @@ zoomRange.addEventListener("input", () => {
   zoomLabel.textContent = `${Math.round(z * 100)}%`;
   if (osmd) {
     osmd.zoom = z;
-    osmd.render();
+    osmd.renderAndScrollBack();
     requestAnimationFrame(() => {
       const inner = scoreContainer.querySelector(".osmd-container") as HTMLElement | null;
       const w = Math.max(inner?.scrollWidth ?? 0, scoreContainer.scrollWidth, 3600);
       scoreContainer.style.minWidth = `${Math.ceil(w + 64)}px`;
     });
   }
+});
+
+/** autoResize 끈 상태에서 창 크기 변경 시 레이아웃만 갱신(스크롤 위치 유지) */
+let winResizeRaf = 0;
+window.addEventListener("resize", () => {
+  if (!osmd) return;
+  if (winResizeRaf) cancelAnimationFrame(winResizeRaf);
+  winResizeRaf = requestAnimationFrame(() => {
+    winResizeRaf = 0;
+    osmd?.renderAndScrollBack();
+  });
 });

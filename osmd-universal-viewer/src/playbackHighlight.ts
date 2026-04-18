@@ -13,7 +13,8 @@ export function clearPlaybackNoteHighlight(osmd: OpenSheetMusicDisplay | null): 
     s.note.NoteheadColor = s.head;
   }
   stack = [];
-  if (osmd) osmd.render();
+  /** render()는 스크롤을 맨 위로 되돌림 — 뷰포트 위치 유지는 renderAndScrollBack */
+  if (osmd) osmd.renderAndScrollBack();
 }
 
 /** 현재 재생 음표 머리만 빨간색. 직전 스텝 색은 복원 */
@@ -30,5 +31,5 @@ export function setPlaybackNoteHighlight(osmd: OpenSheetMusicDisplay, notes: Not
     });
     n.NoteheadColor = PLAYBACK_RED;
   }
-  osmd.render();
+  osmd.renderAndScrollBack();
 }

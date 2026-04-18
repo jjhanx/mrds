@@ -41,6 +41,7 @@ npm run preview
 - 스케줄러가 한 틱에 여러 스텝을 내보낼 때 `render()`가 과도하게 호출되지 않도록 **같은 프레임의 ITERATION은 rAF로 합친다.**
 - 동일 GM 채널에 `stop()`이 중복 호출되면 잡음이 날 수 있어 **pause/stop 시 채널당 한 번만** 중지한다.
 - `StepQueue.getFirstEmptyTick()` 이 빈 스텝이 없을 때 예외가 나지 않도록 보완했다.
+- OSMD **`render()`는 스크롤을 맨 위로 되돌리므로**, 하이라이트·줌 등에서는 **`renderAndScrollBack()`** 을 사용한다. 재생 중에는 커서를 `.score-wrap` 안으로 `scrollIntoView` 한다. `autoResize`는 스크롤 튐 방지를 위해 끄고, `resize` 시에만 `renderAndScrollBack` 한다.
 
 로컬 검증 시 `별(이수인).nwc` 등을 `npm run dev` 후 파일 열기로 재생해 보면 된다.
 
