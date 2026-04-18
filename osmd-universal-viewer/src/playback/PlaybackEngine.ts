@@ -99,6 +99,18 @@ export default class PlaybackEngine {
     (voice as any).midiInstrumentId = midiInstrumentId;
   }
 
+  /** MusicXML 파트(Instrument) 인덱스별 GM 프로그램 번호(0–127) 변경 */
+  async setPartInstrument(partIndex: number, midiProgram: number): Promise<void> {
+    if (!this.sheet?.Instruments?.[partIndex]) return;
+    const id = Number(midiProgram);
+    await this.instrumentPlayer.load(id);
+    const inst = this.sheet.Instruments[partIndex];
+    inst.MidiInstrumentId = id;
+    for (const v of inst.Voices) {
+      (v as any).midiInstrumentId = id;
+    }
+  }
+
   async loadScore(osmd: OpenSheetMusicDisplay): Promise<void> {
     this.ready = false;
     if (this.scheduler) {
@@ -223,7 +235,9 @@ export default class PlaybackEngine {
 
   private notePlaybackCallback(audioDelay: number, notes: Note[]) {
     if (this.state !== PlaybackState.PLAYING) return;
-    let scheduledNotes: Map<number, NotePlaybackInstruction[]> = new Map();
+    const scheduledNotes: Map<number, NotePlaybackInstruction[]> = new Map();
+    /** 실제로 재생·하이라이트할 음표(스태프 필터·길이 0 제외) */
+    const audibleNotes: Note[] = [];
 
     for (let note of notes) {
       if (note.isRest()) {
@@ -235,6 +249,7 @@ export default class PlaybackEngine {
       }
       const noteDuration = getNoteDuration(note, this.wholeNoteLength);
       if (noteDuration === 0) continue;
+      audibleNotes.push(note);
       const noteVolume = getNoteVolume(note);
       const noteArticulation = getNoteArticulationStyle(note);
 
@@ -260,7 +275,7 @@ export default class PlaybackEngine {
 
     this.timeoutHandles.push(
       window.setTimeout(() => this.iterationCallback(), Math.max(0, audioDelay * 1000 - 35)), // Subtracting 35 milliseconds to compensate for update delay
-      window.setTimeout(() => this.events.emit(PlaybackEvent.ITERATION, notes), audioDelay * 1000)
+      window.setTimeout(() => this.events.emit(PlaybackEvent.ITERATION, audibleNotes), audioDelay * 1000)
     );
   }
 

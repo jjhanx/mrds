@@ -1,7 +1,9 @@
 import "./styles.css";
-import { OpenSheetMusicDisplay, MusicSheet } from "opensheetmusicdisplay";
+import { OpenSheetMusicDisplay, MusicSheet, Note } from "opensheetmusicdisplay";
 import PlaybackEngine, { PlaybackEvent, PlaybackState } from "./playback/PlaybackEngine";
 import { nwcBufferToMusicXml } from "./nwc/convertNwcToMusicXml";
+import { midiInstruments } from "./playback/midi/midiInstruments";
+import { clearPlaybackNoteHighlight, setPlaybackNoteHighlight } from "./playbackHighlight";
 
 const EXT_XML = /\.(xml|musicxml)$/i;
 const EXT_MXL = /\.mxl$/i;
@@ -23,7 +25,7 @@ root.appendChild(
   template(`
   <div>
     <h1 style="font-size:1.15rem;font-weight:600;margin:0 0 0.75rem;">OSMD 뷰어 — MusicXML / MXL / NWC</h1>
-    <p class="hint">NWC는 MusicXML로 변환 후 표시합니다. 악보는 가로로 길게(스태프별 한 줄), 스크롤로 재생 시작 위치를 맞춘 뒤 재생하세요.</p>
+    <p class="hint">NWC는 MusicXML로 변환 후 표시합니다. 파트별 GM 악기를 고를 수 있고, 재생 중 해당 순간의 음표가 빨간색으로 표시됩니다. 정지·스크롤 시 강조는 해제됩니다.</p>
     <div class="drop" id="drop">파일을 여기에 놓거나 아래에서 선택하세요 (.xml · .musicxml · .mxl · .nwc)</div>
     <div class="toolbar">
       <label class="file-btn"><input type="file" id="file" accept=".xml,.musicxml,.mxl,.nwc,application/vnd.recordare.musicxml+xml,application/octet-stream" /> 파일 열기</label>
@@ -38,6 +40,7 @@ root.appendChild(
       <div class="status" id="status">파일을 선택하세요.</div>
     </div>
     <div id="staffBar" class="staff-bar" style="display:none"></div>
+    <div id="gmBar" class="gm-bar" style="display:none"></div>
     <div class="score-wrap" id="scoreOuter"><div id="score"></div></div>
   </div>
 `)
@@ -46,6 +49,7 @@ root.appendChild(
 const scoreContainer = document.getElementById("score")!;
 const scoreOuter = document.getElementById("scoreOuter")!;
 const staffBar = document.getElementById("staffBar")!;
+const gmBar = document.getElementById("gmBar")!;
 const statusEl = document.getElementById("status")!;
 const dropEl = document.getElementById("drop")!;
 const fileInput = document.getElementById("file") as HTMLInputElement;
@@ -70,6 +74,13 @@ function setTransport(enabled: boolean) {
   pauseBtn.disabled = !enabled;
   stopBtn.disabled = !enabled;
   zoomRange.disabled = !enabled;
+  setGmControlsEnabled(enabled && engine?.state !== PlaybackState.PLAYING);
+}
+
+function setGmControlsEnabled(on: boolean) {
+  gmBar.querySelectorAll<HTMLSelectElement>(".gm-select").forEach((s) => {
+    s.disabled = !on;
+  });
 }
 
 function syncPlayPauseButtons(state: PlaybackState) {
@@ -79,6 +90,7 @@ function syncPlayPauseButtons(state: PlaybackState) {
 }
 
 function disposeEngine() {
+  clearPlaybackNoteHighlight(osmd);
   if (engine) {
     void engine.stop().catch(() => {});
     engine = null;
@@ -164,6 +176,46 @@ function rebuildStaffBar() {
   updateStaffBarHighlight();
 }
 
+function rebuildGmBar() {
+  gmBar.innerHTML = "";
+  if (!osmd?.Sheet || !engine) {
+    gmBar.style.display = "none";
+    return;
+  }
+  gmBar.style.display = "flex";
+  const parts = osmd.Sheet.Instruments;
+  parts.forEach((inst, pi) => {
+    const row = document.createElement("div");
+    row.className = "gm-row";
+    const lab = document.createElement("span");
+    lab.className = "gm-label";
+    lab.textContent = `${inst.Name || `파트 ${pi + 1}`} · GM`;
+    const sel = document.createElement("select");
+    sel.className = "gm-select";
+    for (const [id, name] of midiInstruments) {
+      const o = document.createElement("option");
+      o.value = String(id);
+      o.textContent = `${id}: ${name}`;
+      sel.appendChild(o);
+    }
+    const cur = Number(inst.MidiInstrumentId);
+    sel.value = String(Number.isFinite(cur) ? cur : 0);
+    sel.addEventListener("change", async () => {
+      if (!engine) return;
+      const v = parseInt(sel.value, 10);
+      try {
+        await engine.setPartInstrument(pi, v);
+      } catch (e) {
+        console.error(e);
+        setStatus("악기(사운드폰트) 로드에 실패했습니다.");
+      }
+    });
+    row.appendChild(lab);
+    row.appendChild(sel);
+    gmBar.appendChild(row);
+  });
+}
+
 /** 스크롤 위치 → 재생 스텝 (선형 근사, OSMD 커서 스텝 수 기준) */
 function scrollPositionToStep(): number {
   if (!engine?.ready) return 0;
@@ -178,6 +230,7 @@ function scrollPositionToStep(): number {
 
 function applyScrollToCursor() {
   if (!engine?.ready || engine.state === PlaybackState.PLAYING) return;
+  clearPlaybackNoteHighlight(osmd);
   engine.jumpToStep(scrollPositionToStep());
 }
 
@@ -233,6 +286,15 @@ async function loadIntoOsmd(content: string | Blob, title: string) {
   engine = new PlaybackEngine();
   engine.on(PlaybackEvent.STATE_CHANGE, (s: PlaybackState) => {
     syncPlayPauseButtons(s);
+    if (s === PlaybackState.STOPPED) {
+      clearPlaybackNoteHighlight(osmd);
+    }
+    setGmControlsEnabled(!!engine?.ready && s !== PlaybackState.PLAYING);
+  });
+
+  engine.on(PlaybackEvent.ITERATION, (notes: Note[]) => {
+    if (!osmd) return;
+    setPlaybackNoteHighlight(osmd, notes);
   });
 
   try {
@@ -242,10 +304,12 @@ async function loadIntoOsmd(content: string | Blob, title: string) {
     setStatus(`재생 엔진 초기화 실패: ${e instanceof Error ? e.message : String(e)}`);
     setTransport(false);
     staffBar.style.display = "none";
+    gmBar.style.display = "none";
     return;
   }
 
   rebuildStaffBar();
+  rebuildGmBar();
   setTransport(true);
   syncPlayPauseButtons(PlaybackState.STOPPED);
   setStatus(`${title} — 스크롤로 시작 위치 조정 후 재생`);
