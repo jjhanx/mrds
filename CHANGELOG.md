@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### 추가
+- **도구**: `osmd-universal-viewer/` — 별도 Vite 앱. MusicXML/MXL과 NWC(→MusicXML 변환)를 OpenSheetMusicDisplay로 표시·재생(soundfont-player / osmd-audio-player 벤더). NWC 파서는 브라우저용으로 `pako` inflate 사용
 - **홈**: 게시판 최신 글보다 악보 자료실에 더 최신 항목이 있으면 3열 영역 맨 오른쪽에 최신 악보 카드 표시, 클릭 시 해당 폴더가 있으면 `?folderId=`로 악보 자료실에 연결
 - **홈**: 위 악보 카드가 PDF일 때 `PdfViewer`(iframe)로 미리보기 표시, `PdfViewer`에 `compact` 옵션 추가
 - **홈**: 악보 카드 설명이 비었을 때 `getDefaultSheetMusicSpotlightDescription`(확장자별: 오디오·동영상·이미지·PDF·NWC·압축·문서 등)

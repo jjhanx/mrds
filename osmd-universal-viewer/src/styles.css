@@ -1,0 +1,111 @@
+:root {
+  font-family: "Noto Sans KR", system-ui, sans-serif;
+  color: #e8e8e8;
+  background: #121212;
+  line-height: 1.5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+#app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.25rem;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.toolbar button {
+  font: inherit;
+  padding: 0.45rem 0.9rem;
+  border-radius: 6px;
+  border: 1px solid #444;
+  background: #2a2a2a;
+  color: #eee;
+  cursor: pointer;
+}
+
+.toolbar button:hover:not(:disabled) {
+  background: #383838;
+}
+
+.toolbar button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.toolbar label.file-btn {
+  padding: 0.45rem 0.9rem;
+  border-radius: 6px;
+  border: 1px solid #5a7ab8;
+  background: #1e2f4a;
+  color: #dbe8ff;
+  cursor: pointer;
+}
+
+.toolbar label.file-btn:hover {
+  background: #2a3d5c;
+}
+
+.toolbar input[type="file"] {
+  display: none;
+}
+
+.status {
+  font-size: 0.9rem;
+  color: #aaa;
+  flex: 1 1 100%;
+}
+
+.zoom {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.drop {
+  border: 2px dashed #444;
+  border-radius: 10px;
+  padding: 2rem;
+  text-align: center;
+  color: #888;
+  margin-bottom: 1rem;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.drop.drag {
+  border-color: #5a7ab8;
+  background: #1a2230;
+}
+
+.score-wrap {
+  overflow: auto;
+  max-height: calc(100vh - 220px);
+  background: #fafafa;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.score-wrap .osmd-container {
+  min-height: 200px;
+}
+
+.hint {
+  font-size: 0.85rem;
+  color: #777;
+  margin-top: 0.75rem;
+}
