@@ -125,11 +125,12 @@ model SheetMusic {
 }
 
 model SheetMusicFolder {
-  id        String   @id @default(cuid())
-  name      String   // 표시 이름 (예: 합창곡, 애창곡)
-  slug      String   @unique // URL용 (예: choir, art-song)
-  sortOrder Int      @default(0)
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  name        String   // 표시 이름 (예: 합창곡, 애창곡)
+  slug        String   @unique // URL용 (예: choir, art-song)
+  sortOrder   Int      @default(0)
+  allowedExts String?  // 허용 파일 확장자 (콤마 구분 예: "mxl,musicxml,xml" 또는 "*" 또는 null=기본규칙/모든형식)
+  createdAt   DateTime @default(now())
 
   items SheetMusic[]
 }

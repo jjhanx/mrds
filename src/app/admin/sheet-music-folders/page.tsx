@@ -2,13 +2,15 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Folder, Pencil, Trash2, ArrowLeft, FolderPlus, Plus, Loader2 } from "lucide-react";
+import { Folder, Pencil, Trash2, ArrowLeft, FolderPlus, Plus, Loader2, FileCode } from "lucide-react";
+import { FORMAT_PRESETS, getFolderHint } from "@/constants/sheet-music";
 
 interface FolderItem {
   id: string;
   name: string;
   slug: string;
   sortOrder: number;
+  allowedExts?: string | null;
   itemCount: number;
 }
 
@@ -20,10 +22,13 @@ export default function AdminSheetMusicFoldersPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editSlug, setEditSlug] = useState("");
+  const [editAllowedExts, setEditAllowedExts] = useState("*");
 
   // 새 폴더 입력 상태
   const [newName, setNewName] = useState("");
   const [newSlug, setNewSlug] = useState("");
+  const [newFormatPreset, setNewFormatPreset] = useState("all");
+  const [newCustomExts, setNewCustomExts] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const load = () => {
@@ -40,6 +45,32 @@ export default function AdminSheetMusicFoldersPage() {
     load();
   }, []);
 
+  // 폴더 이름에 따라 포맷 자동 추천 (예: mxl 입력 시 자동으로 MXL 프리셋 선택)
+  const handleNameChange = (val: string) => {
+    setNewName(val);
+    const lower = val.toLowerCase();
+    if (newFormatPreset === "all") {
+      if (lower.includes("mxl") || lower.includes("musicxml")) {
+        setNewFormatPreset("mxl");
+      } else if (lower.includes("동영상") || lower.includes("video")) {
+        setNewFormatPreset("video");
+      } else if (lower.includes("nwc")) {
+        setNewFormatPreset("nwc");
+      } else if (lower.includes("음원") || lower.includes("오디오") || lower.includes("audio") || lower.includes("mp3")) {
+        setNewFormatPreset("audio");
+      }
+    }
+  };
+
+  const getResolvedAllowedExts = (presetId: string, customVal: string): string => {
+    if (presetId === "custom") {
+      return customVal.trim() || "*";
+    }
+    const preset = FORMAT_PRESETS.find((p) => p.id === presetId);
+    if (!preset || preset.id === "all") return "*";
+    return preset.exts.join(",");
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName.trim()) {
@@ -51,6 +82,8 @@ export default function AdminSheetMusicFoldersPage() {
     setSuccess("");
     setIsSubmitting(true);
 
+    const allowedExts = getResolvedAllowedExts(newFormatPreset, newCustomExts);
+
     try {
       const res = await fetch("/api/sheet-music/folders", {
         method: "POST",
@@ -58,6 +91,7 @@ export default function AdminSheetMusicFoldersPage() {
         body: JSON.stringify({
           name: newName.trim(),
           slug: newSlug.trim().toLowerCase().replace(/\s+/g, "-"),
+          allowedExts,
         }),
       });
 
@@ -68,7 +102,9 @@ export default function AdminSheetMusicFoldersPage() {
 
       setNewName("");
       setNewSlug("");
-      setSuccess(`'${data.name}' 폴더가 성공적으로 추가되었습니다.`);
+      setNewFormatPreset("all");
+      setNewCustomExts("");
+      setSuccess(`'${data.name}' 폴더가 성공적으로 추가되었습니다. (허용 형식: ${getFolderHint(data.slug, data.allowedExts)})`);
       setTimeout(() => setSuccess(""), 4000);
       load();
     } catch (err) {
@@ -88,6 +124,7 @@ export default function AdminSheetMusicFoldersPage() {
         body: JSON.stringify({
           name: editName.trim(),
           slug: editSlug.trim().toLowerCase().replace(/\s+/g, "-"),
+          allowedExts: editAllowedExts.trim() || "*",
         }),
       });
       const data = await res.json();
@@ -119,6 +156,7 @@ export default function AdminSheetMusicFoldersPage() {
     setEditingId(f.id);
     setEditName(f.name);
     setEditSlug(f.slug);
+    setEditAllowedExts(f.allowedExts || "*");
   };
 
   if (loading) {
@@ -131,7 +169,7 @@ export default function AdminSheetMusicFoldersPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50 to-orange-50">
-      <main className="max-w-2xl mx-auto px-4 py-8">
+      <main className="max-w-3xl mx-auto px-4 py-8">
         <Link
           href="/admin"
           className="inline-flex items-center gap-2 text-stone-500 hover:text-amber-700 mb-6 transition-colors"
@@ -142,7 +180,7 @@ export default function AdminSheetMusicFoldersPage() {
 
         <h1 className="text-2xl font-bold text-stone-800 mb-2">악보 폴더 관리</h1>
         <p className="text-stone-600 text-sm mb-6">
-          폴더를 추가·수정·삭제할 수 있습니다. 항목이 있는 폴더는 삭제할 수 없습니다.
+          악보 폴더를 추가·수정·삭제할 수 있습니다. 각 폴더별로 올릴 수 있는 파일 형식을 자유롭게 설정하거나 제한 없이 업로드할 수 있습니다.
         </p>
 
         {error && (
@@ -178,7 +216,7 @@ export default function AdminSheetMusicFoldersPage() {
             <span>새 폴더 추가</span>
           </div>
 
-          <form onSubmit={handleCreate} className="space-y-3">
+          <form onSubmit={handleCreate} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-medium text-stone-600 mb-1">
@@ -186,9 +224,9 @@ export default function AdminSheetMusicFoldersPage() {
                 </label>
                 <input
                   type="text"
-                  placeholder="예: 찬양곡, 성가대"
+                  placeholder="예: MXL 악보실, 찬양곡"
                   value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
+                  onChange={(e) => handleNameChange(e.target.value)}
                   disabled={isSubmitting}
                   className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white"
                 />
@@ -199,7 +237,7 @@ export default function AdminSheetMusicFoldersPage() {
                 </label>
                 <input
                   type="text"
-                  placeholder="예: anthem (미입력 시 자동)"
+                  placeholder="예: mxl (미입력 시 자동)"
                   value={newSlug}
                   onChange={(e) => setNewSlug(e.target.value)}
                   disabled={isSubmitting}
@@ -208,10 +246,49 @@ export default function AdminSheetMusicFoldersPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-1">
-              <span className="text-xs text-stone-400">
-                식별자를 비워두면 영문 변환 또는 고유 키가 자동 생성됩니다.
-              </span>
+            {/* 허용 파일 형식 선택 */}
+            <div>
+              <label className="block text-xs font-medium text-stone-600 mb-1 flex items-center gap-1.5">
+                <FileCode className="w-3.5 h-3.5 text-amber-600" />
+                <span>허용 파일 형식</span>
+                <span className="text-stone-400 font-normal">(폴더에 업로드 가능한 파일 종류)</span>
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <select
+                  value={newFormatPreset}
+                  onChange={(e) => setNewFormatPreset(e.target.value)}
+                  disabled={isSubmitting}
+                  className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+                >
+                  {FORMAT_PRESETS.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.label}
+                    </option>
+                  ))}
+                  <option value="custom">직접 확장자 입력 (예: mxl, musicxml, xml)</option>
+                </select>
+
+                {newFormatPreset === "custom" ? (
+                  <input
+                    type="text"
+                    placeholder="쉼표 구분 (예: mxl, musicxml, xml)"
+                    value={newCustomExts}
+                    onChange={(e) => setNewCustomExts(e.target.value)}
+                    disabled={isSubmitting}
+                    className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+                  />
+                ) : (
+                  <div className="px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-xs text-stone-600 flex items-center">
+                    {FORMAT_PRESETS.find((p) => p.id === newFormatPreset)?.hint || "모든 파일 형식"}
+                  </div>
+                )}
+              </div>
+              <p className="text-xs text-stone-400 mt-1">
+                기본값(모든 파일 형식)으로 두시면 형식 제한 없이 어떤 파일이든 업로드할 수 있습니다.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end pt-1">
               <button
                 type="submit"
                 disabled={isSubmitting || !newName.trim()}
@@ -252,26 +329,42 @@ export default function AdminSheetMusicFoldersPage() {
               </li>
             ) : (
               folders.map((f) => (
-                <li key={f.id} className="p-4 flex items-center justify-between gap-4 hover:bg-stone-50/50 transition-colors">
+                <li key={f.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-stone-50/50 transition-colors">
                   {editingId === f.id ? (
-                    <div className="flex flex-wrap gap-2 items-center flex-1">
-                      <div className="flex items-center gap-1.5 flex-1 min-w-[200px]">
-                        <input
-                          type="text"
-                          value={editName}
-                          onChange={(e) => setEditName(e.target.value)}
-                          placeholder="폴더 이름"
-                          className="px-3 py-1.5 border border-stone-200 rounded-lg text-sm w-1/2 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                        />
-                        <input
-                          type="text"
-                          value={editSlug}
-                          onChange={(e) => setEditSlug(e.target.value)}
-                          placeholder="슬러그"
-                          className="px-3 py-1.5 border border-stone-200 rounded-lg text-sm w-1/2 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                        />
+                    <div className="flex flex-col gap-2 w-full">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div>
+                          <label className="block text-[11px] text-stone-500 mb-0.5">이름</label>
+                          <input
+                            type="text"
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            placeholder="폴더 이름"
+                            className="w-full px-3 py-1.5 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] text-stone-500 mb-0.5">식별자 (Slug)</label>
+                          <input
+                            type="text"
+                            value={editSlug}
+                            onChange={(e) => setEditSlug(e.target.value)}
+                            placeholder="슬러그"
+                            className="w-full px-3 py-1.5 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] text-stone-500 mb-0.5">허용 확장자 (* = 전체)</label>
+                          <input
+                            type="text"
+                            value={editAllowedExts}
+                            onChange={(e) => setEditAllowedExts(e.target.value)}
+                            placeholder="예: mxl,musicxml,xml 또는 *"
+                            className="w-full px-3 py-1.5 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                          />
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center justify-end gap-1.5 pt-1">
                         <button
                           type="button"
                           onClick={() => handleUpdate(f.id)}
@@ -290,7 +383,7 @@ export default function AdminSheetMusicFoldersPage() {
                     </div>
                   ) : (
                     <>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="font-medium text-stone-800">{f.name}</span>
                         <span className="text-stone-400 text-xs font-mono bg-stone-100 px-1.5 py-0.5 rounded">
                           /{f.slug}
@@ -298,8 +391,11 @@ export default function AdminSheetMusicFoldersPage() {
                         <span className="text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full font-medium">
                           {f.itemCount}개 악보
                         </span>
+                        <span className="text-xs text-stone-500 bg-stone-100 px-2 py-0.5 rounded border border-stone-200">
+                          {getFolderHint(f.slug, f.allowedExts)}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 self-end sm:self-center">
                         <button
                           type="button"
                           onClick={() => startEdit(f)}

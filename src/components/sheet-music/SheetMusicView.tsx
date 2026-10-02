@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Printer, Download, Share2, FileDown, Video } from "lucide-react";
+import { ArrowLeft, Printer, Download, Share2, FileDown, Video, FileMusic } from "lucide-react";
 import { VideoPlayer } from "@/components/board/VideoPlayer";
 import { CommentList } from "@/components/comments/CommentList";
 import { PdfViewer } from "@/components/sheet-music/PdfViewer";
@@ -24,6 +24,7 @@ export function SheetMusicView({ sheetMusic, currentUserId }: SheetMusicViewProp
   const pathOnly = sheetMusic.filepath.split("?")[0];
   const isPdf = /\.pdf$/i.test(pathOnly);
   const isNwc = /\.nwc$/i.test(pathOnly);
+  const isMxl = /\.(mxl|musicxml|xml)$/i.test(pathOnly);
   const isScoreFolder = ["choir", "art-song"].includes((sheetMusic.folder?.slug ?? "").toLowerCase());
   const isImage = /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(sheetMusic.filepath);
   const isVideo = /\.(mp4|webm|mov|avi|mkv|m4v|ogv|wmv)(\?|$)/i.test(sheetMusic.filepath);
@@ -224,6 +225,34 @@ export function SheetMusicView({ sheetMusic, currentUserId }: SheetMusicViewProp
                   <Download className="w-4 h-4" />
                   다운로드
                 </a>
+              </div>
+            ) : isMxl ? (
+              <div className="flex flex-col items-center justify-center p-8 bg-white rounded-xl border border-stone-200 text-center my-4">
+                <div className="w-16 h-16 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 mb-4 shadow-sm">
+                  <FileMusic className="w-8 h-8" />
+                </div>
+                <h4 className="text-lg font-bold text-stone-800 mb-1">{sheetMusic.title}</h4>
+                <p className="text-sm text-stone-500 mb-6 max-w-md">
+                  MusicXML / MXL 형식의 디지털 악보 파일입니다. 악보 뷰어 프로그램이나 악보 편집기(MuseScore, Finale, Sibelius 등)에서 열어보실 수 있습니다.
+                </p>
+                <div className="flex flex-wrap gap-3 justify-center">
+                  <a
+                    href={sheetMusic.filepath}
+                    download
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium shadow-sm transition-colors"
+                  >
+                    <Download className="w-4 h-4" />
+                    MXL / MusicXML 다운로드
+                  </a>
+                  <a
+                    href={sheetMusic.filepath}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 border border-stone-200 hover:bg-stone-50 rounded-xl text-stone-700 font-medium transition-colors"
+                  >
+                    파일 직접 열기
+                  </a>
+                </div>
               </div>
             ) : (
               <a

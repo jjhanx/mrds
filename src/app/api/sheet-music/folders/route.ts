@@ -25,6 +25,7 @@ export async function GET() {
         name: f.name,
         slug: f.slug,
         sortOrder: f.sortOrder,
+        allowedExts: f.allowedExts,
         itemCount: f._count.items,
       }))
     );
@@ -53,6 +54,7 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => ({}));
     let name = typeof body?.name === "string" ? body.name.trim() : "";
     let slug = typeof body?.slug === "string" ? body.slug.trim().toLowerCase().replace(/\s+/g, "-") : "";
+    const allowedExts = typeof body?.allowedExts === "string" && body.allowedExts.trim() ? body.allowedExts.trim() : null;
 
     if (!name) {
       name = "새 폴더";
@@ -85,6 +87,7 @@ export async function POST(req: Request) {
         name,
         slug: candidateSlug,
         sortOrder: maxOrder + 1,
+        allowedExts,
       },
     });
 

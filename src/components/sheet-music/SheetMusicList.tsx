@@ -34,6 +34,7 @@ function getFileIcon(filepath: string) {
   const videoExt = ["mp4", "webm", "mov", "avi", "mkv", "m4v", "ogv", "wmv"];
   const imageExt = ["jpg", "jpeg", "png", "gif", "webp"];
   const archiveExt = ["zip", "rar", "7z", "tar", "gz"];
+  if (["mxl", "musicxml", "xml"].includes(ext)) return { Icon: FileMusic, color: "text-indigo-600" };
   if (videoExt.includes(ext)) return { Icon: Video, color: "text-violet-600" };
   if (ext === "pdf") return { Icon: FileText, color: "text-red-600" };
   if (imageExt.includes(ext)) return { Icon: Image, color: "text-emerald-600" };
@@ -50,6 +51,7 @@ interface SheetMusicFolder {
   name: string;
   slug: string;
   sortOrder: number;
+  allowedExts?: string | null;
   itemCount: number;
 }
 
@@ -149,8 +151,8 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
     [folders, folderIdParam]
   );
   const uploadHint = currentFolder
-    ? `${getFolderHint(currentFolder.slug)} (파일당 최대 ${getMaxFileSizeLabel(currentFolder.slug)})`
-    : "PDF, 이미지";
+    ? `${getFolderHint(currentFolder.slug, currentFolder.allowedExts)} (파일당 최대 ${getMaxFileSizeLabel(currentFolder.slug)})`
+    : "모든 파일 형식";
 
   const sortedItems = useMemo(() => {
     const arr = [...items];
@@ -172,8 +174,9 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
     if (!folderIdParam || uploading) return;
 
     const slug = currentFolder?.slug ?? "";
+    const allowedExts = currentFolder?.allowedExts;
     const allValid = Array.from(e.dataTransfer.files).filter(
-      (f) => f.size > 0 && isFileAllowed({ name: f.name, type: f.type }, slug)
+      (f) => f.size > 0 && isFileAllowed({ name: f.name, type: f.type }, slug, allowedExts)
     );
     const oversized = allValid.filter((f) => !isFileSizeAllowed(f.size, slug));
     const files = allValid.filter((f) => isFileSizeAllowed(f.size, slug));
@@ -184,7 +187,7 @@ export function SheetMusicList({ isAdmin = false }: SheetMusicListProps) {
     }
     if (files.length === 0) {
       if (oversized.length === 0) {
-        const hint = getFolderHint(slug);
+        const hint = getFolderHint(slug, allowedExts);
         alert(`이 폴더에는 ${hint}만 업로드할 수 있습니다.`);
       }
       return;

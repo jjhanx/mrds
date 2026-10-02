@@ -27,19 +27,21 @@ export async function POST(request: Request) {
     }
 
     let folderSlug = "";
+    let folderAllowedExts: string | null = null;
     if (folderId) {
       const folder = await prisma.sheetMusicFolder.findUnique({
         where: { id: folderId },
-        select: { slug: true },
+        select: { slug: true, allowedExts: true },
       });
       folderSlug = (folder?.slug ?? "").toLowerCase();
+      folderAllowedExts = folder?.allowedExts ?? null;
     }
 
     const rejected = validFiles.filter(
-      (f) => !isFileAllowed({ name: f.name, type: f.type }, folderSlug)
+      (f) => !isFileAllowed({ name: f.name, type: f.type }, folderSlug, folderAllowedExts)
     );
     if (rejected.length > 0) {
-      const hint = getFolderHint(folderSlug);
+      const hint = getFolderHint(folderSlug, folderAllowedExts);
       return NextResponse.json(
         {
           error: `이 폴더에는 ${hint}만 업로드할 수 있습니다. (허용되지 않음: ${rejected.map((f) => f.name).join(", ")})`,

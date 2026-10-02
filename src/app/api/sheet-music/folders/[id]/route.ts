@@ -14,10 +14,11 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await _request.json();
-    const { name, slug, sortOrder } = body as {
+    const { name, slug, sortOrder, allowedExts } = body as {
       name?: string;
       slug?: string;
       sortOrder?: number;
+      allowedExts?: string | null;
     };
 
     const folder = await prisma.sheetMusicFolder.findUnique({ where: { id } });
@@ -47,6 +48,7 @@ export async function PATCH(
         ...(name !== undefined && { name: name.trim() }),
         ...(slugNorm !== undefined && { slug: slugNorm }),
         ...(sortOrder !== undefined && { sortOrder: Number(sortOrder) }),
+        ...(allowedExts !== undefined && { allowedExts: allowedExts ? allowedExts.trim() : null }),
       },
     });
 
