@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Folder, Pencil, Trash2, ArrowLeft } from "lucide-react";
+import { Folder, Pencil, Trash2, ArrowLeft, FolderPlus, Plus, Loader2 } from "lucide-react";
 
 interface FolderItem {
   id: string;
@@ -16,9 +16,15 @@ export default function AdminSheetMusicFoldersPage() {
   const [folders, setFolders] = useState<FolderItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editSlug, setEditSlug] = useState("");
+
+  // 새 폴더 입력 상태
+  const [newName, setNewName] = useState("");
+  const [newSlug, setNewSlug] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const load = () => {
     fetch("/api/sheet-music/folders")
@@ -34,8 +40,47 @@ export default function AdminSheetMusicFoldersPage() {
     load();
   }, []);
 
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newName.trim()) {
+      setError("폴더 이름을 입력해 주세요.");
+      return;
+    }
+
+    setError("");
+    setSuccess("");
+    setIsSubmitting(true);
+
+    try {
+      const res = await fetch("/api/sheet-music/folders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newName.trim(),
+          slug: newSlug.trim().toLowerCase().replace(/\s+/g, "-"),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "폴더 추가에 실패했습니다.");
+      }
+
+      setNewName("");
+      setNewSlug("");
+      setSuccess(`'${data.name}' 폴더가 성공적으로 추가되었습니다.`);
+      setTimeout(() => setSuccess(""), 4000);
+      load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "폴더 추가에 실패했습니다.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleUpdate = async (id: string) => {
     setError("");
+    setSuccess("");
     try {
       const res = await fetch(`/api/sheet-music/folders/${id}`, {
         method: "PATCH",
@@ -57,6 +102,7 @@ export default function AdminSheetMusicFoldersPage() {
   const handleDelete = async (id: string) => {
     if (!confirm("이 폴더를 삭제하시겠습니까? (항목이 없을 때만 삭제 가능)")) return;
     setError("");
+    setSuccess("");
     try {
       const res = await fetch(`/api/sheet-music/folders/${id}`, {
         method: "DELETE",
@@ -88,7 +134,7 @@ export default function AdminSheetMusicFoldersPage() {
       <main className="max-w-2xl mx-auto px-4 py-8">
         <Link
           href="/admin"
-          className="inline-flex items-center gap-2 text-stone-500 hover:text-amber-700 mb-6"
+          className="inline-flex items-center gap-2 text-stone-500 hover:text-amber-700 mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           관리로 돌아가기
@@ -100,79 +146,183 @@ export default function AdminSheetMusicFoldersPage() {
         </p>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
-            {error}
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm flex items-center justify-between">
+            <span>{error}</span>
+            <button
+              type="button"
+              onClick={() => setError("")}
+              className="text-red-500 hover:text-red-700 font-bold ml-2 text-xs"
+            >
+              닫기
+            </button>
           </div>
         )}
 
-        <div className="bg-white rounded-xl border border-amber-100 overflow-hidden">
-          <div className="px-4 py-3 border-b border-amber-100 flex items-center gap-2">
-            <Folder className="w-4 h-4" />
-            <span className="font-medium text-stone-700">폴더 목록</span>
+        {success && (
+          <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg text-sm flex items-center justify-between">
+            <span>{success}</span>
+            <button
+              type="button"
+              onClick={() => setSuccess("")}
+              className="text-emerald-500 hover:text-emerald-700 font-bold ml-2 text-xs"
+            >
+              닫기
+            </button>
+          </div>
+        )}
+
+        {/* 새 폴더 추가 카드 */}
+        <div className="bg-white rounded-xl border border-amber-100 p-5 mb-6 shadow-sm">
+          <div className="flex items-center gap-2 font-medium text-stone-800 mb-3">
+            <FolderPlus className="w-5 h-5 text-amber-600" />
+            <span>새 폴더 추가</span>
+          </div>
+
+          <form onSubmit={handleCreate} className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-stone-600 mb-1">
+                  폴더 이름 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="예: 찬양곡, 성가대"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  disabled={isSubmitting}
+                  className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-stone-600 mb-1">
+                  영문 식별자 (Slug) <span className="text-stone-400 font-normal">(선택)</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="예: anthem (미입력 시 자동)"
+                  value={newSlug}
+                  onChange={(e) => setNewSlug(e.target.value)}
+                  disabled={isSubmitting}
+                  className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-1">
+              <span className="text-xs text-stone-400">
+                식별자를 비워두면 영문 변환 또는 고유 키가 자동 생성됩니다.
+              </span>
+              <button
+                type="submit"
+                disabled={isSubmitting || !newName.trim()}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-600 hover:bg-amber-700 disabled:bg-stone-300 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    추가 중...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4" />
+                    폴더 추가
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        {/* 폴더 목록 */}
+        <div className="bg-white rounded-xl border border-amber-100 overflow-hidden shadow-sm">
+          <div className="px-4 py-3 border-b border-amber-100 flex items-center justify-between bg-amber-50/50">
+            <div className="flex items-center gap-2">
+              <Folder className="w-4 h-4 text-amber-700" />
+              <span className="font-medium text-stone-800">폴더 목록</span>
+            </div>
+            <span className="text-xs text-stone-500 font-medium">
+              총 {folders.length}개
+            </span>
           </div>
 
           <ul className="divide-y divide-stone-100">
-            {folders.map((f) => (
-              <li key={f.id} className="p-4 flex items-center justify-between gap-4">
-                {editingId === f.id ? (
-                  <div className="flex flex-wrap gap-3 items-center flex-1">
-                    <input
-                      type="text"
-                      value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
-                      className="px-3 py-2 border border-stone-200 rounded-lg text-sm w-28"
-                    />
-                    <input
-                      type="text"
-                      value={editSlug}
-                      onChange={(e) => setEditSlug(e.target.value)}
-                      className="px-3 py-2 border border-stone-200 rounded-lg text-sm w-28"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleUpdate(f.id)}
-                      className="px-3 py-2 bg-amber-600 text-white rounded-lg text-sm"
-                    >
-                      저장
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditingId(null)}
-                      className="px-3 py-2 border rounded-lg text-sm"
-                    >
-                      취소
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <div>
-                      <span className="font-medium text-stone-800">{f.name}</span>
-                      <span className="text-stone-400 text-sm ml-2">/{f.slug}</span>
-                      <span className="text-stone-400 text-sm ml-2">({f.itemCount}개)</span>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => startEdit(f)}
-                        className="p-2 text-stone-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg"
-                        title="수정"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(f.id)}
-                        disabled={f.itemCount > 0}
-                        className="p-2 text-stone-500 hover:text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-40 disabled:pointer-events-none"
-                        title={f.itemCount > 0 ? "항목이 있으면 삭제 불가" : "삭제"}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </>
-                )}
+            {folders.length === 0 ? (
+              <li className="p-6 text-center text-sm text-stone-500">
+                등록된 폴더가 없습니다.
               </li>
-            ))}
+            ) : (
+              folders.map((f) => (
+                <li key={f.id} className="p-4 flex items-center justify-between gap-4 hover:bg-stone-50/50 transition-colors">
+                  {editingId === f.id ? (
+                    <div className="flex flex-wrap gap-2 items-center flex-1">
+                      <div className="flex items-center gap-1.5 flex-1 min-w-[200px]">
+                        <input
+                          type="text"
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          placeholder="폴더 이름"
+                          className="px-3 py-1.5 border border-stone-200 rounded-lg text-sm w-1/2 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        />
+                        <input
+                          type="text"
+                          value={editSlug}
+                          onChange={(e) => setEditSlug(e.target.value)}
+                          placeholder="슬러그"
+                          className="px-3 py-1.5 border border-stone-200 rounded-lg text-sm w-1/2 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        />
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleUpdate(f.id)}
+                          className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-sm font-medium transition-colors"
+                        >
+                          저장
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingId(null)}
+                          className="px-3 py-1.5 border border-stone-200 hover:bg-stone-100 rounded-lg text-sm transition-colors"
+                        >
+                          취소
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-stone-800">{f.name}</span>
+                        <span className="text-stone-400 text-xs font-mono bg-stone-100 px-1.5 py-0.5 rounded">
+                          /{f.slug}
+                        </span>
+                        <span className="text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full font-medium">
+                          {f.itemCount}개 악보
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => startEdit(f)}
+                          className="p-1.5 text-stone-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                          title="수정"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(f.id)}
+                          disabled={f.itemCount > 0}
+                          className="p-1.5 text-stone-500 hover:text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                          title={f.itemCount > 0 ? "악보 항목이 있는 폴더는 삭제할 수 없습니다" : "삭제"}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </li>
+              ))
+            )}
           </ul>
         </div>
       </main>

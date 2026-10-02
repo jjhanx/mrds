@@ -13,6 +13,10 @@
   - `?file=` 파라미터로 우리 서버의 NWC URL 로드
   - **nwc-viewer 개선**: 한글(EUC-KR) 가사 인코딩, 한글 폰트 스택(Malgun Gothic·Noto Sans KR 등), 넓은 악보 레이아웃, 임베드 시 불필요 메뉴 숨김, 파트별 재생 선택, 재생 시 악보 스크롤 동기화
 - **악보 자료실**: 제목·내용·작곡가 검색 기능 추가 (게시판과 동일한 방식)
+- **악보 폴더 관리**: 관리자 페이지(`/admin/sheet-music-folders`)에서 새로운 폴더 추가 기능 구현
+  - 기존 등록된 폴더와 해당 폴더에 포함된 악보 데이터의 손실이나 변경 없이 신규 폴더 추가
+  - 폴더 이름 및 영문 식별자(Slug) 입력 지원 (미입력 시 영문 변환 또는 고유 키 자동 생성 및 중복 방지)
+  - 직관적인 추가 폼 UI 구성 및 등록 후 목록 실시간 갱신, 성공/실패 피드백 제공
 
 ### 수정
 - **osmd-universal-viewer**: 재생 타이밍을 jimutt `PlaybackScheduler`/tick 큐 대신 OSMD iterator 타임라인 + Web Audio 절대 시각 스케줄. 시작 시각은 **연속 스텝 간 `currentTimeStamp` 델타를 BPM으로 누적**(절대 환산은 초반 무음·느린 빨간 진행 유발), 길이는 `getDurationInMilliseconds` 실패 시 BPM 기반 분수 길이로 대체, GM 번호는 Voice·Instrument에서 해석. `jumpToStep`은 재생 중일 때만 `pause`. 재생 중 가로 스크롤은 `PLAYING`일 때만 `requestAnimationFrame`으로 커서 추적(쉼만 있는 스텝에서도 스크롤 유지)

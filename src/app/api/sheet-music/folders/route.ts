@@ -37,7 +37,7 @@ export async function GET() {
   }
 }
 
-export async function POST() {
+export async function POST(req: Request) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -50,14 +50,40 @@ export async function POST() {
 
     await ensureDefaultFolders();
 
+    const body = await req.json().catch(() => ({}));
+    let name = typeof body?.name === "string" ? body.name.trim() : "";
+    let slug = typeof body?.slug === "string" ? body.slug.trim().toLowerCase().replace(/\s+/g, "-") : "";
+
+    if (!name) {
+      name = "새 폴더";
+    }
+
+    if (!slug) {
+      // 영문/숫자가 포함되어 있으면 slug로 변환, 아니면 timestamp 기반 slug
+      const latinOnly = name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+      slug = latinOnly.length >= 2 ? latinOnly : `folder-${Date.now().toString(36)}`;
+    } else {
+      slug = slug.replace(/[^a-z0-9-]/g, "");
+      if (!slug) {
+        slug = `folder-${Date.now().toString(36)}`;
+      }
+    }
+
+    // 중복 체크 및 슬러그 고유화
+    let candidateSlug = slug;
+    let counter = 1;
+    while (await prisma.sheetMusicFolder.findUnique({ where: { slug: candidateSlug } })) {
+      candidateSlug = `${slug}-${counter}`;
+      counter++;
+    }
+
     const all = await prisma.sheetMusicFolder.findMany({ orderBy: { sortOrder: "desc" }, take: 1 });
     const maxOrder = all[0]?.sortOrder ?? -1;
-    const slug = `folder-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
     const folder = await prisma.sheetMusicFolder.create({
       data: {
-        name: "새 폴더",
-        slug,
+        name,
+        slug: candidateSlug,
         sortOrder: maxOrder + 1,
       },
     });
